@@ -1,0 +1,64 @@
+$: << "./lib"
+require 'optparse'
+require 'awetestlib'
+
+options = { }
+OptionParser.new do |opts|
+  opts.banner = "Usage: awetestlib <script_file> [options]"
+
+  opts.on("-m RUN_MODE", "--run_mode RUN_MODE", "Specify the run mode: local, local_zip, remote_zip") do |run_mode|
+    options[:run_mode] = run_mode
+  end
+  opts.on("-r ROOT_PATH", "--root_path ROOT_PATH", "Specify the root path") do |root_path|
+    options[:root_path] = root_path
+  end
+  opts.on("-l LIBRARY", "--library LIBRARY", "Specify a library to be loaded") do |library|
+    options[:library] = library.to_s
+  end
+  opts.on("-x EXCEL_FILE", "--excel EXCEL_FILE", "Specify an excel file containing variables to be loaded") do |xls_path|
+    options[:xls_path] = xls_path
+  end
+  opts.on("-b BROWSER", "--browser BROWSER", "Specify a browser (IE, FF, S, C)") do |browser|
+    options[:browser] = browser
+  end
+  opts.on("-v VERSION", "--version VERSION", "Specify a browser version") do |v|
+    options[:version] = v
+  end
+  opts.on("-e", "--environment_url ENVIRONMENT_URL", "Specify the environment URL") do |environment_url|
+    options[:environment_url] = environment_url
+  end
+  opts.on("-f", "--environment_node_name ENVIRONMENT_NODENAME", "Specify the environment node name") do |node_name|
+    options[:environment_nodename] = node_name
+  end
+  opts.on("-n", "--environment_name ENVIRONMENT_NAME", "Specify the environment name") do |environment_name|
+    options[:environment_name] = environment_name
+  end
+  opts.on("-u SELENIUM_REMOTE_URL", "--selenium_remote_url SELENIUM_REMOTE_URL", "Specify the device's remote url and port") do |remote_url|
+    options[:remote_url] = remote_url
+  end
+  opts.on("-s SCREENCAP_PATH", "--screencap-path SCREENCAP_PATH", "Specify the path where screenshots will be saved") do |screencap_path|
+    options[:screencap_path] = screencap_path
+  end
+  opts.on("-d", "--debug", "Run debugger on first script failure") do
+    options[:debug_on_fail] = true
+  end
+  # add persistent logging for awetestlib. pmn 05jun2012
+  opts.on("-o", "--output_to_log", "Write to log file") do
+    options[:output_to_log] = true
+  end
+  opts.on("", "--log_path_subdir LOG_PATH_SUBDIR", "Specify log path relative to root_path.") do |log_path_subdir|
+    options[:log_path_subdir] = log_path_subdir
+  end
+
+end.parse!
+
+options[:environment] ||= {}
+options[:environment]["name"] = options[:environment_name]
+options[:environment]["url"] = options[:environment_url]
+options[:environment]["nodename"] = options[:environment_nodename]
+options[:script_type] = 'AwetestLegacy'
+options[:script_file] = ARGV[0]
+
+IS_WIN_2008 = File.exists?("config/win2008.txt")
+
+Awetestlib::Runner.new(options).start

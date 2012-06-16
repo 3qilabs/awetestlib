@@ -1,0 +1,4 @@
+= does not include patch for IE 7.0 or earlier modal dialog window title ('Web Page Dialog' vs. 'Webpage Dialog')
+  See 'http://github.com/radamanthus/watir'
+= user must download chromedriver.exe and put somewhere in PATH  ( ruby\bin works  )
+
