@@ -74,33 +74,34 @@ module ZohoUtil
     click_text(browser,'Export Data')
     sleep_for(2)
     select_option_by_name_and_option_value(browser, 'module', 'Accounts')
-    run_sikuli_script("exportaccounts")
-    close_popup('File Download')
-    #click_button_by_value(browser, 'Export')
+    if use_sikuli
+      run_sikuli_script("exportaccounts")
+      close_popup('File Download')
+    else
+      click_button_by_value(browser, 'Export')
 
-    #mark_testlevel('Download', 1)
-    #filename = 'Account_Export.cvs'
-    #filepath = "#{@myRoot}/downloads/#{filename}"
-    #filepath.gsub!('/','\\')
-    #message_to_log("#{filepath.to_s}")
-    #if File.exist?(filepath)
-    #  File.delete(filepath)
-    #end
-    #sleep(3)
-    #
-    #click_button_no_wait_by_value(browser, 'Export')
-    #sleep_for(6)
-    #save_file_here(filepath)
-    #sleep_for(4)
-    #
+      mark_testlevel('Download', 1)
+      filename = 'Account_Export.cvs'
+      filepath = "#{@myRoot}/downloads/#{filename}"
+      filepath.gsub!('/','\\')
+      message_to_log("#{filepath.to_s}")
+      if File.exist?(filepath)
+        File.delete(filepath)
+      end
+      sleep(3)
 
+      click_button_no_wait_by_value(browser, 'Export')
+      sleep_for(6)
+      save_file_here(filepath)
+      sleep_for(4)
 
-    #popup_exists?(popup, 'File Download')
-    #save_file(filepath)
-    #click_popup_button('File Download', 'Save')
-    #file_download(browser)
-    #save_file_orig(filepath)
-    #close_popup_by_button_title(popup, 'Close', 'Download Complete')
+      popup_exists?(popup, 'File Download')
+      save_file(filepath)
+      click_popup_button('File Download', 'Save')
+      file_download(browser)
+      save_file_orig(filepath)
+      close_popup_by_button_title(popup, 'Close', 'Download Complete')
+    end
   end
 
   def import_accounts(browser)

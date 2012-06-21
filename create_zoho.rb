@@ -25,6 +25,7 @@ module CreateZoho
     mark_testlevel('Create New Account', 1)
     sleep_for(3)
     click_text(browser, 'New Account')
+    wait_until_ready(browser, :name, /Account Name/)
     set_textfield_by_name(browser, /Account Name/, "Test Account #1")
     set_textfield_by_name(browser, /Phone/, "415-333-2311")
 
@@ -48,10 +49,10 @@ module CreateZoho
 
   def test_account_lookup(browser)
     mark_testlevel('Account Lookup', 1)
-    browser.image(:title, 'Account Name Lookup').click
+    click(browser, :image, :title, 'Account Name Lookup')
     sleep_for(5)
     popup = attach_browser_by_url(browser, /Parent Account/)
-    set_textfield_by_name(popup, 'fldValue', 'test')
+    set_textfield_by_name(popup, 'fldValue', 'test account #00')
     click_button_by_value(popup, 'Go')
     popup.link(:text, 'Test Account #007').click
     browser = attach_browser_by_url(browser, /ShowHomePage/)
