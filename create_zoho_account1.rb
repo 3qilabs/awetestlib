@@ -1,9 +1,11 @@
-module CreateZoho
-## put variables.xls in project directory
+module CreateZohoAccount1
 
-  def test_zoho(browser)
-    #get_variables("#{@myRoot}/zoho_variables.xls")
-    #navigate_to_crm(browser) #In Project Util
+  def run_test(browser)
+    create_account_scenario_1(browser)
+    create_account_scenario_2(browser)
+  end
+
+  def create_account_scenario_1(browser)
     create_account(browser)
     create_blank_new_account(browser)
     export_accounts(browser)
@@ -11,7 +13,7 @@ module CreateZoho
     signout(browser)
   end
 
-  def test_zoho_2(browser)
+  def create_account_scenario_2(browser)
     create_blank_new_account(browser)
     reports(browser)
     clone_account(browser)
@@ -38,9 +40,9 @@ module CreateZoho
     set_textfield_by_name(browser, /Billing State/, "CA")
     set_textfield_by_name(browser, /Billing Code/, "94102")
     set_textfield_by_name(browser, /Billing Country/, "USA")
-    browser.cell(:text, 'Billing to Shipping').click
+    #browser.cell(:text, 'Billing to Shipping').click
+    click(browser, :cell, :text, 'Billing to Shipping')
     click_button_by_value(browser, 'Save')
-
 
     wait_until_by_text(browser, 'Test Account #1')
     validate_text(browser, "Test Account #1")
@@ -54,9 +56,10 @@ module CreateZoho
     popup = attach_browser_by_url(browser, /Parent Account/)
     set_textfield_by_name(popup, 'fldValue', 'test account #00')
     click_button_by_value(popup, 'Go')
-    popup.link(:text, 'Test Account #007').click
+    click(popup, :link, :text, 'Test Account #007')
     browser = attach_browser_by_url(browser, /ShowHomePage/)
     validate_textfield_value_by_name(browser, /Parent Account/, 'Test Account #007')
   end
+
 
 end

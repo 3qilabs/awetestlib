@@ -11,8 +11,9 @@ module Awetestlib
 
   class Runner
 
-    include Legacy
+  # order matters here
     include Logging
+    include Legacy
     include Validations
 
     ::DEBUG   = 0
@@ -39,7 +40,7 @@ module Awetestlib
                   :debug_on_fail,
                   :environment, :environment_name, :environment_url, :environment_nodename,
                   :cycle, :browser_sequence,
-                  :output_to_log, :log_path_subdir,
+                  :output_to_log, :log_path_subdir, :report_all_test_refs,
                   :timeout
 
     #def self.build(options)
@@ -58,6 +59,11 @@ module Awetestlib
     def setup_global_test_vars(options)
       @my_failed_count = 0
       @my_passed_count = 0
+      @my_error_references         = Hash.new
+      @my_error_hits     = Hash.new
+
+      @report_all_refs  = options[:report_all_test_refs]
+
       if options[:environment]
         @myAppEnv = OpenStruct.new(
             :name     => options[:environment]['name'],
@@ -69,18 +75,24 @@ module Awetestlib
       else
         @runenv = options[:environment_name]
       end
-      @targetBrowser = browser_to_use(options[:browser])
-      @browserAbbrev = @targetBrowser.abbrev
-      @myRoot        = USING_WINDOWS ? options[:root_path].gsub!('/', '\\') : options[:root_path]
-      @myName        = File.basename(options[:script_file]).sub(/\.rb$/, '')
+
+      @targetBrowser  = browser_to_use(options[:browser], options[:version])
+      @targetVersion  = @targetBrowser.version
+      @browserAbbrev  = @targetBrowser.abbrev
+      @myRoot         = USING_WINDOWS ? options[:root_path].gsub!('/', '\\') : options[:root_path]
+      @myName         = File.basename(options[:script_file]).sub(/\.rb$/, '')
 
       if options[:output_to_log]
         log_path = "#{@myRoot}/"
         log_path << "#{options[:log_path_subdir]}/" if options[:log_path_subdir]
         log_spec = File.join log_path, "#{@myName}_#{Time.now.strftime("%Y%m%d%H%M%S")}.log"
-        init_logger(log_spec, @myName)
-        @start_timestamp   = Time.now
-        start_to_log(@start_timestamp)
+        @myLog = init_logger(log_spec, @myName)
+        #@start_timestamp   = Time.now
+        #start_to_log(@start_timestamp)
+      end
+
+      if options[:xls_path]
+        @xls_path = options[:xls_path]
       end
 
       #TODO need to find way to calculate these on the fly
@@ -153,7 +165,7 @@ module Awetestlib
 
     end
 
-    def browser_to_use(browser)
+    def browser_to_use(browser, browser_version = nil)
       platform = ''
       platform = 'Windows' if !!((RUBY_PLATFORM =~ /(win|w)(32|64)$/) || (RUBY_PLATFORM =~ /mswin|mingw/))
       platform = 'OSX' if RUBY_PLATFORM =~ /darwin/
@@ -161,7 +173,23 @@ module Awetestlib
       browser_abbrev =
           Awetestlib::BROWSER_ALTERNATES[platform][browser] ?
               Awetestlib::BROWSER_ALTERNATES[platform][browser] : browser
-      return OpenStruct.new(:name => (Awetestlib::BROWSER_MAP[browser_abbrev]), :abbrev => browser_abbrev)
+      if not browser_version
+        case browser_abbrev
+          when 'IE'
+            browser_version = 8
+          when 'FF'
+            browser_version = 11
+          when 'C', 'GC'
+            browser_version = 10
+          when 'S'
+            browser_version = 10
+        end
+      end
+      return OpenStruct.new(
+            :name => (Awetestlib::BROWSER_MAP[browser_abbrev]),
+            :abbrev => browser_abbrev,
+            :version => browser_version
+      )
     end
 
     def require_gems
@@ -180,7 +208,7 @@ module Awetestlib
             Watir::IE.visible = true
           end
         when 'FF'
-          if version.to_f < 4.0
+          if @targetBrowser.version.to_f < 4.0
             require 'firewatir'
             require 'patches/firewatir'
           else
@@ -202,6 +230,7 @@ module Awetestlib
       if USING_WINDOWS
         require 'watir/win32ole'
         @ai = ::WIN32OLE.new('AutoItX3.Control')
+        require 'pry'
       else
         # TODO: Need alternative for Mac?
         @ai = ''
@@ -214,7 +243,7 @@ module Awetestlib
     end
 
     def before_run
-      puts("starting #{@myName}")
+      start_run
     end
 
     def start
@@ -227,8 +256,7 @@ module Awetestlib
     end
 
     def after_run
-      puts("ending #{@myName}")
-      finish_to_log(Time.now)
+      finish_run
       @myLog.close if @myLog
     end
 

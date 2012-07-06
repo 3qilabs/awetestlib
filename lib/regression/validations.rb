@@ -33,7 +33,7 @@ module Validations
   end
 
 =begin rdoc
-Verifies health of the browser. Looks for common http and system errors that are unrecoverable and 
+Verifies health of the browser. Looks for common http and system errors that are unrecoverable and
 attempts to gracefully bail out of the script.  Calls rescue_me() when trying to capture the text to filter out
 known false errors and handle container elements that don't respond to the .text method.
 category: bullet-proofing
@@ -749,7 +749,7 @@ related methods: rescue_me()
   rescue
     failed_to_log("Unable to validate that '#{text}' did not in select list with name='#{listName}: '#{$!}'. (#{__LINE__})")
   end
-  
+
   def validate_resize(d, err, tol, min, act)
     ary = [false, "failed, actual #{act} err #{err}"]
     if err == 0
@@ -794,7 +794,7 @@ related methods: rescue_me()
       else
         failed_to_log("#{msg}")
       end
-      debug_to_log("\n#{myText}")
+      #debug_to_log("\n#{myText}")
     end
   rescue
     failed_to_log("Unable to validate #{msg} '#{$!}'")
@@ -856,11 +856,11 @@ related methods: rescue_me()
   rescue
     failed_to_log("Unable to verify #{msg} '#{$!}'")
   end
-  
+
   def span_contains_text?(browser, how, what, expected, desc = '')
     element_contains_text?(browser, :span, how, what, expected, desc)
   end
-  
+
   alias valid_text_in_span span_contains_text?
 
   def validate_text_in_span_by_id(browser, id, strg = '', desc = '')

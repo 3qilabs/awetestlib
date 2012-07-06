@@ -84,7 +84,8 @@ module Logging
     nil # so method doesn't return whole @output.
   end
 
-  # hate this
+  #private log_message
+
   def pass_code_for(tag)
     case
       when tag =~ /PASS/
@@ -105,7 +106,7 @@ module Logging
     output_lines = File.open(output_file, 'r') { |f| f.readlines }
     puts "IM FAILING?! #{passed}"
 
-                                                            # if passed
+    # if passed
 
     log_messages = ['[log]', '[error]']
     output_lines = output_lines.select { |l| log_messages } #.detect{|msg| l.include?(msg)} }
@@ -129,9 +130,6 @@ module Logging
 
     return { :result => passed, :msg => output_str }
   end
-
-  #private log_message
-
 
   # Put status message to the log and output window
   # TODO: figure out a way to do the leveling automatically based on actual call depth within script (and project library?)
@@ -164,6 +162,10 @@ module Logging
   #      lower levels. Will seldom appear directly in
   #      scripts
 
+=begin rdoc
+category: Logging
+tags: report, log, test level
+=end
   def mark_testlevel(message, lvl, desc = '', dbg = nil)
     strg = ''
     strg << message
@@ -176,6 +178,10 @@ module Logging
 
   alias mark_test_level mark_testlevel
 
+=begin rdoc
+category: Logging
+tags: log
+=end
   def info_to_log(message, lnbr = __LINE__)
     log_message(INFO, message, nil, lnbr)
   end
@@ -184,6 +190,10 @@ module Logging
   alias message_to_log info_to_log
   alias info_tolog info_to_log
 
+=begin rdoc
+category: Logging
+tags: log, debug
+=end
   def debug_to_log(message, lnbr = __LINE__, dbg = false)
     message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
     log_message(DEBUG, "#{message}", nil, lnbr)
@@ -191,16 +201,25 @@ module Logging
 
   alias debug_tolog debug_to_log
 
-  # do not use for failed validations
+=begin rdoc
+category: Logging
+tags: log, error
+Do not use for failed validations.
+=end
   def error_to_log(message, lnbr = __LINE__)
     log_message(ERROR, message, nil, lnbr)
   end
 
   alias error_tolog error_to_log
 
+=begin rdoc
+category: Logging
+tags: log, error, pass, reference, tag, report
+=end
   def passed_to_log(message, lnbr = __LINE__, dbg = false)
     message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
     @my_passed_count += 1 if @my_passed_count
+    parse_error_references(message)
     log_message(INFO, "#{message}", PASS, lnbr)
   end
 
@@ -210,10 +229,14 @@ module Logging
   alias pass_tolog passed_to_log
   alias pass_to_log passed_to_log
 
+=begin rdoc
+category: Logging
+tags: log, error, fail, reference, tag, report
+=end
   def failed_to_log(message, lnbr = __LINE__, dbg = false)
     message << " \n#{get_debug_list}" # if dbg or @debug_calls or @debug_calls_fail_only
     @my_failed_count += 1 if @my_failed_count
-    parse_error_references(message)
+    parse_error_references(message, true)
     log_message(WARN, "#{message}" + " (#{lnbr})]", FAIL, lnbr)
     #debugger if debug_on_fail
   end
@@ -224,9 +247,14 @@ module Logging
   alias fail_tolog failed_to_log
   alias fail_to_log failed_to_log
 
+=begin rdoc
+category: Logging
+tags: log, error, fail, reference, tag, fatal, report
+=end
   def fatal_to_log(message, lnbr = __LINE__, dbg = false)
     message << " \n#{get_debug_list}" #  if dbg or (@debug_calls and not @debug_calls_fail_only)
     @my_failed_count += 1 if @my_failed_count
+    parse_error_references(message, true)
     debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
     log_message(FATAL, "#{message} (#{lnbr})", FAIL, lnbr)
   end
@@ -238,10 +266,18 @@ module Logging
 
   alias fatal_tolog fatal_to_log
 
+=begin rdoc
+category: Logging
+tags: log, report
+=end
   def message_to_report(message, dbg = false)
     mark_testlevel("#{message}", 0, '', dbg)
   end
 
+=begin rdoc
+category: Logging
+tags: log, debug, report
+=end
   def debug_to_report(message, dbg = false)
     mark_testlevel("(DEBUG):  \n", 0, "#{message}", dbg)
   end
@@ -265,6 +301,10 @@ module Logging
     mySev
   end
 
+=begin rdoc
+category: Debug
+tags: log, caller, trace, report
+=end
   def get_caller(lnbr=nil, exception=nil)
     script_name ||= File.basename(script_file)
     if lnbr && script_type.eql?("Selenium")
@@ -288,36 +328,117 @@ module Logging
 
   def init_logger(logFile, scriptName = nil)
     if File.exist?(logFile)
-      puts "==>Logfile already exists: #{logFile}. Replacing it."
+      puts "==> Logfile already exists: #{logFile}. Replacing it."
       begin
         File.delete(logFile)
       rescue
         puts "#{scriptName}: init_logger RESCUE: #{$!}"
       end
     end
-    @myLog               = ActiveSupport::BufferedLogger.new(logFile)
-    @myLog.level         = Logger::DEBUG
-    @myLog.auto_flushing = (true)
-    @myLog.add(INFO, "#{logFile}\n")
+    logger               = ActiveSupport::BufferedLogger.new(logFile)
+    logger.level         = Logger::DEBUG
+    logger.auto_flushing = (true)
+    logger.add(INFO, "#{logFile}\n#{ENV["OS"]}")
+    logger
   end
 
-  def start_to_log(ts)
-    utc_ts = ts.getutc
-    loc_tm = "#{ts.strftime("%H:%M:%S")} #{ts.zone}"
+  #private init_logger
+
+=begin rdoc
+category: Logging
+tags: error, fail, reference, tag
+=end
+  def start_run(ts = nil)
+    @start_timestamp = Time.now unless ts
+    utc_ts = @start_timestamp.getutc
+    loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
     mark_testlevel(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})", 9)
   end
 
-  def finish_to_log(ts)
-    mark_testlevel(
-        ">> #{@myName.titleize} duration: #{sec2hms(ts - @start_timestamp)}", 0)
+  alias start_to_log start_run
+
+=begin rdoc
+category: Logging
+tags: log, begin, error, reference, validation, pass, fail, tallies, tag
+=end
+  def finish_run(ts = nil)
+    timestamp = Time.now unless ts
+
+    mark_testlevel(">> #{@myName.titleize} duration: #{sec2hms(timestamp - @start_timestamp)}", 0)
+
     mark_testlevel(">> #{@myName.titleize} validations: #{@my_passed_count + @my_failed_count} "+
-                  "fail: #{@my_failed_count}]", 0) if @my_passed_count and @my_failed_count
-    @my_error_hits.each_key do |ref|
-      mark_testlevel("#{ref} - #{@my_error_hits[ref]}", 0)
-    end if @my_error_hits
-    utc_ts = ts.getutc
-    loc_tm = "#{ts.strftime("%H:%M:%S")} #{ts.zone}"
+                   "fail: #{@my_failed_count}]", 0) if @my_passed_count and @my_failed_count
+
+    tally_error_references
+
+    utc_ts = timestamp.getutc
+    loc_tm = "#{timestamp.strftime("%H:%M:%S")} #{timestamp.zone}"
     mark_testlevel(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm})", 9)
+
+  end
+
+  alias finish_to_log finish_run
+
+=begin rdoc
+category: Logging
+tags: log, error, reference, tag, tallies
+=end
+  def tally_error_references(list_tags = @report_all_refs)
+    tags_tested = 0
+    tags_hit    = 0
+    if @my_error_hits and @my_error_hits.length > 0
+      mark_testlevel("Tagged Error Hits:", 0)
+      tags_hit = @my_error_hits.length
+      @my_error_hits.each_key do |ref|
+        mark_testlevel("#{ref} - #{@my_error_hits[ref]}", 0)
+      end
+    end
+    if list_tags
+      if @my_error_references and @my_error_references.length > 0
+        mark_testlevel("Error and Test Case Tags:", 0)
+        tags_tested = @my_error_references.length
+        @my_error_references.each_key do |ref|
+          mark_testlevel("#{ref} - #{@my_error_references[ref]}", 0)
+        end
+        mark_testlevel("Fails were hit on #{tags_hit} of #{tags_tested} error/test case references", 0)
+      else
+        mark_testlevel("No Error or Test Case References found.", 0)
+      end
+    end
+  end
+
+=begin rdoc
+category: Logging
+tags: error, reference, tag, tallies
+=end
+  def parse_error_references(message, fail = false)
+    msg = message.dup
+    while msg =~ /(\*\*\*\s+[\w\d_\s,-:;\?]+\s+\*\*\*)/
+      capture_error_reference($1, fail)
+      msg.sub!($1, '')
+    end
+  end
+
+=begin rdoc
+category: Logging
+tags: error, fail, hits, reference, tag, tallies
+=end
+  def capture_error_reference(ref, fail)
+    if fail
+      @my_error_hits = Hash.new unless @my_error_hits
+      if @my_error_hits[ref]
+        @my_error_hits[ref] += 1
+      else
+        @my_error_hits[ref] = 1
+      end
+      #debug_to_report("#{__method__}: error hits:\n#{@my_error_hits.to_yaml}")
+    end
+    @my_error_references = Hash.new unless @my_error_references
+    if @my_error_references[ref]
+      @my_error_references[ref] += 1
+    else
+      @my_error_references[ref] = 1
+    end
   end
 
 end

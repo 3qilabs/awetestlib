@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
   s.add_dependency('google-spreadsheet-ruby', '0.1.6')
   s.add_dependency('roo', '1.10.1')
   s.add_dependency('selenium-webdriver')
+  s.add_dependency('pry')
 
 
   s.require_paths = ["lib"]

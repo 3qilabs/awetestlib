@@ -104,7 +104,7 @@ module Legacy
   end
 
 =begin rdoc
-tags: data, DOM
+tags: data, DOM, page
 browser is any container element.  Best to use is the smallest that contains the desired data.
 types defaults to all of: :text, :textarea, :select_list, :span, :hidden, :checkbox, and :radio
 Set types to array of subset if fewer elements are desired.
@@ -297,31 +297,6 @@ No positive validations are reported but failure is rescued and reported.
 
   rescue
     failed_to_log("#{__method__}: '#{$!}'")
-  end
-
-=begin rdoc
-tags: pdf, conversion, parse
-file is full path to the pdf file to be converted.
-requires xpdf executable pdftotext.exe to be in path.
-returns an array containing each line of text as parsed by pdftotext with
-blank lines omitted by default
-=end
-  def parse_error_references(message)
-    msg = message.dup
-    while msg =~ /(\*\*\*\s+[\w\d_\s,-:;\?]+\s+\*\*\*)/
-      capture_error_reference($1)
-      msg.sub!($1, '')
-    end
-  end
-
-  def capture_error_reference(ref)
-    @my_error_hits = Hash.new unless @my_error_hits
-    if @my_error_hits[ref]
-      @my_error_hits[ref] += 1
-    else
-      @my_error_hits[ref] = 1
-    end
-    #debug_to_report("#{__method__}: error hits:\n#{@my_error_hits.to_yaml}")
   end
 
   def verify_no_element_overlap(browser, above_element, above_how, above_what, below_element, below_how, below_what, side, desc = '')
@@ -624,6 +599,99 @@ blank lines omitted by default
   end
 
   alias dump_caller get_trace
+
+  def get_variables(file, login = :role, dbg = true)
+    debug_to_log("#{__method__}: file = #{file}")
+    debug_to_log("#{__method__}: role = #{login}")
+
+    @var                   = Hash.new
+    workbook               = Excel.new(file)
+    data_index             = find_sheet_with_name(workbook, 'Data')
+    workbook.default_sheet = workbook.sheets[data_index]
+    var_col                = 0
+
+    2.upto(workbook.last_column) do |col|
+      scriptName = workbook.cell(1, col)
+      if scriptName == @myName
+        var_col = col
+        break
+      end
+    end
+
+    2.upto(workbook.last_row) do |line|
+      name       = workbook.cell(line, 'A')
+      value      = workbook.cell(line, var_col).to_s.strip
+      @var[name] = value
+    end
+
+    @var.keys.sort.each do |name|
+      message_tolog("@var #{name}: '#{@var[name]}'")
+    end if dbg
+
+    @login       = Hash.new
+    login_col    = 0
+    role_col     = 0
+    userid_col   = 0
+    password_col = 0
+    url_col      = 0
+    name_col     = 0
+    role_index   = find_sheet_with_name(workbook, 'Login')
+    if role_index >= 0
+      workbook.default_sheet = workbook.sheets[role_index]
+
+      4.upto(workbook.last_column) do |col|
+        case workbook.cell(1, col)
+          when @myName
+            login_col = col
+            break
+          when 'role'
+            role_col = col
+          when 'userid'
+            userid_col = col
+          when 'password'
+            password_col = col
+          when 'url'
+            url_col = col
+          when 'name'
+            name_col = col
+        end
+      end
+
+      2.upto(workbook.last_row) do |line|
+        role     = workbook.cell(line, role_col)
+        userid   = workbook.cell(line, userid_col)
+        password = workbook.cell(line, password_col)
+        url      = workbook.cell(line, url_col)
+        username = workbook.cell(line, name_col)
+        enabled  = workbook.cell(line, login_col).to_s
+
+        case login
+          when :id
+            key = userid
+          when :role
+            key = role
+          else
+            key = role
+        end
+
+        @login[key]             = Hash.new
+        @login[key]['role']     = role
+        @login[key]['userid']   = userid
+        @login[key]['password'] = password
+        @login[key]['url']      = url
+        @login[key]['name']     = username
+        @login[key]['enabled']  = enabled
+
+      end
+
+      @login.keys.sort.each do |key|
+        message_tolog("@login (by #{login}): #{key}=>'#{@login[key].to_yaml}'")
+      end if dbg
+    end
+
+  rescue
+    fatal_to_log("#{__method__}: '#{$!}'")
+  end
 
   def grab_window_list(strg)
     @ai.AutoItSetOption("WinTitleMatchMode", 2)
@@ -1288,7 +1356,12 @@ blank lines omitted by default
     failed_to_log("Unable to '#{msg}': '#{$!}'")
   end
 
-  # TODO Needs to be more flexible about finding login id and password textfields
+=begin rdoc
+category: Logon
+tags: logon, login, user, password, url
+TODO: Needs to be more flexible about finding login id and password textfields
+TODO: Parameterize url and remove references to environment
+=end
   def login(browser, user, password)
     myURL  = @myAppEnv.url
     runenv = @myAppEnv.nodename
@@ -1304,15 +1377,54 @@ blank lines omitted by default
           passed_to_log("Login successful.")
         end
       else
-        failed_to_log("Unable to login to application: '#{$!}'. (#{__LINE__})")
+        failed_to_log("Unable to login to application: '#{$!}'")
         #          screen_capture( "#{@myRoot}/screens/#{myName}_#{@runid}_#{__LINE__.to_s}_#{Time.new.to_f.to_s}.jpg")
       end
     end
   rescue
-    failed_to_log("Unable to login to application: '#{$!}'. (#{__LINE__})")
+    failed_to_log("Unable to login to application: '#{$!}'")
   end
 
-  def logout(browser, where = '', lnbr = '')
+=begin rdoc
+category: Logon
+tags: logon, login, user, password, url, basic authorization
+=end
+  def basic_auth(browser, user, pswd, url, bypass_validate = false)
+    mark_testlevel("Basic Authorization Login", 0)
+
+    message_to_report ("Login:    #{user}")
+    message_to_report ("URL:      #{url}")
+    message_to_report ("Password: #{pswd}")
+
+    @login_title = "Connect to"
+
+    a = Thread.new {
+      browser.goto(url)
+    }
+
+    sleep_for(2)
+    message_to_log("#{@login_title}...")
+
+    if (@ai.WinWait(@login_title, "", 90) > 0)
+      win_title = @ai.WinGetTitle(@login_title)
+      debug_to_log("Basic Auth Login window appeared: '#{win_title}'")
+      @ai.WinActivate(@login_title)
+      @ai.ControlSend(@login_title, '', "[CLASS:Edit; INSTANCE:2]", '!u')
+      @ai.ControlSend(@login_title, '', "[CLASS:Edit; INSTANCE:2]", user, 1)
+      @ai.ControlSend(@login_title, '', "[CLASS:Edit; INSTANCE:3]", pswd.gsub(/!/, '{!}'), 1)
+      @ai.ControlClick(@login_title, "", '[CLASS:Button; INSTANCE:1]')
+    else
+      debug_to_log("Basic Auth Login window did not appear.")
+    end
+    a.join
+
+    validate(browser, @myName) unless bypass_validate
+
+    message_to_report("URL: [#{browser.url}] User: [#{user}]")
+
+  end
+
+  def logout(browser, where = @myName, lnbr = __LINE__)
     #TODO Firewatir 1.6.5 does not implement .exists for FireWatir::Firefox class
     debug_to_log("Logging out in #{where} at line #{lnbr}.", lnbr, true)
     debug_to_log("#{__method__}: browser: #{browser.inspect} (#{__LINE__})")
@@ -2159,10 +2271,11 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
       when 'IE'
         @myBrowser = open_ie
         @myHwnd    = @myBrowser.hwnd
-        #@waiter    = Watir::Waiter.new(WAIT)
+      #@waiter    = Watir::Waiter.new(WAIT)
       when 'FF'
-        version             = "11"
-        @myBrowser = open_ff_for_version(version)
+        #version    = "11"
+        #@myBrowser = open_ff_for_version(version)
+        @myBrowser = open_ff_for_version
       when 'S'
         debug_to_log("Opening browser: #{@targetBrowser.name} legacy.rb:#{__LINE__}")
         aBrowser = Watir::Safari.new
@@ -2197,7 +2310,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     browser
   end
 
-  def open_ff_for_version(version)
+  def open_ff_for_version(version = @targetVersion)
     if version.to_f < 4.0
       browser = open_ff
       #waiter  = Watir::Waiter.new(WAIT)
@@ -2531,6 +2644,10 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   def click_button_no_wait_by_text(browser, strg, desc = '')
     click_no_wait(browser, :button, :text, strg, desc)
+  end
+
+  def click_button_no_wait_by_value(browser, strg, desc = '')
+    click_no_wait(browser, :button, :value, strg, desc)
   end
 
   def click_link_by_name_no_wait(browser, strg, desc = '')
