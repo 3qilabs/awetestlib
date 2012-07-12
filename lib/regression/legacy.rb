@@ -490,8 +490,8 @@ No positive validations are reported but failure is rescued and reported.
   #  tmpbrowser
   #end
   #
-  def attach_browser(browser, how, what)
-    debug_to_log("Attaching browser window :#{how}=>'#{what}' ")
+  def attach_browser(browser, how, what, desc = '')
+    debug_to_log("Attaching browser window :#{how}=>'#{what}' #{desc}")
     uri_decoded_pattern = URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
     case @browserAbbrev
       when 'IE'
@@ -519,15 +519,15 @@ No positive validations are reported but failure is rescued and reported.
     tmpbrowser
   end
 
-  def attach_browser_by_url(browser, pattern)
-    attach_browser(browser, :url, pattern)
+  def attach_browser_by_url(browser, pattern, desc = '')
+    attach_browser(browser, :url, pattern, desc)
   end
 
   alias attach_browser_with_url attach_browser_by_url
 
   def attach_popup(browser, how, what, desc = '')
     msg   = "Attach popup :#{how}=>'#{what}'. #{desc}"
-    popup = attach_browser(browser, how, what)
+    popup = attach_browser(browser, how, what, desc)
     sleep_for(1)
     debug_to_log("#{popup.inspect}")
     if is_browser?(popup)
@@ -600,6 +600,18 @@ No positive validations are reported but failure is rescued and reported.
 
   alias dump_caller get_trace
 
+  def translate_var_list(key)
+    if @var[key] and @var[key].length > 0
+      list = @var[key].dup
+      unless list =~ /^\[.+\]$/
+        list = "[#{list}]"
+      end
+      eval(list)
+    end
+  rescue
+    failed_to_log("#{__method__}: '#{$!}'")
+  end
+
   def get_variables(file, login = :role, dbg = true)
     debug_to_log("#{__method__}: file = #{file}")
     debug_to_log("#{__method__}: role = #{login}")
@@ -639,8 +651,9 @@ No positive validations are reported but failure is rescued and reported.
     if role_index >= 0
       workbook.default_sheet = workbook.sheets[role_index]
 
-      4.upto(workbook.last_column) do |col|
-        case workbook.cell(1, col)
+      1.upto(workbook.last_column) do |col|
+        a_cell = workbook.cell(1, col)
+        case a_cell
           when @myName
             login_col = col
             break
@@ -1636,7 +1649,7 @@ tags: logon, login, user, password, url, basic authorization
         close_modal_ff(browser, title, button, text, side)
       when 'S'
         close_modal_s
-      when 'C'
+      when 'C', 'GC'
         close_modal_c(browser, title)
     end
   end
@@ -1655,7 +1668,7 @@ tags: logon, login, user, password, url, basic authorization
   def close_modal_ie(browser, title="", button="OK", text='', side = 'primary', wait = WAIT, desc = '', quiet = false)
     #TODO needs simplifying, incorporating text verification, and debug code cleaned up
     title = translate_popup_title(title)
-    msg   = "Modal dialog (popup) '#{title}'"
+    msg   = "Modal window (popup) '#{title}'"
     if @ai.WinWait(title, text, wait)
       myHandle = @ai.WinGetHandle(title, text)
       if myHandle.length > 0
@@ -1860,50 +1873,51 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     filespec.gsub!('/', '\\')
   end
 
-  def save_file_orig(filepath)
+  def save_file_orig(filepath, desc = '', wait = WAIT)
     #    title = translate_popup_title(title)
-    @ai.WinWait("File Download", "", WAIT)
+    @ai.WinWait("File Download", "", wait)
     @ai.ControlFocus("File Download", "", "&Save")
     sleep 1
     @ai.ControlClick("File Download", "", "&Save", "left")
-    @ai.WinWait("Save As", "", WAIT)
+    @ai.WinWait("Save As", "", wait)
     sleep 1
     @ai.ControlSend("Save As", "", "Edit1", filepath)
     @ai.ControlClick("Save As", "", "&Save", "left")
     sleep 1
-    @ai.WinWait("Download complete", "", WAIT)
+    @ai.WinWait("Download complete", "", wait)
     @ai.ControlClick("Download complete", "", "Close")
   end
 
   #TODO This and save_file2 have to be combined somehow.
-  def save_file1(filepath, title = "File Download")
+  def save_file1(filepath, title = "File Download", desc = '', wait = WAIT)
     title = translate_popup_title(title)
-    @ai.WinWait(title, '', WAIT)
+    @ai.WinWait(title, '', wait)
     @ai.WinActivate(title, '')
     sleep 1
     @ai.ControlFocus(title, "", "&Save")
     sleep 3
     @ai.ControlClick(title, "", "&Save", "primary")
     sleep 2
-    @ai.ControlClick(title, "", "&Save", "primary")
+    @ai.ControlClick(title, "", "Save", "primary")
 
-    @ai.WinWait("Save As", "", WAIT)
+    @ai.WinWait("Save As", "", wait)
     sleep 1
     @ai.ControlSend("Save As", "", "Edit1", filepath)
     @ai.ControlFocus("Save As", "", "&Save")
     @ai.ControlClick("Save As", "", "&Save", "primary")
+    @ai.ControlClick("Save As", "", "Save", "primary")
 
-    @ai.WinWait("Download complete", "", WAIT)
-    passed_to_log("Save file '#{filepath}' succeeded.")
+    @ai.WinWait("Download complete", "", wait)
+    passed_to_log("Save file '#{filepath}' succeeded. #{desc}")
     @ai.ControlClick("Download complete", "", "Close")
   rescue
-    failed_to_log("Save file failed: '#{$!}'. (#{__LINE__})")
+    failed_to_log("Save file failed: #{desc} '#{$!}'. (#{__LINE__})")
   end
 
-  def save_file2(filepath, title = "File Download - Security Warning")
+  def save_file2(filepath, title = "File Download - Security Warning", desc = '', wait = WAIT)
     title = translate_popup_title(title)
     sleep(1)
-    @ai.WinWait(title, '', WAIT)
+    @ai.WinWait(title, '', wait)
     dl_hndl    = @ai.WinGetHandle(title, '')
     dl_sv_hndl = @ai.ControlGetHandle(title, '', "&Save")
     @ai.WinActivate(title, '')
@@ -1923,17 +1937,17 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     sleep 1
     w.clickWindowsButton_hwnd(dl_hndl, "&Save")
 
-    @ai.WinWait("Save As", "", WAIT)
+    @ai.WinWait("Save As", "", wait)
     sleep 1
     @ai.ControlSend("Save As", "", "Edit1", filepath)
     @ai.ControlFocus("Save As", "", "&Save")
     @ai.ControlClick("Save As", "", "&Save", "primary")
 
-    @ai.WinWait("Download complete", "", WAIT)
-    passed_to_log("Save file '#{filepath}' succeeded.")
+    @ai.WinWait("Download complete", "", wait)
+    passed_to_log("Save file '#{filepath}' succeeded. #{desc}")
     @ai.ControlClick("Download complete", "", "Close")
   rescue
-    failed_to_log("Save file failed: '#{$!}'. (#{__LINE__})")
+    failed_to_log("Save file failed: #{desc} '#{$!}'. (#{__LINE__})")
   end
 
   #method for handling save dialog

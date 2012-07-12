@@ -3,6 +3,15 @@ module ZohoUtil
   def run
     if @xls_path
       get_variables(@xls_path, :role)
+      @login.each_key do |key|
+        if @login[key]['enabled'] == 'Y'
+          @user = @login[key]['userid']
+          @pass = @login[key]['password']
+          @role = @login[key]['role']
+          debug_to_report("@user: #{@user}, @pass: #{@pass}, @role: #{@role} (#{__LINE__})")
+          break
+        end
+      end
     end
 
     userid     = "joeklienwatir@gmail.com" #@zohologin.cell(2,2)
@@ -13,7 +22,7 @@ module ZohoUtil
 
     browser = open_browser
     go_to_url(browser, login_url)
-    login(browser, userid, password, home_url, validation)
+    zoho_login(browser, home_url, validation)
     run_test(browser)
     logout(browser)
 
@@ -23,12 +32,21 @@ module ZohoUtil
     raise
   end
 
-  def login(browser, userid, password, url, validation = 'Welcome joeklienwatir at Software')
-    mark_testlevel('Zoho Login', 0)
+  def zoho_login_1(browser, userid, password, url, validation = 'Welcome joeklienwatir at Software')
+    mark_testlevel("#{__method__.to_s.titleize}", 8)
     set_textfield_by_name(browser, 'lid', userid)
     set_textfield_by_name(browser, 'pwd', password)
     click_button_by_value(browser, 'Sign In')
     go_to_url(browser, url)
+    validate_text(browser, validation)
+  end
+
+  def zoho_login(browser, home_url, validation = 'Welcome joeklienwatir at Software')
+    mark_testlevel("#{__method__.to_s.titleize}", 8)
+    set_textfield_by_name(browser, 'lid', @login['super']['userid'])
+    set_textfield_by_name(browser, 'pwd', @login['super']['password'])
+    click_button_by_value(browser, 'Sign In')
+    go_to_url(browser, home_url)
     validate_text(browser, validation)
   end
 
@@ -38,7 +56,7 @@ module ZohoUtil
   end
 
   def navigate_to_project(browser)
-    mark_testlevel("#{__method__.to_s.titleize}", 0)
+    mark_testlevel("#{__method__.to_s.titleize}", 3)
     click_text(browser, 'Projects')
   end
 
@@ -57,7 +75,7 @@ module ZohoUtil
   end
 
   def export_accounts(browser)
-    mark_testlevel('Export Accounts', 5)
+    mark_testlevel("#{__method__.to_s.titleize}", 5)
     click_text(browser, 'Setup')
     sleep_for(2)
     click_text(browser, 'Export Data')
@@ -67,11 +85,12 @@ module ZohoUtil
       run_sikuli_script("exportaccounts")
       close_popup('File Download')
     else
-      click_button_no_wait_by_value(browser, 'Export')
+      #click_button_no_wait_by_value(browser, 'Export')
+      # Make sure popups are allowed by browser
 
-      mark_testlevel('Download', 1)
+      mark_testlevel("#{__method__.to_s.titleize} Download", 4)
       filename = 'Account_Export.cvs'
-      filepath = "#{@myRoot}/downloads/#{filename}"
+      filepath = "#{@myRoot}/#{filename}"
       filepath.gsub!('/', '\\')
       message_to_log("#{filepath.to_s}")
       if File.exist?(filepath)
@@ -80,16 +99,25 @@ module ZohoUtil
       sleep(3)
 
       click_button_no_wait_by_value(browser, 'Export')
-      sleep_for(6)
-      save_file_here(filepath)
+      sleep_for(5)
+      close_popup('Message from webpage', 'Are you sure?')
+      sleep_for(1)
+
+      click_button_no_wait_by_value(browser, 'Export')
+      sleep_for(3)
+      close_popup('Message from webpage', 'Are you sure?')
+      sleep_for(3)
+
+      save_file1(filepath)
       sleep_for(4)
 
-      popup_exists?(popup, 'File Download')
-      save_file(filepath)
-      click_popup_button('File Download', 'Save')
-      file_download(browser)
-      save_file_orig(filepath)
-      close_popup_by_button_title(popup, 'Close', 'Download Complete')
+      #if popup_exists?(popup, 'File Download')
+      #  save_file(filepath)
+      #  click_popup_button('File Download', 'Save')
+      #  file_download(browser)
+      #  save_file_orig(filepath)
+      #  close_popup_by_button_title(popup, 'Close', 'Download Complete')
+      #end
     end
   end
 
@@ -97,8 +125,9 @@ module ZohoUtil
     mark_testlevel("#{__method__.to_s.titleize}", 5)
     #click_class(browser, 'menuOn', 'Accounts')
     click_text(browser, 'Accounts')
-    click_text(browser, 'Import My Accounts')
-    validate_text(browser, 'Import My Accounts Wizard')
+    click_text(browser, 'Import Accounts')
+    click(browser, :button, :value, 'Import Accounts')
+    validate_text(browser, 'Import Accounts')
     #click_button_by_name(browser, 'theFile')
     #file_upload(filepath)
     #click_button_by_class(browser, 'button')
@@ -344,155 +373,120 @@ module ZohoUtil
     sleep(3)
   end
 
-  #browser.image(:title, 'Calculator').click
-  #sleep(4)
-  #attach_popup_by_url(browser, "https://crmold.zoho.com/crm/Calc.do?currFld=property(Annual%20Revenue)")
-  #sleep(3)
-  #close_modal_ie(browser, 'Calculator')
+########################################################################
+# EVERYTHING BELOW: TEMPORARY OVERRIDES/ADDITIONS NOT YET IN SHAMISEN  pmn 12jul1012
+########################################################################
 
-  def save_file(filepath)
-    ai = WIN32OLE.new("AutoItX3.Control")
-    ai.WinWait("File Download", "", 5)
-    ai.ControlFocus("File Download", "", "&Save")
-    sleep 1
-    ai.ControlClick("File Download", "", "&Save", "left")
-    ai.WinWait("Save As", "", 5)
-    sleep 1
-    ai.ControlSend("Save As", "", "Edit1", filepath)
-    ai.ControlClick("Save As", "", "&Save", "left")
-    ai.WinWait("Download complete", "", 5)
-    ai.ControlClick("Download complete", "", "Close")
+  def get_variables(file, login = :role, dbg = true)
+    debug_to_log("#{__method__}: file = #{file}")
+    debug_to_log("#{__method__}: role = #{login}")
+
+    @var                   = Hash.new
+    workbook               = Excel.new(file)
+    data_index             = find_sheet_with_name(workbook, 'Data')
+    workbook.default_sheet = workbook.sheets[data_index]
+    var_col                = 0
+
+    2.upto(workbook.last_column) do |col|
+      scriptName = workbook.cell(1, col)
+      if scriptName == @myName
+        var_col = col
+        break
+      end
+    end
+
+    2.upto(workbook.last_row) do |line|
+      name       = workbook.cell(line, 'A')
+      value      = workbook.cell(line, var_col).to_s.strip
+      @var[name] = value
+    end
+
+    @var.keys.sort.each do |name|
+      message_tolog("@var #{name}: '#{@var[name]}'")
+    end if dbg
+
+    @login       = Hash.new
+    login_col    = 0
+    role_col     = 0
+    userid_col   = 0
+    password_col = 0
+    url_col      = 0
+    name_col     = 0
+    role_index   = find_sheet_with_name(workbook, 'Login')
+    if role_index >= 0
+      workbook.default_sheet = workbook.sheets[role_index]
+
+      1.upto(workbook.last_column) do |col|
+        a_cell = workbook.cell(1, col)
+        case a_cell
+          when @myName
+            login_col = col
+            break
+          when 'role'
+            role_col = col
+          when 'userid'
+            userid_col = col
+          when 'password'
+            password_col = col
+          when 'url'
+            url_col = col
+          when 'name'
+            name_col = col
+        end
+      end
+
+      2.upto(workbook.last_row) do |line|
+        role     = workbook.cell(line, role_col)
+        userid   = workbook.cell(line, userid_col)
+        password = workbook.cell(line, password_col)
+        url      = workbook.cell(line, url_col)
+        username = workbook.cell(line, name_col)
+        enabled  = workbook.cell(line, login_col).to_s
+
+        case login
+          when :id
+            key = userid
+          when :role
+            key = role
+          else
+            key = role
+        end
+
+        @login[key]             = Hash.new
+        @login[key]['role']     = role
+        @login[key]['userid']   = userid
+        @login[key]['password'] = password
+        @login[key]['url']      = url
+        @login[key]['name']     = username
+        @login[key]['enabled']  = enabled
+
+      end
+
+      @login.keys.sort.each do |key|
+        message_tolog("@login (by #{login}): #{key}=>'#{@login[key].to_yaml}'")
+      end if dbg
+    end
+
+  rescue
+    fatal_to_log("#{__method__}: '#{$!}'")
   end
 
-  def save_file_here(filepath)
-    begin
-      limit = 120.seconds
-      #Timeout::timeout( limit ) {
-      wait  = 20
-      ai    = WIN32OLE.new("AutoItX3.Control")
-      ai.WinWait("File Download - Security Warning", "", wait)
-      ai.ControlFocus("File Download - Security Warning", "", "&Save")
-      sleep 1
-      ai.ControlClick("File Download - Security Warning", "", "&Save", "left")
-      ai.WinWait("Save As", "", wait)
-      sleep 1
-      ai.ControlSend("Save As", "", "Edit1", filepath)
-      ai.ControlClick("Save As", "", "&Save", "left")
-      sleep 1
-      ai.WinWait("Download complete", "", wait)
-      ai.ControlClick("Download complete", "", "Close")
-      sleep 1
-      #}
-      passed_to_log('Download Complete')
-    rescue Timeout::Error
-      failed_to_log("File Download timeout after #{limit} seconds. '#{$!}'")
+  def find_sheet_with_name(workbook, sheet_name)
+    sheets = workbook.sheets
+    idx    = 0
+    found  = false
+    sheets.each do |s|
+      if s == sheet_name
+        found = true
+        break
+      end
+      idx += 1
+    end
+    if found
+      idx
+    else
+      -1
     end
   end
-
-###################### METHODS #############
-#def test_account_lookup(browser)
-#  mark_testlevel('Account Lookup', 7)
-#  browser.image(:title, 'Account Name Lookup').click
-#  sleep_for(5)
-#  popup = attach_popup_by_url(browser, /Parent Account/)
-#  set_textfield_by_name(popup, 'fldValue', 'test')
-#  click_button_by_value(popup, 'Go')
-#  popup.link(:text, 'Test Account #007').click
-#  validate_textfield_value_by_name(browser, /Parent Account/, 'Test Account #007')
-#end
-
-  #def get_variables(file, login = :role, dbg = true)
-  #  debug_to_log("#{__method__}: file = #{file}")
-  #  debug_to_log("#{__method__}: role = #{login}")
-  #
-  #  @var                   = Hash.new
-  #  workbook               = Excel.new(file)
-  #  data_index             = find_sheet_with_name(workbook, 'Data')
-  #  workbook.default_sheet = workbook.sheets[data_index]
-  #  var_col                = 0
-  #
-  #  2.upto(workbook.last_column) do |col|
-  #    scriptName = workbook.cell(1, col)
-  #    if scriptName == @myName
-  #      var_col = col
-  #      break
-  #    end
-  #  end
-  #
-  #  2.upto(workbook.last_row) do |line|
-  #    name       = workbook.cell(line, 'A')
-  #    value      = workbook.cell(line, var_col).to_s.strip
-  #    @var[name] = value
-  #  end
-  #
-  #  @var.keys.sort.each do |name|
-  #    message_tolog("@var #{name}: '#{@var[name]}'")
-  #  end if dbg
-  #
-  #  @login       = Hash.new
-  #  login_col    = 0
-  #  role_col     = 0
-  #  userid_col   = 0
-  #  password_col = 0
-  #  url_col      = 0
-  #  name_col     = 0
-  #  role_index   = find_sheet_with_name(workbook, 'Login')
-  #  if role_index >= 0
-  #    workbook.default_sheet = workbook.sheets[role_index]
-  #
-  #    4.upto(workbook.last_column) do |col|
-  #      case workbook.cell(1, col)
-  #        when @myName
-  #          login_col = col
-  #          break
-  #        when 'role'
-  #          role_col = col
-  #        when 'userid'
-  #          userid_col = col
-  #        when 'password'
-  #          password_col = col
-  #        when 'url'
-  #          url_col = col
-  #        when 'name'
-  #          name_col = col
-  #      end
-  #    end
-  #
-  #    2.upto(workbook.last_row) do |line|
-  #      role     = workbook.cell(line, role_col)
-  #      userid   = workbook.cell(line, userid_col)
-  #      password = workbook.cell(line, password_col)
-  #      url      = workbook.cell(line, url_col)
-  #      username = workbook.cell(line, name_col)
-  #      enabled  = workbook.cell(line, login_col).to_s
-  #
-  #      case login
-  #        when :id
-  #          key = userid
-  #        when :role
-  #          key = role
-  #        else
-  #          key = role
-  #      end
-  #
-  #      @login[key]             = Hash.new
-  #      @login[key]['role']     = role
-  #      @login[key]['userid']   = userid
-  #      @login[key]['password'] = password
-  #      @login[key]['url']      = url
-  #      @login[key]['name']     = username
-  #      @login[key]['enabled']  = enabled
-  #
-  #    end
-  #
-  #    @login.keys.sort.each do |key|
-  #      message_tolog("@login (by #{login}): #{key}=>'#{@login[key].to_yaml}'")
-  #    end if dbg
-  #  end
-  #
-  #rescue
-  #  fatal_to_log("#{__method__}: '#{$!}'")
-  #end
-
 
 end

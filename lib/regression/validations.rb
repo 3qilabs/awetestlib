@@ -891,7 +891,8 @@ related methods: rescue_me()
       else
         debug_to_report("actual:\n#{nice_array(options, true)}")
         debug_to_report("expected:\n#{nice_array(list, true)}")
-        failed_to_log("Select list options list #{options} does not equal expected list #{list}")
+        failed_to_log("Select list options list #{nice_array(options, true)} "+
+                          "does not equal expected list #{nice_array(list, true)}")
       end
     end
 
@@ -900,7 +901,7 @@ related methods: rescue_me()
     options.each do |opt|
       if not ignore.include?(opt)
         cnt += 1
-        ok  = select_option_from_list(select_list, opt_type, opt)
+        ok  = select_option(select_list, opt_type, opt)
         break if not ok
         select_list.clear
         break if limit > 0 and cnt >= limit
@@ -912,8 +913,8 @@ related methods: rescue_me()
     if ok and multiple
       if options.length > 2
         targets = list.slice(1, 2)
-        select_option_from_list(select_list, opt_type, options[1])
-        select_option_from_list(select_list, opt_type, options[2])
+        select_option(select_list, opt_type, options[1])
+        select_option(select_list, opt_type, options[2])
         selected = select_list.selected_options
         if selected == targets
           passed_to_log("Select list selected options equals expected #{targets}")
@@ -927,6 +928,7 @@ related methods: rescue_me()
   rescue
     failed_to_log("Unable to validate select_list: '#{$!}'", __LINE__)
   end
+
 
   def validate_select_list_contents(browser, how, what, list)
     mark_testlevel("#{__method__.to_s.titleize} (#{what})", 2)
