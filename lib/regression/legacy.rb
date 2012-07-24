@@ -10,9 +10,9 @@ module Legacy
     raise
   end
 
-  #TODO replace with method_missing?
-  #    place holder to prevent method not found error in scripts
+  # Place holder to prevent method not found error in scripts
   def set_script_variables
+  # TODO: replace with method_missing?
   end
 
   def setup
@@ -51,6 +51,7 @@ module Legacy
     @y_tolerance             = 4
   end
 
+# :category: Waits
   def sleep_for(seconds, dbg = true, desc = '')
     msg = "Sleeping for #{seconds} seconds."
     msg << " #{desc}" if desc.length > 0
@@ -59,15 +60,18 @@ module Legacy
     sleep(seconds)
   end
 
+# :category: Helpers
   def get_mdyy(t = Time.now)
     "#{t.month}/#{t.day}/#{t.year}"
   end
 
+# :category: Helpers
   def get_prefix(strg, offset)
     a_slice = strg.slice(0, offset)
     a_slice.downcase
   end
 
+# :category: Helpers
   def get_timestamp(format = 'long', offset = nil, offset_unit = :years)
     t = DateTime.now
     if offset
@@ -99,41 +103,19 @@ module Legacy
     end
   end
 
+# :category: Helpers
   def calc_index(index, every = 1)
     (index / every) + (every - 1)
   end
 
 =begin rdoc
-tags: data, DOM, page
-browser is any container element.  Best to use is the smallest that contains the desired data.
-types defaults to all of: :text, :textarea, :select_list, :span, :hidden, :checkbox, and :radio
-Set types to array of subset if fewer elements are desired.
-returns a single hash:
----
-:name:
-  :span: {}
-  :textarea: {}
-  :radio: {}
-  :checkbox: {}
-  :hidden: {}
-  :select_list: {}
-  :text: {}
-:index:
-  :span: {}
-  :textarea: {}
-  :radio: {}
-  :checkbox: {}
-  :hidden: {}
-  :select_list: {}
-  :text: {}
-:id:
-  :span: {}
-  :textarea: {}
-  :radio: {}
-  :checkbox: {}
-  :hidden: {}
-  :select_list: {}
-  :text: {}
+:category: Page Data
+:tags: data, DOM, page
+
+*browser* is any container element.  Best to use is the smallest that contains the desired data.
+
+*types* defaults to all of: :text, :textarea, :select_list, :span, :hidden, :checkbox, and :radio.
+Set types to array of subset of these if fewer elements are desired.
 
 No positive validations are reported but failure is rescued and reported.
 =end
@@ -173,14 +155,21 @@ No positive validations are reported but failure is rescued and reported.
   end
 
 =begin rdoc
-tags: data, DOM
-data is output of capture_page_data().
-how is one of :id, :name, :index
-what is the target value for how
-type is one of :text,:textarea,:select_list,:span,:hidden,:checkbox,:radio
-get_text is used for select_list to choose selected option value or text (default)
-note that multiple selections will be captured as arrays so value and text.
-Not tested with multiple selections (02aug2011)
+:category: Page Data
+:tags:data, DOM
+
+*data* is output of capture_page_data().
+
+*how* is one of :id, :name, :index
+
+*what* is the target value for how
+
+*type* is one of :text,:textarea,:select_list,:span,:hidden,:checkbox,:radio
+
+*get_text* is used for select_list to choose selected option value or text (default)
+
+Note that multiple selections will be captured as arrays so value and text.
+
 =end
   def fetch_page_data(data, how, what, type, get_text = true)
     rslt = data[how][type][what]
@@ -195,6 +184,7 @@ Not tested with multiple selections (02aug2011)
     rslt
   end
 
+# :category: Helpers
   def capture_screen(browser, ts)
     browser.maximize
     browser.bring_to_front
@@ -210,6 +200,7 @@ Not tested with multiple selections (02aug2011)
     screenfile
   end
 
+# :category: Helpers
   def bail_out(browser, lnbr, msg)
     ts  = Time.new
     msg = "Bailing out at util line #{lnbr} #{ts} " + msg
@@ -231,6 +222,7 @@ Not tested with multiple selections (02aug2011)
     raise(RuntimeError, msg, caller)
   end
 
+# :category: Helpers
   def parse_cookies(browser)
     cookies = Hash.new
     strg    = browser.document.cookie
@@ -243,13 +235,20 @@ Not tested with multiple selections (02aug2011)
   end
 
 =begin rdoc
-tags: data, DOM
-browser is any container element.  best to use is the smallest that contains the desired data.
-type is one of these symbols: :text,:textarea,:select_list,:span,:hidden,:checkbox,:radio
-returns three hashes: id[type][id] = value, name[type][id] = value, index[type][id] = value
-a given element appears once in the set of hashes depending on how is is found:  id first
+:category: Page Data
+:tags:data, DOM
+
+*browser* is any container element.  best to use is the smallest that contains the desired data.
+
+*type* is one of these symbols: :text,:textarea,:select_list,:span,:hidden,:checkbox,:radio
+
+Returns three hashes: id[type][id] = value, name[type][id] = value, index[type][id] = value
+
+A given element appears once in the set of hashes depending on how is is found: id first
 then name, then index.
-select list value is in the form 'value::text'. parse with x.split('::')
+
+Select list value is in the form 'value::text'. parse with x.split('::')
+
 No positive validations are reported but failure is rescued and reported.
 =end
   def parse_elements(browser, type)
@@ -299,6 +298,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{__method__}: '#{$!}'")
   end
 
+  # :category: GUI
   def verify_no_element_overlap(browser, above_element, above_how, above_what, below_element, below_how, below_what, side, desc = '')
     mark_testlevel("#{__method__.to_s.titleize}", 3)
     msg = "#{above_element.to_s.titleize} #{above_how}=>#{above_what} does not overlap "+
@@ -316,6 +316,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("Unable to verify that #{msg} '#{$!}'")
   end
 
+  # :category: GUI
   def verify_element_inside(inner_element, outer_element, desc = '')
     mark_testlevel("#{__method__.to_s.titleize}", 3)
     msg = "#{inner_element.class.to_s} (:id=#{inner_element.id}) is fully enclosed by #{outer_element.class.to_s} (:id=#{outer_element.id})."
@@ -330,6 +331,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("Unable to verify that #{msg} '#{$!}'")
   end
 
+  # :category: GUI
   def overlay?(inner, outer, side = :bottom)
     #mark_testlevel("#{__method__.to_s.titleize}", 3)
     inner_t, inner_b, inner_l, inner_r = inner.bounding_rectangle_offsets
@@ -360,6 +362,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("Unable to determine overlay. '#{$!}'")
   end
 
+  # :category: Page Data
   def pdf_to_text(file, noblank = true)
     spec = file.sub(/\.pdf$/, '')
     `pdftotext #{spec}.pdf`
@@ -375,6 +378,7 @@ No positive validations are reported but failure is rescued and reported.
     text
   end
 
+# :category: Bullet-Proofing
   def kill_browser(hwnd, lnbr, browser = nil, doflag = false)
     # TODO Firefox
     logit = false
@@ -411,6 +415,7 @@ No positive validations are reported but failure is rescued and reported.
     end
   end
 
+# :category: Bullet-Proofing
   def do_taskkill(severity, pid)
     if pid and pid > 0 and pid < 538976288
       info_to_log("Executing taskkill for pid #{pid}")
@@ -420,6 +425,7 @@ No positive validations are reported but failure is rescued and reported.
     error_to_log("#{$!}  (#{__LINE__})")
   end
 
+# :category: Bullet-Proofing
   def check_for_other_browsers
     cnt1 = find_other_browsers
     cnt2 = Watir::Process.count 'iexplore.exe'
@@ -428,6 +434,7 @@ No positive validations are reported but failure is rescued and reported.
     error_to_log("#{$!}  (#{__LINE__})\n#{Kernel.caller.to_yaml}")
   end
 
+# :category: Bullet-Proofing
   def check_for_and_clear_other_browsers
     if @targetBrowser.abbrev == 'IE'
       debug_to_log("#{__method__}:")
@@ -467,29 +474,32 @@ No positive validations are reported but failure is rescued and reported.
     error_to_log("#{__method__}: #{$!}  (#{__LINE__})\n#{Kernel.caller.to_yaml}")
   end
 
-  #def attach_browser(browser, how, what)
-  #  debug_to_log("Attaching browser window :#{how}=>'#{what}' ")
-  #  uri_decoded_pattern = URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
-  #  case @browserAbbrev
-  #  when 'IE'
-  #    tmpbrowser         = Watir::IE.attach(how, what)
-  #    browser.visible    = true
-  #    tmpbrowser.visible = true
-  #    tmpbrowser.speed   = :fast
-  #    tmpbrowser
-  #  when 'FF'
-  #    tmpbrowser = FireWatir::Firefox.attach(how, /#{uri_decoded_pattern}/)
-  #  when 'S'
-  #    Watir::Safari.attach(how, what)
-  #    tmpbrowser = browser
-  #  when 'C'
-  #    browser.window(how, /#{uri_decoded_pattern}/).use
-  #    tmpbrowser = browser
-  #  end
-  #  debug_to_log("#{__method__}: tmpbrowser:#{tmpbrowser.inspect}")
-  #  tmpbrowser
-  #end
-  #
+  #--
+    #def attach_browser(browser, how, what)
+    #  debug_to_log("Attaching browser window :#{how}=>'#{what}' ")
+    #  uri_decoded_pattern = URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
+    #  case @browserAbbrev
+    #  when 'IE'
+    #    tmpbrowser         = Watir::IE.attach(how, what)
+    #    browser.visible    = true
+    #    tmpbrowser.visible = true
+    #    tmpbrowser.speed   = :fast
+    #    tmpbrowser
+    #  when 'FF'
+    #    tmpbrowser = FireWatir::Firefox.attach(how, /#{uri_decoded_pattern}/)
+    #  when 'S'
+    #    Watir::Safari.attach(how, what)
+    #    tmpbrowser = browser
+    #  when 'C'
+    #    browser.window(how, /#{uri_decoded_pattern}/).use
+    #    tmpbrowser = browser
+    #  end
+    #  debug_to_log("#{__method__}: tmpbrowser:#{tmpbrowser.inspect}")
+    #  tmpbrowser
+    #end
+  #++
+
+# :category: Navigation
   def attach_browser(browser, how, what, desc = '')
     debug_to_log("Attaching browser window :#{how}=>'#{what}' #{desc}")
     uri_decoded_pattern = URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
@@ -519,12 +529,14 @@ No positive validations are reported but failure is rescued and reported.
     tmpbrowser
   end
 
+# :category: Navigation
   def attach_browser_by_url(browser, pattern, desc = '')
     attach_browser(browser, :url, pattern, desc)
   end
 
   alias attach_browser_with_url attach_browser_by_url
 
+# :category: Navigation
   def attach_popup(browser, how, what, desc = '')
     msg   = "Attach popup :#{how}=>'#{what}'. #{desc}"
     popup = attach_browser(browser, how, what, desc)
@@ -541,10 +553,12 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("Unable to attach popup :#{how}=>'#{what}'. #{desc} '#{$!}' (#{__LINE__})")
   end
 
+# :category: Navigation
   def attach_popup_by_title(browser, strg, desc = '')
     attach_popup(browser, :title, strg, desc)
   end
 
+# :category: Navigation
   def attach_popup_by_url(browser, pattern, desc = '')
     attach_popup(browser, :url, pattern, desc)
   end
@@ -574,6 +588,7 @@ No positive validations are reported but failure is rescued and reported.
     clear_checkbox(browser, :id, strg, value, desc)
   end
 
+# :category: Bullet-Proofing
   def find_other_browsers
     cnt = 0
     if @targetBrowser.abbrev == 'IE'
@@ -590,6 +605,7 @@ No positive validations are reported but failure is rescued and reported.
     return 0
   end
 
+# :category: Debug
   def get_trace(lnbr)
     callertrace = "\nCaller trace: (#{lnbr})\n"
     Kernel.caller.each_index do |x|
@@ -600,6 +616,7 @@ No positive validations are reported but failure is rescued and reported.
 
   alias dump_caller get_trace
 
+# :category: Helpers
   def translate_var_list(key)
     if @var[key] and @var[key].length > 0
       list = @var[key].dup
@@ -612,6 +629,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{__method__}: '#{$!}'")
   end
 
+# :category: Helpers
   def get_variables(file, login = :role, dbg = true)
     debug_to_log("#{__method__}: file = #{file}")
     debug_to_log("#{__method__}: role = #{login}")
@@ -706,6 +724,7 @@ No positive validations are reported but failure is rescued and reported.
     fatal_to_log("#{__method__}: '#{$!}'")
   end
 
+# :category: Debug
   def grab_window_list(strg)
     @ai.AutoItSetOption("WinTitleMatchMode", 2)
     list    = @ai.WinList(strg)
@@ -724,35 +743,39 @@ No positive validations are reported but failure is rescued and reported.
     stuff
   end
 
+# :category: Debug
   def debug_call_list(msg)
     call_array = get_call_array
     debug_to_log("#{msg}\n#{dump_array(call_array)}")
   end
 
-  # TODO ugly, gotta lose the hardcoding...
-  def decode_options(strg)
-    idx      = 0
-    @options = Hash.new
-    strg.each_char do |c|
-      idx = idx + 1
-      case idx
-        when 1
-          @options['load'] = c.to_i
-        when 2
-          @options['screenshot'] = c.to_i
-          if c.to_i > 0
-            @screenCaptureOn = true
-          end
-        when 3
-          @options['hiderun'] = c.to_i
-        #      when 4
-        #        @options['another'] = c.to_i
-      end
+  #--
+  ## TODO ugly, gotta lose the hardcoding...
+  #def decode_options(strg)
+  #  idx      = 0
+  #  @options = Hash.new
+  #  strg.each_char do |c|
+  #    idx = idx + 1
+  #    case idx
+  #      when 1
+  #        @options['load'] = c.to_i
+  #      when 2
+  #        @options['screenshot'] = c.to_i
+  #        if c.to_i > 0
+  #          @screenCaptureOn = true
+  #        end
+  #      when 3
+  #        @options['hiderun'] = c.to_i
+  #      #      when 4
+  #      #        @options['another'] = c.to_i
+  #    end
+  #
+  #  end
+  #  #    puts @options.to_yaml
+  #end
+  #++
 
-    end
-    #    puts @options.to_yaml
-  end
-
+# :category: User Input
   def click_popup_button(title, button, waitTime= 9, user_input=nil)
     #TODO: is winclicker still viable/available?
     wc = WinClicker.new
@@ -780,6 +803,7 @@ No positive validations are reported but failure is rescued and reported.
     #    end
   end
 
+# :category: Locate Elements
   def get_select_list(browser, how, what, desc = '')
     list = browser.select_list(how, what)
     if validate(browser, @myName, __LINE__)
@@ -790,6 +814,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("Unable to return select list #{how}='#{what}': '#{$!}' (#{__LINE__})")
   end
 
+# :category: Page Data
   def get_select_options(browser, how, what, dump = false)
     list = browser.select_list(how, what)
     dump_select_list_options(list) if dump
@@ -798,14 +823,17 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("Unable to get select options for #{how}=>#{what}.  '#{$!}'")
   end
 
+# :category: Page Data
   def get_select_options_by_id(browser, strg, dump = false)
     get_select_options(browser, :id, strg, dump)
   end
 
+# :category: Page Data
   def get_select_options_by_name(browser, strg, dump = false)
     get_select_options(browser, :name, strg, dump)
   end
 
+# :category: Page Data
   def get_selected_options(browser, how, what)
     begin
       list = browser.select_list(how, what)
@@ -817,22 +845,26 @@ No positive validations are reported but failure is rescued and reported.
     list.selected_options
   end
 
+# :category: Page Data
   def get_selected_options_by_id(browser, strg)
     get_selected_options(browser, :id, strg)
   end
 
   alias get_selected_option_by_id get_selected_options_by_id
 
+# :category: Page Data
   def get_selected_options_by_name(browser, strg)
     get_selected_options(browser, :name, strg)
   end
 
   alias get_selected_option_by_name get_selected_options_by_name
 
+# :category: Helpers
   def sec2hms(s)
     Time.at(s.to_i).gmtime.strftime('%H:%M:%S')
   end
 
+# :category: User Input
   def select(browser, how, what, which, value, desc = '')
     msg  = "Select option #{which}='#{value}' from list #{how}=#{what}. #{desc}"
     list = browser.select_list(how, what)
@@ -855,6 +887,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#Unable to #{msg}': '#{$!}'")
   end
 
+# :category: User Input
   def select_option_from_list(list, what, what_strg, desc = '')
     ok  = true
     msg = "#{__method__.to_s.titleize} "
@@ -884,6 +917,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{__method__.to_s.titleize}: #{what}='#{what_strg}' could not be selected: '#{$!}'. #{desc} (#{__LINE__})")
   end
 
+# :category: User Input
   def select_option_by_id_and_option_text(browser, strg, option, nofail=false, desc = '')
     msg = "Select list id=#{strg} option text='#{option}' selected."
     msg << " #{desc}" if desc.length > 0
@@ -903,6 +937,7 @@ No positive validations are reported but failure is rescued and reported.
   alias select_option_by_id select_option_by_id_and_option_text
   alias select_option_by_id_and_text select_option_by_id_and_option_text
 
+# :category: User Input
   def select_option_by_name_and_option_text(browser, strg, option, desc = '')
     msg = "Select list name=#{strg} option text='#{option}' selected."
     msg << " #{desc}" if desc.length > 0
@@ -930,6 +965,7 @@ No positive validations are reported but failure is rescued and reported.
 
   alias select_option_by_name select_option_by_name_and_option_text
 
+# :category: User Input
   def select_option_by_title_and_option_text(browser, strg, option, desc = '')
     msg = "Select list name=#{strg} option text='#{option}' selected."
     msg << " #{desc}" if desc.length > 0
@@ -941,6 +977,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{msg} '#{$!}'")
   end
 
+# :category: User Input
   def select_option_by_class_and_option_text(browser, strg, option, desc = '')
     msg = "Select list class=#{strg} option text='#{option}' selected."
     msg << " #{desc}" if desc.length > 0
@@ -953,6 +990,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{msg} '#{$!}'")
   end
 
+# :category: User Input
   def select_option_by_name_and_option_value(browser, strg, option, desc = '')
     msg = "Select list name=#{strg} option value='#{option}' selected."
     msg << " #{desc}" if desc.length > 0
@@ -978,6 +1016,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{msg} '#{$!}'")
   end
 
+# :category: User Input
   def select_option_by_id_and_option_value(browser, strg, option, desc = '')
     msg = "Select list name=#{strg} option value='#{option}' selected."
     msg << " #{desc}" if desc.length > 0
@@ -1044,6 +1083,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{msg} '#{$!}'")
   end
 
+# :category: User Input
   def set(browser, element, how, what, value = nil, desc = '')
     msg = "Set #{element} #{how}=>'#{what}' "
     msg << "('#{value.to_s}')" if value
@@ -1064,30 +1104,37 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{msg} '#{$!}'")
   end
 
+# :category: User Input
   def set_checkbox(browser, how, what, desc = '')
     set(browser, :checkbox, how, what, nil, desc)
   end
 
+# :category: User Input
   def set_checkbox_by_class(browser, strg, value = nil, desc = '')
     set(browser, :checkbox, :class, strg, value, desc)
   end
 
+# :category: User Input
   def set_checkbox_by_id(browser, strg, value = nil, desc = '')
     set(browser, :checkbox, :id, strg, value, desc)
   end
 
+# :category: User Input
   def set_checkbox_by_name(browser, strg, value = nil, desc = '')
     set(browser, :checkbox, :name, strg, value, desc)
   end
 
+# :category: User Input
   def set_checkbox_by_title(browser, strg, value = nil, desc = '')
     set(browser, :checkbox, :title, strg, value, desc)
   end
 
+# :category: User Input
   def set_checkbox_by_value(browser, strg, desc = '')
     set(browser, :checkbox, :value, strg, nil, desc)
   end
 
+# :category: User Input
   def set_radio(browser, how, what, value = nil, desc = '')
     if how == :value
       set_radio_by_value(browser, what, desc)
@@ -1098,6 +1145,7 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{msg} '#{$!}'")
   end
 
+# :category: User Input
   def set_radio_two_attributes(browser, how1, what1, how2, what2, desc = '')
     msg = "Set radio #{how1}='#{what1}', #{how2}= #{what2}"
     msg << " '#{desc}' " if desc.length > 0
@@ -1110,26 +1158,32 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{msg} '#{$!}'")
   end
 
+# :category: User Input
   def set_radio_by_class(browser, strg, value = nil, desc = '')
     set(browser, :radio, :class, strg, value, desc)
   end
 
+# :category: User Input
   def set_radio_by_id(browser, strg, value = nil, desc = '')
     set(browser, :radio, :id, strg, value, desc)
   end
 
+# :category: User Input
   def set_radio_by_index(browser, index, desc = '')
     set(browser, :radio, :index, index, nil, desc)
   end
 
+# :category: User Input
   def set_radio_by_name(browser, strg, value = nil, desc = '')
     set(browser, :radio, :name, strg, value, desc)
   end
 
+# :category: User Input
   def set_radio_by_title(browser, strg, value = nil, desc = '')
     set(browser, :radio, :title, strg, value, desc)
   end
 
+# :category: User Input
   def set_radio_no_wait_by_index(browser, index, desc = '')
     #TODO: Not supported by Watir 1.8.x
     msg    = "Radio :index=#{index} "
@@ -1370,8 +1424,8 @@ No positive validations are reported but failure is rescued and reported.
   end
 
 =begin rdoc
-category: Logon
-tags: logon, login, user, password, url
+:category: Basic
+:tags:logon, login, user, password, url
 TODO: Needs to be more flexible about finding login id and password textfields
 TODO: Parameterize url and remove references to environment
 =end
@@ -1400,7 +1454,7 @@ TODO: Parameterize url and remove references to environment
 
 =begin rdoc
 category: Logon
-tags: logon, login, user, password, url, basic authorization
+:tags:logon, login, user, password, url, basic authorization
 =end
   def basic_auth(browser, user, pswd, url, bypass_validate = false)
     mark_testlevel("Basic Authorization Login", 0)
@@ -1834,7 +1888,8 @@ tags: logon, login, user, password, url, basic authorization
 
 # howLong is integer, whatFor is a browser object
 =begin rdoc
-tags: wait
+:category: Waits
+:tags:wait
 howLong is the number of seconds, text is a string to be found, threshold is the number of seconds
 after which a fail message is generated even though the text was detected within the howLong limit.
 Use this in place of wait_until_by_text when the wait time needs to be longer than the test automation default.
@@ -1952,9 +2007,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   #method for handling save dialog
   #use click_no_wait on the action that triggers the save dialog
+  def save_file(filepath, download_title = "File Download - Security Warning")
   # TODO need version for Firefox
   # TODO need to handle first character underline, e.g. 'Cancel' and '&Cancel'
-  def save_file(filepath, download_title = "File Download - Security Warning")
     download_title   = translate_popup_title(download_title)
     download_text    = ''
     download_control = "&Save"
@@ -2213,14 +2268,6 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     countdown
   end
 
-  #Sample usage:
-  #  if wait_for( 10, browser.link(:id, "wria-messagebox-yes") )
-  #    browser.link(:id, "wria-messagebox-yes").click
-  # . .
-  #  else
-  #    @myLog.error('['+__LINE__.to_s+'] '+role+' Validate Expected Confirm Delete messagebox')
-  #  end
-
   def wait_the_hard_way(browser, how, what, wait = 6, intvl = 0.25)
     count = (wait / intvl).to_i + 1
     tally = 0
@@ -2345,10 +2392,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     browser = Watir::Browser.new(:chrome)
   end
 
-  #=begin
-  # Get the browser to navigate to a given url.  If not supplied in the second argument,
-  # defaults to value of FullScript.myURL, which is populated from ApplicationEnvironment.url.
-  #=end
+  #Get the browser to navigate to a given url.  If not supplied in the second argument,
+  #defaults to value of FullScript.myURL, which is populated from ApplicationEnvironment.url.
+
   def go_to_url(browser, url = nil, redirect = nil)
     if url
       @myURL = url
@@ -2371,7 +2417,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     fatal_to_log("Unable to navigate to '#{@myURL}': '#{$!}'")
   end
 
-  #def open_log
+
+  #--
+  ##def open_log
   #  start = Time.now.to_f.to_s
   #
   #  logTS = Time.at(@myRun.launched.to_f).strftime("%Y%m%d%H%M%S")
@@ -2391,7 +2439,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   #  mark_testlevel(@myChild.name, @myChild.level) # SubModule
   #
   #end
+  #++
 
+# :category: User Input
   def click(browser, element, how, what, desc = '')
     #debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
     msg = "Click #{element} :#{how}=>'#{what}'"
@@ -2434,6 +2484,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to #{msg}. '#{$!}'")
   end
 
+# :category: User Input
   def click_no_wait(browser, element, how, what, desc = '')
     debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
     msg = "Click no wait #{element} :#{how}=>'#{what}'"
@@ -2479,66 +2530,67 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     sleep_for(1)
   end
 
+# :category: User Input
   def click_button_by_id(browser, strg, desc = '')
     click(browser, :button, :id, strg, desc)
   end
-
+# :category: User Input
   def click_link_by_index(browser, strg, desc = '')
     click(browser, :link, :index, strg, desc)
   end
-
+# :category: User Input
   def click_link_by_href(browser, strg, desc = '')
     click(browser, :link, :href, strg, desc)
   end
 
   alias click_href click_link_by_href
-
+# :category: User Input
   def click_link_no_wait_by_href(browser, strg, desc = '')
     click_no_wait(browser, :link, :href, strg, desc)
   end
 
   alias click_href_no_wait click_link_no_wait_by_href
-
+# :category: User Input
   def click_button_by_index(browser, index, desc = '')
     click(browser, :button, :index, index, desc)
   end
-
+# :category: User Input
   def click_button_by_name(browser, strg, desc = '')
     click(browser, :button, :name, strg, desc)
   end
-
+# :category: User Input
   def click_button_by_text(browser, strg, desc = '')
     click(browser, :button, :text, strg, desc)
   end
-
+# :category: User Input
   def click_button_by_class(browser, strg, desc = '')
     click(browser, :button, :class, strg, desc)
   end
-
+# :category: User Input
   def click_button_no_wait_by_id(browser, strg, desc = '')
     click_no_wait(browser, :button, :id, strg, desc)
   end
 
   alias click_button_by_id_no_wait click_button_no_wait_by_id
-
+# :category: User Input
   def click_button_no_wait_by_name(browser, strg, desc = '')
     click_no_wait(browser, :button, :name, strg, desc)
   end
-
+# :category: User Input
   def click_button_no_wait_by_class(browser, strg, desc = '')
     click_no_wait(browser, :button, :class, strg, desc)
   end
 
   alias click_button_by_class_no_wait click_button_no_wait_by_class
-
+# :category: User Input
   def click_button_by_value(browser, strg, desc = '')
     click(browser, :button, :value, strg, desc)
   end
-
+# :category: User Input
   def click_button_by_title(browser, strg, desc = '')
     click(browser, :button, :title, strg, desc)
   end
-
+# :category: User Input
   def click_button_by_xpath_and_id(browser, strg, desc = '')
     msg = "Click button by xpath and id '#{strg}' #{desc}"
     if browser.button(:xpath, "//a[@id = '#{strg}']").click
@@ -2552,19 +2604,19 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   end
 
   alias click_button_by_xpath click_button_by_xpath_and_id
-
+# :category: User Input
   def click_link_by_id(browser, strg, desc = '')
     click(browser, :link, :id, strg, desc)
   end
 
   alias click_id click_link_by_id
-
+# :category: User Input
   def click_link_by_name(browser, strg, desc = '')
     click(browser, :link, :name, strg, desc)
   end
 
   alias click_name click_link_by_name
-
+# :category: User Input
   def click_link_by_xpath_and_id(browser, strg, desc = '')
     msg = "Click link by xpath and id '#{strg}' #{desc}"
     if browser.link(:xpath, "//a[@id = '#{strg}']").click
@@ -2578,7 +2630,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   end
 
   alias click_link_by_xpath click_link_by_xpath_and_id
-
+# :category: User Input
   def click_link_no_wait_by_id(browser, strg, desc = '')
     click_no_wait(browser, :link, :id, strg, desc)
   end
@@ -2587,19 +2639,19 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   alias click_no_wait_by_id click_link_no_wait_by_id
   alias click_id_no_wait click_link_no_wait_by_id
   alias click_no_wait_link_by_id click_link_no_wait_by_id
-
+# :category: User Input
   def click_file_field_by_id(browser, strg, desc = '')
     click(browser, :file_field, :id, strg, desc)
   end
-
+# :category: User Input
   def click_img_by_alt(browser, strg, desc = '')
     click(browser, :image, :alt, strg, desc)
   end
-
+# :category: User Input
   def click_img_by_title(browser, strg, desc = '')
     click(browser, :image, :title, strg, desc)
   end
-
+# :category: User Input
   def click_img_by_xpath_and_name(browser, strg, desc = '')
     msg = "Click image by xpath where name='#{strg}' #{desc}"
     if browser.link(:xpath, "//input[@name = '#{strg}']").click
@@ -2615,17 +2667,17 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   alias click_img_by_xpath click_img_by_xpath_and_name
   alias click_image_by_xpath click_img_by_xpath_and_name
   alias click_image_by_xpath_and_name click_img_by_xpath_and_name
-
+# :category: User Input
   def click_img_no_wait_by_alt(browser, strg, desc = '')
     click_no_wait(browser, :image, :alt, strg, desc)
   end
 
   alias click_img_by_alt_no_wait click_img_no_wait_by_alt
-
+# :category: User Input
   def click_img_by_src(browser, strg, desc = '')
     click(browser, :image, :src, strg, desc)
   end
-
+# :category: User Input
   def click_img_by_src_and_index(browser, strg, index, desc = '')
     msg = "Click image by src='#{strg}' and index=#{index}"
     msg << " #{desc}" if desc.length > 0
@@ -2637,11 +2689,11 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   rescue
     failed_to_log("Unable to #{msg} '#{$!}'")
   end
-
+# :category: User Input
   def click_link_by_value(browser, strg, desc = '')
     click(browser, :link, :value, strg, desc)
   end
-
+# :category: User Input
   def click_link_by_text(browser, strg, desc = '')
     click(browser, :link, :text, strg, desc)
   end
@@ -2649,35 +2701,35 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   alias click_link click_link_by_text
   alias click_text click_link_by_text
   alias click_js_button click_link_by_text
-
+# :category: User Input
   def click_link_by_class(browser, strg, desc = '')
     click(browser, :link, :class, strg, desc)
   end
 
   alias click_class click_link_by_class
-
+# :category: User Input
   def click_button_no_wait_by_text(browser, strg, desc = '')
     click_no_wait(browser, :button, :text, strg, desc)
   end
-
+# :category: User Input
   def click_button_no_wait_by_value(browser, strg, desc = '')
     click_no_wait(browser, :button, :value, strg, desc)
   end
-
+# :category: User Input
   def click_link_by_name_no_wait(browser, strg, desc = '')
     click_no_wait(browser, :link, :name, strg, desc)
   end
 
   alias click_no_wait_name click_link_by_name_no_wait
   alias click_name_no_wait click_link_by_name_no_wait
-
+# :category: User Input
   def click_link_by_text_no_wait(browser, strg, desc = '')
     click_no_wait(browser, :link, :text, strg, desc)
   end
 
   alias click_no_wait_text click_link_by_text_no_wait
   alias click_text_no_wait click_link_by_text_no_wait
-
+# :category: User Input
   def click_span_by_text(browser, strg, desc = '')
     if not desc and not strg.match(/Save|Open|Close|Submit|Cancel/)
       desc = 'to navigate to selection'
@@ -2691,7 +2743,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to #{msg}: '#{$!}'")
   end
 
-# TODO no logging yet.  slow.
+# TODO no logging yet.  slow.# :category: User Input
   def click_span_with_text(browser, trgt, desc = '')
     msg = "Find and click span containing text '#{trgt}'."
     msg << " #{desc}" if desc.length > 0
@@ -2709,17 +2761,17 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     end
     spans[x].click
   end
-
+# :category: User Input
   def click_link_by_title(browser, strg, desc = '')
     click(browser, :link, :title, strg, desc)
   end
 
   alias click_title click_link_by_title
-
+# :category: User Input
   def click_title_no_wait(browser, strg, desc = '')
     click_no_wait(browser, :link, :title, strg, desc)
   end
-
+# :category: User Input
   def click_table_row_with_text_by_id(browser, ptrn, strg, column = nil)
     msg   = "id=#{ptrn} row with text='#{strg}"
     table = get_table_by_id(browser, /#{ptrn}/)
@@ -2740,7 +2792,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   rescue
     failed_to_log("Unable to click table #{msg}: '#{$!}' (#{__LINE__}) ")
   end
-
+# :category: User Input
   def click_table_row_with_text_by_index(browser, idx, strg, column = nil)
     msg   = "index=#{idx} row with text='#{strg}"
     table = get_table_by_index(browser, idx)
@@ -3082,6 +3134,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     count
   end
 
+# :category: Helpers
   def translate_popup_title(title)
     new_title = title
     case @browserAbbrev
@@ -3147,6 +3200,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     new_title
   end
 
+  #--
   #def translate_popup_title(title)
   #  new_title = title
   #  case @browserAbbrev
@@ -3185,6 +3239,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   #  end
   #  new_title
   #end
+  #++
 
   def get_browser_version(browser)
     debug_to_log("starting get_browser_version")
@@ -3315,6 +3370,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   alias fire_event_src fire_event_on_image_by_src
   alias fire_event_image_by_src fire_event_on_image_by_src
 
+# :category: Waits
   def wait_until_exists(browser, element, how, what, desc = '')
     msg = "Wait until (#{element} :#{how}=>#{what}) exists."
     msg << " #{desc}" if desc.length > 0
@@ -3367,8 +3423,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to complete #{msg}: '#{$!}'")
   end
 
-  #TODO: Would like to be able to see the block code in the log message instead of the identification
+# :category: Waits
   def wait_while(browser, desc, timeout = 45, &block)
+  #TODO: Would like to be able to see the block code in the log message instead of the identification
     msg   = "Wait while #{desc}:"
     start = Time.now.to_f
     begin
@@ -3397,8 +3454,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   alias wait_while_true wait_while
 
-  #TODO: Would like to be able to see the block code in the log message instead of the identification
+# :category: Waits
   def wait_until(browser, desc, timeout = 45, skip_pass = false, &block)
+  #TODO: Would like to be able to see the block code in the log message instead of the identification
     msg   = "Wait until #{desc}"
     start = Time.now.to_f
     begin
@@ -3424,10 +3482,12 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   alias wait_until_true wait_until
 
+# :category: Waits
   def wait_until_by_radio_value(browser, strg, desc = '')
     wait_until_exists(browser, :radio, :value, strg, desc)
   end
 
+# :category: Waits
   def wait_until_ready(browser, how, what, desc = '', timeout = 90, verbose = false)
     msg = "#{__method__.to_s.titleize}: element: #{how}='#{what}'"
     msg << " #{desc}" if desc.length > 0
@@ -3468,6 +3528,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to #{msg}. '#{$!}'")
   end
 
+# :category: Waits
   def wait_until_ready_quiet(browser, how, what, desc = '', timeout = 45, quiet = true)
     msg = "#{__method__.to_s.titleize}: element: #{how}='#{what}'"
     msg << " #{desc}" if desc.length > 0
@@ -3495,6 +3556,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to #{msg}. '#{$!}'")
   end
 
+# :category: Waits
   def wait_until_text(browser, strg, desc = '', timeout = 60)
     if not strg.class.to_s.match('String')
       raise "#{__method__} requires String for search target. #{strg.class} is not supported."
@@ -3504,11 +3566,14 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   alias wait_until_by_text wait_until_text
 
+# :category: Waits
   def wait_until_by_link_text(browser, strg, desc = '')
     wait_until_exists(browser, :link, :text, strg, desc)
   end
 
+# :category: Waits
   def wait_until_enabled(browser, what, how, value, desc = '')
+    # TODO: This can be simplified
     start = Time.now.to_f
     begin
       case what
@@ -3550,6 +3615,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to complete wait until (#{what} :#{how}=>#{value}) enabled. #{desc}: '#{$!}'")
   end
 
+# :category: Waits
   def wait_until_visible(browser, element, how, what, desc = '')
     start = Time.now.to_f
     Watir::Wait.until(20) { browser.element(how, what).exists? }
@@ -3592,6 +3658,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to complete wait until (#{element} :#{how}=>#{what}) visible. #{desc}: '#{$!}'")
   end
 
+# :category: Bullet-Proofing
   def rescue_me(e, me = nil, what = nil, where = nil, who = nil)
     #TODO: these are rescues from exceptions raised in Watir/Firewatir
     debug_to_log("#{__method__}: Enter")
@@ -3642,10 +3709,12 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     ok
   end
 
+# :category: Browser
   def close_popup_by_button_title(popup, strg, desc = '')
     click(popup, :link, :title, strg, desc)
   end
 
+# :category: GUI
   def move_element_with_handle(browser, element, handle_id, dx, dy)
     #    msg = "Move element "
     #    w1, h1, x1, y1, xc1, yc1, xlr1, ylr1 = get_element_coordinates(browser, element, true)
@@ -3675,8 +3744,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   end
 
-  #TODO enhance to accept differing percentages in each direction
+# :category: GUI
   def resize_element_with_handle(browser, element, target, dx, dy=nil)
+  #TODO enhance to accept differing percentages in each direction
     msg                                  = "Resize element "
     w1, h1, x1, y1, xc1, yc1, xlr1, ylr1 = get_element_coordinates(browser, element, true)
     if dy
@@ -3760,6 +3830,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     sleep_for(1)
   end
 
+# :category: GUI
   def get_resize_handle_by_id(element, id, dbg=nil)
     handle = get_div_by_id(element, id, dbg)
     sleep_for(1)
@@ -3767,6 +3838,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     return handle
   end
 
+# :category: GUI
   def get_resize_handle_by_class(element, strg, dbg=nil)
     handle = get_div_by_class(element, strg, dbg)
     sleep_for(0.5)
@@ -3774,6 +3846,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     return handle
   end
 
+# :category: GUI
   def get_element_coordinates(browser, element, dbg=nil)
     bx, by, bw, bh = get_browser_coord(browser, dbg)
     if @browserAbbrev == 'IE'
@@ -3871,6 +3944,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to #{msg}: '#{$!}'")
   end
 
+# :category: GUI
   def adjust_dimensions_by_percent(w, h, p, returnnew=nil)
     p      += 100
     nw     = (w * (p/100.0)).to_i
@@ -3884,6 +3958,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     end
   end
 
+# :category: GUI
   def get_browser_coord(browser=nil, dbg=nil)
     browser = @myBrowser if not browser
     title = browser.title
@@ -3899,6 +3974,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     [x, y, w, h]
   end
 
+# :category: Table Handling
   def get_index_for_column_head(panel, table_index, strg)
     rgx = Regexp.new(strg)
     panel.tables[table_index].each do |row|
@@ -3914,6 +3990,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     end
   end
 
+# :category: Table Handling
   def get_index_of_last_row(table, pad = 2, every = 1)
     index = calc_index(table.row_count, every)
     index = index.to_s.rjust(pad, '0')
@@ -3923,6 +4000,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   alias get_index_for_last_row get_index_of_last_row
 
+# :category: Table Handling
   def get_index_of_last_row_with_text(table, strg, column_index = nil)
     debug_to_log("#{__method__}: #{get_callers(5)}")
     msg = "Find last row in table :id=#{table.id} with text '#{strg}'"
@@ -3965,6 +4043,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   alias get_index_for_last_row_with_text get_index_of_last_row_with_text
 
+# :category: Table Handling
   def get_index_of_row_with_text(table, strg, column_index = nil, fail_if_found = false)
     debug_to_log("#{__method__}: #{get_callers(5)}")
     if fail_if_found
@@ -4016,6 +4095,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to #{msg}. '#{$!}'")
   end
 
+# :category: Table Handling
   def get_index_of_row_with_textfield_value(table, strg, how, what, column_index = nil)
     msg = "Find row in table :id=#{table.id} with value '#{strg}' in text_field #{how}=>'#{what} "
     msg << " in column #{column_index}" if column_index
@@ -4053,6 +4133,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to #{msg}. '#{$!}'")
   end
 
+# :category: Table Handling
   def get_index_for_table_containing_text(browser, strg, ordinal = 1)
     msg   = "Get index for table containing text '#{strg}'"
     index = 0
@@ -4091,6 +4172,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to find index of table containing text '#{strg}' '#{$!}' ")
   end
 
+# :category: Table Handling
   def get_cell_text_from_row_with_string(nc_element, table_index, column_index, strg)
     rgx  = Regexp.new(strg)
     text = ''
@@ -4113,6 +4195,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     text
   end
 
+# :category: Table Handling
   def count_rows_with_string(container, table_index, strg)
     hit = 0
     container.tables[table_index].each do |row|
@@ -4131,6 +4214,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     hit
   end
 
+# :category: Table Handling
   def fetch_array_for_table_column(nc_element, table_index, column_index)
     ary = []
     nc_element.tables[table_index].each do |row|
@@ -4144,6 +4228,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     return ary f
   end
 
+# :category: Table Handling
   def fetch_hash_for_table_column(table, column_index, start_row = 2)
     hash      = Hash.new
     row_count = 0
@@ -4158,6 +4243,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     hash
   end
 
+# :category: Table Handling
   def get_row_cells_text_as_array(row)
     ary = []
     row.each do |cell|
@@ -4166,6 +4252,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     ary
   end
 
+# :category: Table Handling
   def count_data_rows(container, data_index, column_index)
     cnt   = 0
     #  get_objects(container, :tables, true)
@@ -4185,6 +4272,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     cnt
   end
 
+# :category: GUI
   def drag_and_drop(x1, y1, dx, dy, speed=nil)
     speed = 10 if not speed
     x2 = x1 + dx
@@ -4199,6 +4287,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     @ai.MouseClickDrag("primary", x1, y1, x2, y2, speed)
   end
 
+# :category: GUI
   def drag_and_drop_element(browser, element, dx, dy, speed = nil)
     speed = 10 if not speed
     w1, h1, x1, y1, xc1, yc1, xlr1, ylr1 = get_element_coordinates(browser, element, true)
@@ -4344,12 +4433,14 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     idx
   end
 
+# :category: GUI
   def right_click(element)
     x = element.left_edge_absolute + 2
     y = element.top_edge_absolute + 2
     @ai.MouseClick("secondary", x, y)
   end
 
+# :category: GUI
   def left_click(element)
     x = element.left_edge_absolute + 2
     y = element.top_edge_absolute + 2
@@ -4364,6 +4455,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     #    end
   end
 
+# :category: GUI
   def screen_offset(element, browser=nil)
     bx, by, bw, bh = get_browser_coord(browser)
     ex             = element.left_edge
@@ -4371,6 +4463,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     [bx + ex, by + ey]
   end
 
+# :category: GUI
   def screen_center(element, browser=nil)
     bx, by, bw, bh = get_browser_coord(browser)
     w, h           = element.dimensions.to_a
@@ -4393,6 +4486,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     error_to_log("#{where.inspect} doesn't seem to respond to element() #{$!}")
   end
 
+# :category: User Input
   def click_me(element)
     element.click
   rescue
@@ -4407,12 +4501,14 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     end
   end
 
+# :category: Debug
   def get_caller_line
     last_caller = get_callers[0]
     line        = last_caller.split(':', 3)[1]
     line
   end
 
+# :category: Debug
   def get_call_list(depth = 9, dbg = false)
     myList    = []
     call_list = Kernel.caller
@@ -4428,6 +4524,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   alias get_callers get_call_list
 
+# :category: Debug
   def get_call_list_new(depth = 9, dbg = false)
     myList    = []
     call_list = Kernel.caller
@@ -4455,6 +4552,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     myList
   end
 
+# :category: Debug
   def get_call_array(depth = 9)
     arr       = []
     call_list = Kernel.caller
@@ -4467,6 +4565,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     arr
   end
 
+# :category: Debug
   def get_debug_list(dbg = false)
     calls = get_call_array(10)
     puts "#{calls.to_yaml}" if dbg
@@ -4486,6 +4585,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     end
   end
 
+# :category: Debug
   def dump_all_tables(browser, to_report = false)
     tables  = browser.tables
     msg     = ''
@@ -4511,6 +4611,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     end
   end
 
+# :category: Debug
   def dump_table_and_rows(table, to_report = false)
     msg = "\n=================\ntable\n=================\nn#{table}\n#{table.to_yaml}\nrows:"
     cnt = 0
@@ -4526,6 +4627,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     end
   end
 
+# :category: Debug
   def dump_table_rows_and_cells(tbl)
     msg     = ''
     row_cnt = 0
@@ -4544,6 +4646,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   alias dump_table_rows dump_table_rows_and_cells
 
+# :category: Debug
   def dump_array(arr, space_to_underscore = false)
     dump = "  #{arr.inspect}\n"
     arr.each_index do |x|
@@ -4554,6 +4657,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     dump
   end
 
+# :category: Debug
   def dump_ole_methods(ole)
     rtrn = ''
     ole.ole_methods.each do |m|
@@ -4566,6 +4670,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     rtrn
   end
 
+# :category: Debug
   def dump_ole_get_methods(ole)
     rtrn = ''
     ole.ole_get_methods.each do |m|
@@ -4578,6 +4683,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     rtrn
   end
 
+# :category: Debug
   def dump_ole_help(ole)
     rtrn = ''
     ole.ole_obj_help.each do |m|
@@ -4590,6 +4696,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     rtrn
   end
 
+# :category: Debug
   def dump_row_cells(row)
     msg      = ''
     cell_cnt = 0
@@ -4601,6 +4708,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     debug_to_log(msg)
   end
 
+# :category: Debug
   def dump_select_list_options(element)
     msg     = "#{element.inspect}"
     options = element.options

@@ -1,6 +1,5 @@
-sinatra.pid
-shamisen-*.gem
-vendor/cache/*
+awetestlib*.gem
+*.csv
 
 # gVim tmp files
 *~

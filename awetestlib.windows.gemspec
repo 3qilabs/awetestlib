@@ -30,6 +30,7 @@ Gem::Specification.new do |s|
   s.add_dependency('roo', '1.10.1')
   s.add_dependency('selenium-webdriver')
   s.add_dependency('pry')
+  s.add_dependency('rdoc', '~> 3.11')
 
 
   s.require_paths = ["lib"]

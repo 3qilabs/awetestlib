@@ -8,21 +8,22 @@ module ZohoUtil
           @user = @login[key]['userid']
           @pass = @login[key]['password']
           @role = @login[key]['role']
+          @url1 = @login[key]['url']
           debug_to_report("@user: #{@user}, @pass: #{@pass}, @role: #{@role} (#{__LINE__})")
           break
         end
       end
     end
 
-    userid     = "joeklienwatir@gmail.com" #@zohologin.cell(2,2)
-    password   = 'watir001'                #@zohologin.cell(2,3)
-    login_url  = "https://accounts.zoho.com/login?serviceurl=https://www.zoho.com/&hide_signup=true&css=https://www.zoho.com/css/login.css"
+    #userid     = "joeklienwatir@gmail.com" #@zohologin.cell(2,2)
+    #password   = 'watir001'                #@zohologin.cell(2,3)
+    #login_url  = "https://accounts.zoho.com/login?serviceurl=https://www.zoho.com/&hide_signup=true&css=https://www.zoho.com/css/login.css"
     home_url   = 'https://crm.zoho.com/crm/ShowHomePage.do'
     validation = 'Welcome joeklienwatir at Software'
 
     browser = open_browser
-    go_to_url(browser, login_url)
-    zoho_login(browser, home_url, validation)
+    go_to_url(browser, @url1)
+    zoho_login(browser, @user, @pass, home_url, validation)
     run_test(browser)
     logout(browser)
 
@@ -32,21 +33,12 @@ module ZohoUtil
     raise
   end
 
-  def zoho_login_1(browser, userid, password, url, validation = 'Welcome joeklienwatir at Software')
+  def zoho_login(browser, userid, password, url, validation = 'Welcome joeklienwatir at Software')
     mark_testlevel("#{__method__.to_s.titleize}", 8)
     set_textfield_by_name(browser, 'lid', userid)
     set_textfield_by_name(browser, 'pwd', password)
     click_button_by_value(browser, 'Sign In')
     go_to_url(browser, url)
-    validate_text(browser, validation)
-  end
-
-  def zoho_login(browser, home_url, validation = 'Welcome joeklienwatir at Software')
-    mark_testlevel("#{__method__.to_s.titleize}", 8)
-    set_textfield_by_name(browser, 'lid', @login['super']['userid'])
-    set_textfield_by_name(browser, 'pwd', @login['super']['password'])
-    click_button_by_value(browser, 'Sign In')
-    go_to_url(browser, home_url)
     validate_text(browser, validation)
   end
 

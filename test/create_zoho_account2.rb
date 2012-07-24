@@ -62,7 +62,7 @@ module CreateZohoAccount2
       set_textfield_by_name(popup, 'fldValue', @var['parent_account_pattern'])
       click_button_by_value(popup, 'Go')
       click(popup, :link, :text, @var['parent_account'])
-      browser = attach_browser_by_url(browser, /ShowHomePage/)
+      # TODO: This next line is currently required for Firefox and Chrome to return to original browser window      browser = attach_browser_by_url(browser, /ShowHomePage/)
       validate_textfield_value_by_name(browser, /Parent Account/, @var['parent_account'], "*** cza002 ***")
     end
   end
