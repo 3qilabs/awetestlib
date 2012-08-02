@@ -455,6 +455,25 @@ related methods: rescue_me()
   alias radio_checked? set?
   alias radio_selected? set?
 
+  def radio_set_with_value?(browser, how, what, value, desc = '', no_fail = false)
+    msg = "Radio #{how}=>#{what} :value=>#{value} is selected."
+    msg << " #{desc}" if desc.length > 0
+    if browser.radio(how, what, value).set?
+      if validate(browser, @myName, __LINE__)
+        passed_to_log(msg)
+        true
+      end
+    else
+      if no_fail
+        passed_to_log("Radio #{how}=>#{what} :value=>#{value} is not selected.")
+      else
+        failed_to_log(msg)
+      end
+    end
+  rescue
+    failed_to_log("Unable to validate #{msg}: '#{$!}'")
+  end
+
   def select_list_includes?(browser, how, what, option)
     select_list = browser.select_list(how, what)
     options     = select_list.options

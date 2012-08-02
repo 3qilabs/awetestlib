@@ -12,7 +12,7 @@ module Legacy
 
   # Place holder to prevent method not found error in scripts
   def set_script_variables
-  # TODO: replace with method_missing?
+    # TODO: replace with method_missing?
   end
 
   def setup
@@ -112,10 +112,12 @@ module Legacy
 :category: Page Data
 :tags: data, DOM, page
 
-*browser* is any container element.  Best to use is the smallest that contains the desired data.
+_Parameters_::
 
-*types* defaults to all of: :text, :textarea, :select_list, :span, :hidden, :checkbox, and :radio.
-Set types to array of subset of these if fewer elements are desired.
+*browser* is any container element, usually the browser window or a div within it.  Best to use is the smallest that contains the desired data.
+
+*types* is an array that defaults to all of: :text, :textarea, :select_list, :span, :hidden, :checkbox, and :radio.
+Set types to an array of a subset of these if fewer elements are desired.
 
 No positive validations are reported but failure is rescued and reported.
 =end
@@ -158,17 +160,16 @@ No positive validations are reported but failure is rescued and reported.
 :category: Page Data
 :tags:data, DOM
 
-*data* is output of capture_page_data().
+*data* is the hash returned by capture_page_data().
 
 *how* is one of :id, :name, :index
 
-*what* is the target value for how
+*what* is the target value for how. It can be a string or a regular expression
 
 *type* is one of :text,:textarea,:select_list,:span,:hidden,:checkbox,:radio
 
-*get_text* is used for select_list to choose selected option value or text (default)
-
-Note that multiple selections will be captured as arrays so value and text.
+*get_text* determines whether selected option's text or value is returned. Default is true, i.e., return the selected text.
+This only applies when the *type* is :select_list.
 
 =end
   def fetch_page_data(data, how, what, type, get_text = true)
@@ -448,7 +449,7 @@ No positive validations are reported but failure is rescued and reported.
           do_taskkill(INFO, pid)
           sleep_for(10)
         end
-        #Watir::IE.close_all()
+          #Watir::IE.close_all()
       rescue
         debug_to_log("#{__method__}: #{$!}  (#{__LINE__})")
       end
@@ -464,7 +465,7 @@ No positive validations are reported but failure is rescued and reported.
             do_taskkill(INFO, pid)
             sleep_for(10)
           end
-          #Watir::IE.close_all()
+            #Watir::IE.close_all()
         rescue
           debug_to_log("#{__method__}:#{$!}  (#{__LINE__})")
         end
@@ -475,31 +476,56 @@ No positive validations are reported but failure is rescued and reported.
   end
 
   #--
-    #def attach_browser(browser, how, what)
-    #  debug_to_log("Attaching browser window :#{how}=>'#{what}' ")
-    #  uri_decoded_pattern = URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
-    #  case @browserAbbrev
-    #  when 'IE'
-    #    tmpbrowser         = Watir::IE.attach(how, what)
-    #    browser.visible    = true
-    #    tmpbrowser.visible = true
-    #    tmpbrowser.speed   = :fast
-    #    tmpbrowser
-    #  when 'FF'
-    #    tmpbrowser = FireWatir::Firefox.attach(how, /#{uri_decoded_pattern}/)
-    #  when 'S'
-    #    Watir::Safari.attach(how, what)
-    #    tmpbrowser = browser
-    #  when 'C'
-    #    browser.window(how, /#{uri_decoded_pattern}/).use
-    #    tmpbrowser = browser
-    #  end
-    #  debug_to_log("#{__method__}: tmpbrowser:#{tmpbrowser.inspect}")
-    #  tmpbrowser
-    #end
+  #def attach_browser(browser, how, what)
+  #  debug_to_log("Attaching browser window :#{how}=>'#{what}' ")
+  #  uri_decoded_pattern = URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
+  #  case @browserAbbrev
+  #  when 'IE'
+  #    tmpbrowser         = Watir::IE.attach(how, what)
+  #    browser.visible    = true
+  #    tmpbrowser.visible = true
+  #    tmpbrowser.speed   = :fast
+  #    tmpbrowser
+  #  when 'FF'
+  #    tmpbrowser = FireWatir::Firefox.attach(how, /#{uri_decoded_pattern}/)
+  #  when 'S'
+  #    Watir::Safari.attach(how, what)
+  #    tmpbrowser = browser
+  #  when 'C'
+  #    browser.window(how, /#{uri_decoded_pattern}/).use
+  #    tmpbrowser = browser
+  #  end
+  #  debug_to_log("#{__method__}: tmpbrowser:#{tmpbrowser.inspect}")
+  #  tmpbrowser
+  #end
   #++
 
-# :category: Navigation
+=begin rdoc
+  :category: A_rdoc_test
+
+Returns a reference to a browser window.  Used to attach a browser window to a variable
+which can then be passed to methods that require a *browser* parameter.
+
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*how* - the browser attribute used to identify the window:  either :url or :title
+
+*what* - a string or a regular expression in the url or title
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+
+*_Example_*
+
+  mainwindow = open_browser('www.myapp.com')  # open a browser to www.google.com
+  click(mainwindow, :button, :id, 'an id string')  # click a button that opens another browser window
+  popup = attach_browser(mainwindow, :url, '[url of new window]')   #*or*
+  popup = attach_browser(mainwindow, :title, '[title of new window]')
+
+=end
+
   def attach_browser(browser, how, what, desc = '')
     debug_to_log("Attaching browser window :#{how}=>'#{what}' #{desc}")
     uri_decoded_pattern = URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
@@ -529,14 +555,59 @@ No positive validations are reported but failure is rescued and reported.
     tmpbrowser
   end
 
-# :category: Navigation
+=begin rdoc
+  :category: A_rdoc_test
+Returns a reference to a browser window using the window's url. Calls attach_browser().
+
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*pattern* - a string with the complete url or a regular expression containing part of the url
+that uniquely identifies it in the context of the test.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+
+_Example_
+
+  mainwindow = open_browser('www.myapp.com')  # open a browser to www.google.com
+  click(mainwindow, :button, :id, 'an id string')  # click a button that opens another browser window
+  popup = attach_browser_by_url(mainwindow, '[url of new window]')
+
+=end
+
   def attach_browser_by_url(browser, pattern, desc = '')
     attach_browser(browser, :url, pattern, desc)
   end
 
   alias attach_browser_with_url attach_browser_by_url
 
-# :category: Navigation
+=begin rdoc
+  :category: A_rdoc_test
+Returns a reference to a new browser window.  Used to attach a new browser window to a variable
+which can then be passed to methods that require a *browser* parameter. Calls attach_browser().
+
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*how* - the browser attribute used to identify the window:  either :url or :title
+
+*what* - a string or a regular expression in the url or title
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+
+_Example_
+
+  mainwindow = open_browser('www.myapp.com')  # open a browser to www.google.com
+  click(mainwindow, :button, :id, 'an id string')  # click a button that opens another browser window
+  popup = attach_popup(mainwindow, :url, '[url of new window]') *or*
+  popup = attach_popup(mainwindow, :title, '[title of new window]')
+
+=end
+
   def attach_popup(browser, how, what, desc = '')
     msg   = "Attach popup :#{how}=>'#{what}'. #{desc}"
     popup = attach_browser(browser, how, what, desc)
@@ -775,7 +846,7 @@ No positive validations are reported but failure is rescued and reported.
   #end
   #++
 
-# :category: User Input
+  # :category: User Input
   def click_popup_button(title, button, waitTime= 9, user_input=nil)
     #TODO: is winclicker still viable/available?
     wc = WinClicker.new
@@ -865,7 +936,7 @@ No positive validations are reported but failure is rescued and reported.
   end
 
 # :category: User Input
-  def select(browser, how, what, which, value, desc = '')
+  def select_option(browser, how, what, which, value, desc = '')
     msg  = "Select option #{which}='#{value}' from list #{how}=#{what}. #{desc}"
     list = browser.select_list(how, what)
     case which
@@ -917,7 +988,29 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("#{__method__.to_s.titleize}: #{what}='#{what_strg}' could not be selected: '#{$!}'. #{desc} (#{__LINE__})")
   end
 
-# :category: User Input
+=begin rdoc
+  :category: A_rdoc_test
+Select an option from a specific drop down list.  The drop down (select list) is id
+
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*how* - the element attribute used to identify the specific element. Valid values depend on the kind of element.
+Common values: :text, :id, :title, :name, :class, :href (:link only)
+
+*what* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+_Example_
+
+  # html for a link element:
+  # <a href="http://pragmaticprogrammer.com/titles/ruby/" id="one" name="book">Pickaxe</a>
+  click_no_wait(browser, :link, :text, 'Pickaxe')
+
+=end
+
   def select_option_by_id_and_option_text(browser, strg, option, nofail=false, desc = '')
     msg = "Select list id=#{strg} option text='#{option}' selected."
     msg << " #{desc}" if desc.length > 0
@@ -1339,6 +1432,35 @@ No positive validations are reported but failure is rescued and reported.
     set_file_field(browser, :id, strg, path, desc)
   end
 
+=begin rdoc
+  :category: A_rdoc_test
+Enter a string into a text field element identified by an attribute type and a value.
+After the entry the value in the text field is validated against the input value unless the *skip_value_check*
+parameter is set to true
+
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*how* - the element attribute used to identify the specific element. Valid values depend on the kind of element.
+Common values: :text, :id, :title, :name, :class, :href (:link only)
+
+*what* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*value* - a string to be entered in the text field
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+*skip_value_check* (Optional, default is false). Set to true to prevent the built-in verification
+that the text field actually contains the value entered.  Useful when application reformats
+or otherwise edits the input string.
+
+_Example_
+
+  set_text_field(browser, :name, /thisTextfield/, 'The text to enter')
+
+=end
+
   def set_text_field(browser, how, what, value, desc = '', skip_value_check = false)
     #TODO: fix this to handle Safari password field
     msg = "Set textfield #{how}='#{what}' to '#{value}'"
@@ -1399,8 +1521,30 @@ No positive validations are reported but failure is rescued and reported.
     failed_to_log("Textfield name='#{name}' could not be set to '#{value}': '#{$!}'. #{desc} (#{__LINE__})")
   end
 
-# Set skip_value_check = true when string is altered by application and/or
-# this method will be followed by validate_text
+=begin rdoc
+  :category: A_rdoc_test
+Enter a string into a text field element identified by the value in its id attribute.
+
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*id* - a string or a regular expression to be found in the id attribute that uniquely identifies the element.
+
+*value* - a string to be entered in the text field
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+*skip_value_check* (Optional, default is false). Set to true to prevent the built-in verification
+that the text field actually contains the value entered.  Useful when application reformats
+or otherwise edits the input string.
+
+_Example_
+
+  set_text_field_by_id(browser, /thisTextfield/, 'The text to enter')
+
+=end
+
   def set_textfield_by_id(browser, id, value, desc = '', skip_value_check = false)
     set_text_field(browser, :id, id, value, desc, skip_value_check)
   end
@@ -1412,6 +1556,33 @@ No positive validations are reported but failure is rescued and reported.
   def set_textfield_by_class(browser, strg, value, desc = '', skip_value_check = false)
     set_text_field(browser, :class, strg, value, desc, skip_value_check)
   end
+
+=begin rdoc
+  :category: A_rdoc_test
+Enter a string into a text field element identified by an attribute type and a value.
+After the entry the value in the text field is validated against the *valid_value*. Use when the application reformats
+or performs edits on the input value.
+
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*how* - the element attribute used to identify the specific element. Valid values depend on the kind of element.
+Common values: :text, :id, :title, :name, :class, :href (:link only)
+
+*what* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*value* - a string to be entered in the text field
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+*valid_value* (Optional, default is nil). Set to the expected value
+
+_Example_
+
+  set_text_field_and_validate(browser, :id, /AmountTendered/, '7500', 'Dollar formatting', '$7,500.00')
+
+=end
 
   def set_text_field_and_validate(browser, how, what, value, desc = '', valid_value = nil)
     #NOTE: use when value and valid_value differ as with dollar reformatting
@@ -2008,8 +2179,8 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   #method for handling save dialog
   #use click_no_wait on the action that triggers the save dialog
   def save_file(filepath, download_title = "File Download - Security Warning")
-  # TODO need version for Firefox
-  # TODO need to handle first character underline, e.g. 'Cancel' and '&Cancel'
+    # TODO need version for Firefox
+    # TODO need to handle first character underline, e.g. 'Cancel' and '&Cancel'
     download_title   = translate_popup_title(download_title)
     download_text    = ''
     download_control = "&Save"
@@ -2325,6 +2496,21 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     "['#{new_arr.join("','")}']"
   end
 
+=begin rdoc
+  :category: A_rdoc_test
+Opens a browser and returns a reference to it. If *url* is specified the browser is
+opened to that url, otherwise it is opened to a bland page
+
+_Parameters_::
+
+*url* - a string containing the full url. Optional.
+
+_Example_
+
+  browser = open_browser('www.google.com')
+
+=end
+
   def open_browser(url = nil)
     debug_to_log("Opening browser: #{@targetBrowser.name}")
     debug_to_log("#{__method__}: [#{get_caller_line}] #{get_callers}")
@@ -2392,9 +2578,6 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     browser = Watir::Browser.new(:chrome)
   end
 
-  #Get the browser to navigate to a given url.  If not supplied in the second argument,
-  #defaults to value of FullScript.myURL, which is populated from ApplicationEnvironment.url.
-
   def go_to_url(browser, url = nil, redirect = nil)
     if url
       @myURL = url
@@ -2416,7 +2599,6 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   rescue
     fatal_to_log("Unable to navigate to '#{@myURL}': '#{$!}'")
   end
-
 
   #--
   ##def open_log
@@ -2441,7 +2623,32 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   #end
   #++
 
-# :category: User Input
+=begin rdoc
+  :category: A_rdoc_test
+Click a specific DOM element by one of its attributes and that attribute's value.
+
+_Parameters_::
+
+*browser* - a reference to the browser window or container element to be tested
+
+*element* - the kind of element to click. Must be one of the elements recognized by Watir.
+Some common values are :link, :button, :image, :div, :span.
+
+*how* - the element attribute used to identify the specific element. Valid values depend on the kind of element.
+Common values: :text, :id, :title, :name, :class, :href (:link only)
+
+*what* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+_Example_
+
+  # html for a link element:
+  # <a href="http://pragmaticprogrammer.com/titles/ruby/" id="one" name="book">Pickaxe</a>
+  click(browser, :link, :text, 'Pickaxe')
+
+=end
+
   def click(browser, element, how, what, desc = '')
     #debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
     msg = "Click #{element} :#{how}=>'#{what}'"
@@ -2484,7 +2691,34 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to #{msg}. '#{$!}'")
   end
 
-# :category: User Input
+=begin rdoc
+  :category: A_rdoc_test
+Click a specific DOM element by one of its attributes and that attribute's value and
+do not wait for the browser to finish reloading.  Used when a modal popup or alert is expected. Allows the script
+to keep running so the popup can be handled.
+
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*element* - the kind of element to click. Must be one of the elements recognized by Watir.
+Some common values are :link, :button, :image, :div, :span.
+
+*how* - the element attribute used to identify the specific element. Valid values depend on the kind of element.
+Common values: :text, :id, :title, :name, :class, :href (:link only)
+
+*what* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+_Example_
+
+  # html for a link element:
+  # <a href="http://pragmaticprogrammer.com/titles/ruby/" id="one" name="book">Pickaxe</a>
+  click_no_wait(browser, :link, :text, 'Pickaxe')
+
+=end
+
   def click_no_wait(browser, element, how, what, desc = '')
     debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
     msg = "Click no wait #{element} :#{how}=>'#{what}'"
@@ -2534,10 +2768,12 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   def click_button_by_id(browser, strg, desc = '')
     click(browser, :button, :id, strg, desc)
   end
+
 # :category: User Input
   def click_link_by_index(browser, strg, desc = '')
     click(browser, :link, :index, strg, desc)
   end
+
 # :category: User Input
   def click_link_by_href(browser, strg, desc = '')
     click(browser, :link, :href, strg, desc)
@@ -2554,18 +2790,22 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   def click_button_by_index(browser, index, desc = '')
     click(browser, :button, :index, index, desc)
   end
+
 # :category: User Input
   def click_button_by_name(browser, strg, desc = '')
     click(browser, :button, :name, strg, desc)
   end
+
 # :category: User Input
   def click_button_by_text(browser, strg, desc = '')
     click(browser, :button, :text, strg, desc)
   end
+
 # :category: User Input
   def click_button_by_class(browser, strg, desc = '')
     click(browser, :button, :class, strg, desc)
   end
+
 # :category: User Input
   def click_button_no_wait_by_id(browser, strg, desc = '')
     click_no_wait(browser, :button, :id, strg, desc)
@@ -2576,6 +2816,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   def click_button_no_wait_by_name(browser, strg, desc = '')
     click_no_wait(browser, :button, :name, strg, desc)
   end
+
 # :category: User Input
   def click_button_no_wait_by_class(browser, strg, desc = '')
     click_no_wait(browser, :button, :class, strg, desc)
@@ -2586,10 +2827,12 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   def click_button_by_value(browser, strg, desc = '')
     click(browser, :button, :value, strg, desc)
   end
+
 # :category: User Input
   def click_button_by_title(browser, strg, desc = '')
     click(browser, :button, :title, strg, desc)
   end
+
 # :category: User Input
   def click_button_by_xpath_and_id(browser, strg, desc = '')
     msg = "Click button by xpath and id '#{strg}' #{desc}"
@@ -2604,12 +2847,35 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   end
 
   alias click_button_by_xpath click_button_by_xpath_and_id
-# :category: User Input
+
+=begin rdoc
+  :category: A_rdoc_test
+Click a link identified by the value in its id attribute.  Calls click()
+
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*strg* - a string or a regular expression to be found in the id  attribute that uniquely identifies the element.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+
+_Example_
+
+  # html for a link element:
+  # <a href="http://pragmaticprogrammer.com/titles/ruby/" id="one" name="book">Pickaxe</a>
+  click_link_by_text(browser, 'Pickaxe', 'Open the page for the Pickaxe book')
+
+=end
+
   def click_link_by_id(browser, strg, desc = '')
     click(browser, :link, :id, strg, desc)
   end
 
+# :category: A_rdoc_test
   alias click_id click_link_by_id
+
 # :category: User Input
   def click_link_by_name(browser, strg, desc = '')
     click(browser, :link, :name, strg, desc)
@@ -2630,6 +2896,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   end
 
   alias click_link_by_xpath click_link_by_xpath_and_id
+
 # :category: User Input
   def click_link_no_wait_by_id(browser, strg, desc = '')
     click_no_wait(browser, :link, :id, strg, desc)
@@ -2639,18 +2906,22 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   alias click_no_wait_by_id click_link_no_wait_by_id
   alias click_id_no_wait click_link_no_wait_by_id
   alias click_no_wait_link_by_id click_link_no_wait_by_id
+
 # :category: User Input
   def click_file_field_by_id(browser, strg, desc = '')
     click(browser, :file_field, :id, strg, desc)
   end
+
 # :category: User Input
   def click_img_by_alt(browser, strg, desc = '')
     click(browser, :image, :alt, strg, desc)
   end
+
 # :category: User Input
   def click_img_by_title(browser, strg, desc = '')
     click(browser, :image, :title, strg, desc)
   end
+
 # :category: User Input
   def click_img_by_xpath_and_name(browser, strg, desc = '')
     msg = "Click image by xpath where name='#{strg}' #{desc}"
@@ -2667,6 +2938,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   alias click_img_by_xpath click_img_by_xpath_and_name
   alias click_image_by_xpath click_img_by_xpath_and_name
   alias click_image_by_xpath_and_name click_img_by_xpath_and_name
+
 # :category: User Input
   def click_img_no_wait_by_alt(browser, strg, desc = '')
     click_no_wait(browser, :image, :alt, strg, desc)
@@ -2677,6 +2949,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   def click_img_by_src(browser, strg, desc = '')
     click(browser, :image, :src, strg, desc)
   end
+
 # :category: User Input
   def click_img_by_src_and_index(browser, strg, index, desc = '')
     msg = "Click image by src='#{strg}' and index=#{index}"
@@ -2689,32 +2962,59 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   rescue
     failed_to_log("Unable to #{msg} '#{$!}'")
   end
+
 # :category: User Input
   def click_link_by_value(browser, strg, desc = '')
     click(browser, :link, :value, strg, desc)
   end
-# :category: User Input
+
+=begin rdoc
+  :category: A_rdoc_test
+Click a link identified by the value in its text attribute.  Calls click()
+
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*strg* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+
+_Example_
+
+  # html for a link element:
+  # <a href="http://pragmaticprogrammer.com/titles/ruby/" id="one" name="book">Pickaxe</a>
+  click_link_by_text(browser, 'Pickaxe', 'Open the page for the Pickaxe book')
+
+=end
+
   def click_link_by_text(browser, strg, desc = '')
     click(browser, :link, :text, strg, desc)
   end
 
   alias click_link click_link_by_text
+# :category: A_rdoc_test
   alias click_text click_link_by_text
   alias click_js_button click_link_by_text
+
 # :category: User Input
   def click_link_by_class(browser, strg, desc = '')
     click(browser, :link, :class, strg, desc)
   end
 
   alias click_class click_link_by_class
+
 # :category: User Input
   def click_button_no_wait_by_text(browser, strg, desc = '')
     click_no_wait(browser, :button, :text, strg, desc)
   end
+
 # :category: User Input
   def click_button_no_wait_by_value(browser, strg, desc = '')
     click_no_wait(browser, :button, :value, strg, desc)
   end
+
 # :category: User Input
   def click_link_by_name_no_wait(browser, strg, desc = '')
     click_no_wait(browser, :link, :name, strg, desc)
@@ -2722,6 +3022,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   alias click_no_wait_name click_link_by_name_no_wait
   alias click_name_no_wait click_link_by_name_no_wait
+
 # :category: User Input
   def click_link_by_text_no_wait(browser, strg, desc = '')
     click_no_wait(browser, :link, :text, strg, desc)
@@ -2729,6 +3030,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
   alias click_no_wait_text click_link_by_text_no_wait
   alias click_text_no_wait click_link_by_text_no_wait
+
 # :category: User Input
   def click_span_by_text(browser, strg, desc = '')
     if not desc and not strg.match(/Save|Open|Close|Submit|Cancel/)
@@ -2761,6 +3063,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     end
     spans[x].click
   end
+
 # :category: User Input
   def click_link_by_title(browser, strg, desc = '')
     click(browser, :link, :title, strg, desc)
@@ -2771,6 +3074,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   def click_title_no_wait(browser, strg, desc = '')
     click_no_wait(browser, :link, :title, strg, desc)
   end
+
 # :category: User Input
   def click_table_row_with_text_by_id(browser, ptrn, strg, column = nil)
     msg   = "id=#{ptrn} row with text='#{strg}"
@@ -2792,6 +3096,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   rescue
     failed_to_log("Unable to click table #{msg}: '#{$!}' (#{__LINE__}) ")
   end
+
 # :category: User Input
   def click_table_row_with_text_by_index(browser, idx, strg, column = nil)
     msg   = "index=#{idx} row with text='#{strg}"
@@ -2947,6 +3252,31 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     failed_to_log("Unable to open popup '#{name}': '#{$!}' (#{__LINE__})")
   end
 
+=begin rdoc
+  :category: A_rdoc_test
+Returns a reference to a division element.  Used to assign a div element to a variable
+which can then be passed to methods that require a *browser* parameter.
+
+_Parameters_::
+
+*browser* - a reference to the browser window or container element to be tested
+
+*how* - the element attribute used to identify the specific element. Valid values depend on the kind of element.
+Common values: :text, :id, :title, :name, :class, :href (:link only)
+
+*what* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+_Example_
+
+  mainwindow = open_browser('www.myapp.com')  # open a browser to www.google.com
+  click(mainwindow, :button, :id, 'an id string')  # click a button that opens another browser window
+  popup = attach_browser(mainwindow, :url, '[url of new window]') *or*
+  popup = attach_browser(mainwindow, :title, '[title of new window]')
+
+=end
+
   def get_div(browser, how, what, desc = '', dbg = false)
     msg = "Get division #{how}=>#{what}."
     msg << " #{desc}" if desc.length > 0
@@ -2968,6 +3298,27 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   def get_div_by_id(browser, strg, desc = '', dbg = false)
     get_div(browser, :id, strg, desc, dbg)
   end
+
+=begin rdoc
+  :category: A_rdoc_test
+Returns a reference to a division element identified by the value in its class attribute. Calls get_div()
+
+_Parameters_::
+
+*browser* - a reference to the browser window or container element to be tested
+
+*strg* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+_Example_
+
+  mainwindow = open_browser('www.myapp.com')  # open a browser to www.google.com
+  click(mainwindow, :button, :id, 'an id string')  # click a button that opens another browser window
+  popup = attach_browser(mainwindow, :url, '[url of new window]') *or*
+  popup = attach_browser(mainwindow, :title, '[title of new window]')
+
+=end
 
   def get_div_by_class(browser, strg, desc = '', dbg = false)
     get_div(browser, :class, strg, desc, dbg)
@@ -3060,6 +3411,29 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
   def get_span_by_id(browser, strg, desc = '')
     get_span(browser, :id, strg, desc)
   end
+
+=begin rdoc
+  :category: A_rdoc_test
+Returns a reference to a table element.  Used to assign a table element to a variable
+which can then be used directly or passed to methods that require a *browser* or *table* parameter.
+
+_Parameters_::
+
+*browser* - a reference to the browser window or container element to be tested
+
+*how* - the element attribute used to identify the specific element. Valid values depend on the kind of element.
+Common values: :text, :id, :title, :name, :class, :href (:link only)
+
+*what* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+_Example_
+
+  a_table = get_table(browser, :id, 'table1')
+  a_table_cell = a_table[2][1]   # The cell in the first column of the second row of the table
+
+=end
 
   def get_table(browser, how, what, desc = '')
     msg = "Return table :#{how}='#{what}'. #{desc}"
@@ -3279,44 +3653,72 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         @browserVersion = '11.0' #TODO: get actual version from browser
         debug_to_log("Chrome, in get_browser_version (#{@browserVersion})")
     end
-    # if [notify_queue, notify_class, notify_id].all?
-    #  Resque::Job.create(notify_queue, notify_class, :id => notify_id, :browser_used => "#{@browserName} #{@browserVersion}")
-    #end
+      # if [notify_queue, notify_class, notify_id].all?
+      #  Resque::Job.create(notify_queue, notify_class, :id => notify_id, :browser_used => "#{@browserName} #{@browserVersion}")
+      #end
   rescue
     debug_to_log("Unable to determine #{@browserAbbrev} browser version: '#{$!}' (#{__LINE__})")
 
-    # TODO: can we get rid of this?
-    # js for getting firefox version information
-    #      function getAppID() {
-    #        var id;
-    #        if("@mozilla.org/xre/app-info;1" in Components.classes) {
-    #          // running under Mozilla 1.8 or later
-    #          id = Components.classes["@mozilla.org/xre/app-info;1"]
-    #                         .getService(Components.interfaces.nsIXULAppInfo).ID;
-    #        } else {
-    #          try {
-    #            id = Components.classes["@mozilla.org/preferences-service;1"]
-    #                           .getService(Components.interfaces.nsIPrefBranch)
-    #                           .getCharPref("app.id");
-    #          } catch(e) {
-    #            // very old version
-    #            dump(e);
-    #          }
-    #        }
-    #        return id;
-    #      }
-    #      alert(getAppID());
-    # another snippet that shows getting attributes from object
-    #      var info = Components.classes["@mozilla.org/xre/app-info;1"]
-    #                 .getService(Components.interfaces.nsIXULAppInfo);
-    #      // Get the name of the application running us
-    #      info.name; // Returns "Firefox" for Firefox
-    #      info.version; // Returns "2.0.0.1" for Firefox version 2.0.0.1
+      # TODO: can we get rid of this?
+      # js for getting firefox version information
+      #      function getAppID() {
+      #        var id;
+      #        if("@mozilla.org/xre/app-info;1" in Components.classes) {
+      #          // running under Mozilla 1.8 or later
+      #          id = Components.classes["@mozilla.org/xre/app-info;1"]
+      #                         .getService(Components.interfaces.nsIXULAppInfo).ID;
+      #        } else {
+      #          try {
+      #            id = Components.classes["@mozilla.org/preferences-service;1"]
+      #                           .getService(Components.interfaces.nsIPrefBranch)
+      #                           .getCharPref("app.id");
+      #          } catch(e) {
+      #            // very old version
+      #            dump(e);
+      #          }
+      #        }
+      #        return id;
+      #      }
+      #      alert(getAppID());
+      # another snippet that shows getting attributes from object
+      #      var info = Components.classes["@mozilla.org/xre/app-info;1"]
+      #                 .getService(Components.interfaces.nsIXULAppInfo);
+      #      // Get the name of the application running us
+      #      info.name; // Returns "Firefox" for Firefox
+      #      info.version; // Returns "2.0.0.1" for Firefox version 2.0.0.1
   ensure
     message_to_log("Browser: [#{@browserAbbrev} #{@browserVersion}]")
   end
 
   protected :get_browser_version
+
+=begin rdoc
+  :category: A_rdoc_test
+Allows a generic way to fire browser or javascript events on page elements.
+Raises UnknownObjectException if the object is not found or ObjectDisabledException if the object is currently disabled.
+_Parameters_::
+
+*browser* - a reference to the browser window to be tested
+
+*element* - the kind of element to click. Must be one of the elements recognized by Watir.
+Some common values are :link, :button, :image, :div, :span.
+
+*how* - the element attribute used to identify the specific element. Valid values depend on the kind of element.
+Common values: :text, :id, :title, :name, :class, :href (:link only)
+
+*what* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*event* - a string indicating the event to be triggered, e.g., 'onMouseOver', 'onClick', and etc.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+_Example_
+
+  # html for a link element:
+  # <a href="http://pragmaticprogrammer.com/titles/ruby/" id="one" name="book">Pickaxe</a>
+  fire_event(browser, :link, :text, 'Pickaxe', 'onMouseOver')
+
+=end
 
   def fire_event(browser, element, how, what, event, desc = '')
     msg  = "#{element.to_s.titlecase}: #{how}=>'#{what}' event:'#{event}'"
@@ -3425,7 +3827,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
 # :category: Waits
   def wait_while(browser, desc, timeout = 45, &block)
-  #TODO: Would like to be able to see the block code in the log message instead of the identification
+    #TODO: Would like to be able to see the block code in the log message instead of the identification
     msg   = "Wait while #{desc}:"
     start = Time.now.to_f
     begin
@@ -3456,7 +3858,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
 # :category: Waits
   def wait_until(browser, desc, timeout = 45, skip_pass = false, &block)
-  #TODO: Would like to be able to see the block code in the log message instead of the identification
+    #TODO: Would like to be able to see the block code in the log message instead of the identification
     msg   = "Wait until #{desc}"
     start = Time.now.to_f
     begin
@@ -3746,7 +4148,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
 
 # :category: GUI
   def resize_element_with_handle(browser, element, target, dx, dy=nil)
-  #TODO enhance to accept differing percentages in each direction
+    #TODO enhance to accept differing percentages in each direction
     msg                                  = "Resize element "
     w1, h1, x1, y1, xc1, yc1, xlr1, ylr1 = get_element_coordinates(browser, element, true)
     if dy
@@ -4361,7 +4763,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     if dbg
       list.each do |obj|
         cnt += 1
-        debug_to_log("\n============== #{which}:\nindex:     #{cnt}\n#{obj}\n#{obj.to_yaml}")
+        debug_to_log("\n==========#{which}:\nindex:     #{cnt}\n#{obj}\n#{obj.to_yaml}")
       end
     end
     list
@@ -4600,7 +5002,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         msg <<"\n=================\ntable: #{tbl_cnt} row: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
         row.each do |cell|
           cell_cnt += 1
-          msg <<"\n==== cell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+          msg <<"\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
         end
       end
     end
@@ -4638,7 +5040,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
       msg <<"\n=================\nrow: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
       row.each do |cell|
         cell_cnt += 1
-        msg <<"\n==== cell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+        msg <<"\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
       end
     end
     debug_to_log(msg)
@@ -4703,7 +5105,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
     msg <<"\n=================\nrow: #{row.inspect}\n#{row}\ntext:'#{row.text}'"
     row.each do |cell|
       cell_cnt += 1
-      msg <<"\n==== cell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+      msg <<"\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
     end
     debug_to_log(msg)
   end

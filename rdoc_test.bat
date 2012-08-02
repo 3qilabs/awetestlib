@@ -1,1 +1,1 @@
-rdoc --force-update -o doc lib/regression/legacy.rb --force-output
+rdoc --force-update -o c:/docs/rdoc_test --force-output lib/regression
