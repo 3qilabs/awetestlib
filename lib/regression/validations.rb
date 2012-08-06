@@ -1524,4 +1524,15 @@ related methods: rescue_me()
     failed_to_log("Unable to verify sort on column '#{strg}'. #{$!}")
   end
 
+  def exercise_sorting(browser, columnList, desc = '')
+  #TODO put rescue inside the do loop
+  #parameters: browser and a list of column link text values
+  #example: exercise_sorting(browser,['Division', 'Payee', 'Date'], 'Sortable columns on this page')
+    columnList.each do |column|
+      click(browser, :link, :text, column, desc)
+    end
+  end
+
+  alias validate_sorting exercise_sorting
+
 end
