@@ -93,7 +93,7 @@ module Awetestlib
       @targetBrowser  = browser_to_use(options[:browser], options[:version])
       @targetVersion  = @targetBrowser.version
       @browserAbbrev  = @targetBrowser.abbrev
-      @myRoot         = USING_WINDOWS ? options[:root_path].gsub!('/', '\\') : options[:root_path]
+      @myRoot         = options[:root_path]
       @myName         = File.basename(options[:script_file]).sub(/\.rb$/, '')
 
       if options[:output_to_log]
@@ -165,14 +165,14 @@ module Awetestlib
 
       # load and extend with library module if it exists
       if options[:library]
-        lib_file = File.join @myRoot, options[:library]
+        lib_file = options[:library]
         load lib_file # force a fresh load
         lib_module = module_for lib_file
         self.extend(lib_module)
       end
 
       # load and extend with script
-      script_file = File.join @myRoot, options[:script_file]
+      script_file = options[:script_file]
       load script_file # force a fresh load
       runner_module = module_for script_file
       self.extend(runner_module)
