@@ -13,11 +13,12 @@ module ZohoUtil
           break
         end
       end
+    else
+      @user = "joeklienwatir@gmail.com"
+      @pass = 'watir001'
+      @url1 = "https://accounts.zoho.com/login?serviceurl=https://www.zoho.com/&hide_signup=true&css=https://www.zoho.com/css/login.css"
     end
 
-    #userid     = "joeklienwatir@gmail.com" #@zohologin.cell(2,2)
-    #password   = 'watir001'                #@zohologin.cell(2,3)
-    #login_url  = "https://accounts.zoho.com/login?serviceurl=https://www.zoho.com/&hide_signup=true&css=https://www.zoho.com/css/login.css"
     home_url   = 'https://crm.zoho.com/crm/ShowHomePage.do'
     validation = 'Welcome joeklienwatir at Software'
 
