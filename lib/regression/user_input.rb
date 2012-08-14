@@ -803,7 +803,7 @@ _Example_
 
   def set(browser, element, how, what, value = nil, desc = '')
     msg = "Set #{element} #{how}=>'#{what}' "
-    msg << "('#{value.to_s}')" if value
+    msg << ", :value=>#{value} " if value
     msg << " '#{desc}' " if desc.length > 0
     case element
       when :radio
@@ -821,8 +821,8 @@ _Example_
     failed_to_log("#{msg} '#{$!}'")
   end
 
-  def set_checkbox(browser, how, what, desc = '')
-    set(browser, :checkbox, how, what, nil, desc)
+  def set_checkbox(browser, how, what, value, desc = '')
+    set(browser, :checkbox, how, what, value, desc)
   end
 
   def set_checkbox_by_class(browser, strg, value = nil, desc = '')
@@ -846,13 +846,7 @@ _Example_
   end
 
   def set_radio(browser, how, what, value = nil, desc = '')
-    if how == :value
-      set_radio_by_value(browser, what, desc)
-    else
-      set(browser, :radio, how, what, value, desc)
-    end
-  rescue
-    failed_to_log("#{msg} '#{$!}'")
+    set(browser, :radio, how, what, value, desc)
   end
 
   def set_radio_two_attributes(browser, how1, what1, how2, what2, desc = '')
@@ -876,7 +870,7 @@ _Example_
   end
 
   def set_radio_by_index(browser, index, desc = '')
-    set(browser, :radio, :index, index, nil, desc)
+    set(browser, :radio, :index, index, value, desc)
   end
 
   def set_radio_by_name(browser, strg, value = nil, desc = '')
@@ -885,6 +879,10 @@ _Example_
 
   def set_radio_by_title(browser, strg, value = nil, desc = '')
     set(browser, :radio, :title, strg, value, desc)
+  end
+
+  def set_radio_by_value(browser, strg, desc = '')
+    set(browser, :radio, :value, strg, nil, desc)
   end
 
   def set_radio_no_wait_by_index(browser, index, desc = '')
@@ -905,18 +903,6 @@ _Example_
     failed_to_log("#{msg} (#{__LINE__})")
   end
 
-  def set_radio_by_value(browser, strg, desc = '')
-    msg = "Radio :value=>'#{strg}' "
-    msg << " '#{desc}' " if desc.length > 0
-    browser.radio(:value, strg).set
-    if validate(browser, @myName, __LINE__)
-      passed_to_log(msg)
-      true
-    end
-  rescue
-    failed_to_log("#{msg} '#{$!}'")
-  end
-
   def set_radio_by_name_and_index(browser, name, index, desc = '')
     set_radio_two_attributes(browser, :name, name, :index, index, desc)
   end
@@ -930,12 +916,12 @@ _Example_
   end
 
   def set_radio_by_name_and_value(browser, strg, value, desc = '')
-    set(browser, :radio, :name, strg, value, desc)
+    set_radio(browser, :name, strg, value, desc)
   end
 
   def clear(browser, element, how, what, value = nil, desc = '')
     msg = "Clear #{element} #{how}=>'#{what}' "
-    msg << "('#{value.to_s}')" if value
+    msg << ", value=>#{value} " if value
     msg << " '#{desc}' " if desc.length > 0
     case element
       when :radio
@@ -956,38 +942,19 @@ _Example_
   end
 
   def clear_checkbox(browser, how, what, value = nil, desc = '')
-    msg = "Clear checkbox #{how}=>'#{what}'"
-    msg << " ('#{value}')" if value
-    msg << " #{desc}'" if desc.length > 0
-    browser.checkbox(how, what).clear
-    if validate(browser, @myName, __LINE__)
-      passed_to_log(msg)
-      true
-    end
-  rescue
-    failed_to_log("Unable to #{msg} '#{$!}'")
+    clear(browser, :checkbox, how, what, value, desc)
   end
 
   def clear_checkbox_by_name(browser, strg, value = nil, desc = '')
-    clear_checkbox(browser, :name, strg, value, desc)
+    clear(browser, :checkbox, :name, strg, value, desc)
   end
 
   def clear_checkbox_by_id(browser, strg, value = nil, desc = '')
-    clear_checkbox(browser, :id, strg, value, desc)
+    clear(browser, :checkbox, :id, strg, value, desc)
   end
 
   def clear_radio(browser, how, what, value = nil, desc = '')
-    msg = "Clear radio #{how}=>'#{what.to_s}' "
-    msg << "('#{value.to_s}')" if value
-    msg << " '#{desc}' " if desc.length > 0
-    radio = browser.radio(how, what, value)
-    radio.clear
-    if validate(browser, @myName, __LINE__)
-      passed_to_log(msg)
-      true
-    end
-  rescue
-    failed_to_log("#{msg} '#{$!}'")
+    clear(browser, :radio, how, what, value, desc)
   end
 
 # Set skip_value_check = true when string is altered by application and/or

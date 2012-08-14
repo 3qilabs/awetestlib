@@ -1068,5 +1068,192 @@ category: Logon
     failed_to_log("Unable to open popup '#{name}': '#{$!}' (#{__LINE__})")
   end
 
+=begin rdoc
+Verifies health of the browser. Looks for common http and system errors that are unrecoverable and
+attempts to gracefully bail out of the script.  Calls rescue_me() when trying to capture the text to filter out
+known false errors and handle container elements that don't respond to the .text method.
+category: bullet-proofing
+tags: system, http, fatal, error
+example: See click()
+related methods: rescue_me()
+=end
+  def validate(browser, fileName = '', lnbr = __LINE__, dbg = false)
+    debug_to_log("#{__method__} begin") if dbg
+    msg  = ''
+    myOK = true
+    if not browser
+      msg  = "#{fileName}----browser is nil object. (#{lnbr})"
+      myOK = false
+    elsif not is_browser?(browser)
+      msg = "#{fileName}----not a browser. (#{lnbr})"
+      debug_to_log(browser.inspect)
+      myOK = false
+
+    else
+      if browser.respond_to?(:url)
+        if not browser.url == @currentURL
+          @currentURL = browser.url
+          debug_to_log("Current URL: [#{@currentURL}]")
+          #        mark_testlevel( "Current URL: [#{@currentURL}]", 1 )
+        end
+      end
+
+      if @capture_js_errors
+        if browser.respond_to?(:status)
+          if browser.status.downcase =~ /errors? on page/ and
+              not browser.status.downcase.include?('Waiting for')
+            capture_js_error(browser)
+          end
+        end
+      end
+
+      begin
+        browser_text = browser.text.downcase
+      rescue => e
+        if not rescue_me(e, __method__, "browser.text.downcase", "#{browser.class}", browser)
+          debug_to_log("browser.text.downcase in #{__method__} #{browser.class}")
+          debug_to_log("#{get_callers}")
+          raise e
+        else
+          return true
+        end
+      end
+
+      if browser_text
+        if browser_text.match(/unrecognized error condition has occurred/i)
+          msg  = "#{fileName}----Unrecognized Exception occurred. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/cannot find server or dns error/i)
+          msg  = "#{fileName}----Cannot find server error or DNS error. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/the rpc server is unavailable/i)
+          msg  = "#{fileName}----RPC server unavailable. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/404 not found/i) or
+            browser_text.match(/the page you were looking for does\s*n[o']t exist/i)
+          msg  = "#{fileName}----RFC 2068 HTTP/1.1: 404 URI Not Found. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/we're sorry, but something went wrong/i) or
+            browser_text.match(/http status 500/i)
+          msg  = "#{fileName}----RFC 2068 HTTP/1.1: 500 Internal Server Error. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/internet explorer cannot display the webpage/i)
+          msg  = "#{fileName}----Probably RFC 2068 HTTP/1.1: 500 Internal Server Error. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/503.*service unavailable/i)
+          msg  = "#{fileName}----RFC 2068 HTTP/1.1: 503 Service Unavailable. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/java.lang.NullPointerException/i)
+          msg  = "#{fileName}----java.lang.NullPointerException. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/due to unscheduled maintenance/i)
+          msg  = "#{fileName}----Due to unscheduled maintenance. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/network\s+error\s*(.+)$/i)
+          $1.chomp!
+          msg  = "#{fileName}----Network Error #{$1}. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/warning: page has expired/i)
+          msg  = "#{fileName}----Page using information from form has expired. Not automatically resubmitted. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/no backend server available/i)
+          msg  = "#{fileName}----Cannot Reach Server (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/sign on\s+.+\s+unsuccessful/i)
+          msg  = "#{fileName}----Invalid Id or Password (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/you are not authorized/i)
+          msg  = "#{fileName}----Not authorized to view this page. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/too many incorrect login attempts have been made/i)
+          msg  = "#{fileName}----Invalid Id or Password. Too many tries. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/system error\.\s+an error has occurred/i)
+          msg  = "#{fileName}----System Error. An error has occurred. Please try again or call the Help Line for assistance. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/Internal Server failure,\s+NSAPI plugin/i)
+          msg  = "#{fileName}----Internal Server failure, NSAPI plugin. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/Error Page/i)
+          msg  = "#{fileName}----Error Page. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/The website cannot display the page/i)
+          msg  = "#{fileName}----HTTP 500. (#{lnbr})"
+          myOK = false
+
+          #        elsif browser_text.match(/Insufficient Data/i)
+          #          msg  = "#{fileName}----Insufficient Data. (#{lnbr})"
+          #          myOK = false
+
+        elsif browser_text.match(/The timeout period elapsed/i)
+          msg  = "#{fileName}----Time out period elapsed or server not responding. (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/Unexpected\s+errors*\s+occur+ed\.\s+(?:-+)\s+(.+)/i)
+          msg = "#{fileName}----Unexpected errors occurred. #{$2.slice(0, 120)} (#{lnbr})"
+          if not browser_text.match(/close the window and try again/i)
+            myOK = false
+          else
+            debug_to_log("#{msg}")
+          end
+
+        elsif browser_text.match(/Server Error in (.+) Application\.\s+(?:-+)\s+(.+)/i)
+          msg  = "#{fileName}----Server Error in #{1} Application. #{$2.slice(0, 100)} (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/Server Error in (.+) Application\./i)
+          msg  = "#{fileName}----Server Error in #{1} Application. '#{browser_text.slice(0, 250)}...' (#{lnbr})"
+          myOK = false
+
+        elsif browser_text.match(/An error has occur+ed\. Please contact support/i)
+          msg  = "#{fileName}----An error has occurred. Please contact support (#{lnbr})"
+          myOK = false
+
+        end
+      else
+        debug_to_log("browser.text returned nil")
+      end
+    end
+
+    if not myOK
+      msg << " (#{browser.url})"
+      puts msg
+      debug_to_log(browser.inspect)
+      debug_to_log(browser.text)
+      fatal_to_log(msg, lnbr)
+      raise(RuntimeError, msg, caller)
+    else
+      debug_to_log("#{__method__} returning OK") if dbg
+      return myOK
+    end
+
+  rescue
+    errmsg = $!
+    if errmsg.match(msg)
+      errmsg = ''
+    end
+    bail_out(browser, lnbr, "#{msg} #{errmsg}")
+  end
+
+  alias validate_browser validate
+
 
 end

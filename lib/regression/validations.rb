@@ -32,200 +32,38 @@ module Validations
     end
   end
 
-=begin rdoc
-Verifies health of the browser. Looks for common http and system errors that are unrecoverable and
-attempts to gracefully bail out of the script.  Calls rescue_me() when trying to capture the text to filter out
-known false errors and handle container elements that don't respond to the .text method.
-category: bullet-proofing
-tags: system, http, fatal, error
-example: See click()
-related methods: rescue_me()
-=end
-  def validate(browser, fileName = '', lnbr = __LINE__, dbg = false)
-    debug_to_log("#{__method__} begin") if dbg
-    msg  = ''
-    myOK = true
-    if not browser
-      msg  = "#{fileName}----browser is nil object. (#{lnbr})"
-      myOK = false
-    elsif not is_browser?(browser)
-      msg = "#{fileName}----not a browser. (#{lnbr})"
-      debug_to_log(browser.inspect)
-      myOK = false
-
-    else
-      if browser.respond_to?(:url)
-        if not browser.url == @currentURL
-          @currentURL = browser.url
-          debug_to_log("Current URL: [#{@currentURL}]")
-          #        mark_testlevel( "Current URL: [#{@currentURL}]", 1 )
-        end
-      end
-
-      if @capture_js_errors
-        if browser.respond_to?(:status)
-          if browser.status.downcase =~ /errors? on page/ and
-              not browser.status.downcase.include?('Waiting for')
-            capture_js_error(browser)
-          end
-        end
-      end
-
-      begin
-        browser_text = browser.text.downcase
-      rescue => e
-        if not rescue_me(e, __method__, "browser.text.downcase", "#{browser.class}", browser)
-          debug_to_log("browser.text.downcase in #{__method__} #{browser.class}")
-          debug_to_log("#{get_callers}")
-          raise e
-        else
-          return true
-        end
-      end
-
-      if browser_text
-        if browser_text.match(/unrecognized error condition has occurred/i)
-          msg  = "#{fileName}----Unrecognized Exception occurred. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/cannot find server or dns error/i)
-          msg  = "#{fileName}----Cannot find server error or DNS error. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/the rpc server is unavailable/i)
-          msg  = "#{fileName}----RPC server unavailable. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/404 not found/i) or
-            browser_text.match(/the page you were looking for does\s*n[o']t exist/i)
-          msg  = "#{fileName}----RFC 2068 HTTP/1.1: 404 URI Not Found. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/we're sorry, but something went wrong/i) or
-            browser_text.match(/http status 500/i)
-          msg  = "#{fileName}----RFC 2068 HTTP/1.1: 500 Internal Server Error. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/internet explorer cannot display the webpage/i)
-          msg  = "#{fileName}----Probably RFC 2068 HTTP/1.1: 500 Internal Server Error. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/503.*service unavailable/i)
-          msg  = "#{fileName}----RFC 2068 HTTP/1.1: 503 Service Unavailable. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/java.lang.NullPointerException/i)
-          msg  = "#{fileName}----java.lang.NullPointerException. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/due to unscheduled maintenance/i)
-          msg  = "#{fileName}----Due to unscheduled maintenance. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/network\s+error\s*(.+)$/i)
-          $1.chomp!
-          msg  = "#{fileName}----Network Error #{$1}. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/warning: page has expired/i)
-          msg  = "#{fileName}----Page using information from form has expired. Not automatically resubmitted. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/no backend server available/i)
-          msg  = "#{fileName}----Cannot Reach Server (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/sign on\s+.+\s+unsuccessful/i)
-          msg  = "#{fileName}----Invalid Id or Password (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/you are not authorized/i)
-          msg  = "#{fileName}----Not authorized to view this page. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/too many incorrect login attempts have been made/i)
-          msg  = "#{fileName}----Invalid Id or Password. Too many tries. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/system error\.\s+an error has occurred/i)
-          msg  = "#{fileName}----System Error. An error has occurred. Please try again or call the Help Line for assistance. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/Internal Server failure,\s+NSAPI plugin/i)
-          msg  = "#{fileName}----Internal Server failure, NSAPI plugin. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/Error Page/i)
-          msg  = "#{fileName}----Error Page. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/The website cannot display the page/i)
-          msg  = "#{fileName}----HTTP 500. (#{lnbr})"
-          myOK = false
-
-          #        elsif browser_text.match(/Insufficient Data/i)
-          #          msg  = "#{fileName}----Insufficient Data. (#{lnbr})"
-          #          myOK = false
-
-        elsif browser_text.match(/The timeout period elapsed/i)
-          msg  = "#{fileName}----Time out period elapsed or server not responding. (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/Unexpected\s+errors*\s+occur+ed\.\s+(?:-+)\s+(.+)/i)
-          msg = "#{fileName}----Unexpected errors occurred. #{$2.slice(0, 120)} (#{lnbr})"
-          if not browser_text.match(/close the window and try again/i)
-            myOK = false
-          else
-            debug_to_log("#{msg}")
-          end
-
-        elsif browser_text.match(/Server Error in (.+) Application\.\s+(?:-+)\s+(.+)/i)
-          msg  = "#{fileName}----Server Error in #{1} Application. #{$2.slice(0, 100)} (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/Server Error in (.+) Application\./i)
-          msg  = "#{fileName}----Server Error in #{1} Application. '#{browser_text.slice(0, 250)}...' (#{lnbr})"
-          myOK = false
-
-        elsif browser_text.match(/An error has occur+ed\. Please contact support/i)
-          msg  = "#{fileName}----An error has occurred. Please contact support (#{lnbr})"
-          myOK = false
-
-        end
-      else
-        debug_to_log("browser.text returned nil")
-      end
-    end
-
-    if not myOK
-      msg << " (#{browser.url})"
-      puts msg
-      debug_to_log(browser.inspect)
-      debug_to_log(browser.text)
-      fatal_to_log(msg, lnbr)
-      raise(RuntimeError, msg, caller)
-    else
-      debug_to_log("#{__method__} returning OK") if dbg
-      return myOK
-    end
-
-  rescue
-    errmsg = $!
-    if errmsg.match(msg)
-      errmsg = ''
-    end
-    bail_out(browser, lnbr, "#{msg} #{errmsg}")
-  end
-
-  alias validate_browser validate
-
   def validate_message(browser, message)
     if validate(browser, @myName, __LINE__)
       message_to_log(message)
     end
   end
 
-##### begin core validation methods #####
+  def validate_style_value(browser, element, how, what, type, expected, desc = '')
+    #TODO: works only with watir-webdriver
+    msg = "Expected CSS style #{type} value '#{expected}' in #{element} with #{how} = #{what}"
+    msg << " #{desc}" if desc.length > 0
+    case element
+      when :link
+        actual = browser.link(how => what).style type
+      when :button
+        actual = browser.button(how => what).style type
+      when :image
+        actual = browser.image(how => what).style type
+      when :span
+        actual = browser.span(how => what).style type
+      when :div
+        actual = browser.div(how => what).style type
+    end
+    if expected == actual
+      passed_to_log(msg)
+    else
+      failed_to_log(msg)
+    end
+  rescue
+    failed_to_log( "Unable to validate #{msg} '#{$!}'")
+  end
+
+  ##### begin core validation methods #####
 
   def arrays_match?(exp, act, dir, col, org = nil)
     if exp == act
@@ -242,7 +80,8 @@ related methods: rescue_me()
   alias arrays_match arrays_match?
 
   def enabled?(browser, element, how, what, desc = '')
-    msg = "#{element.to_s.titlecase} by #{how}=>'#{what}' is enabled. #{desc}"
+    msg = "#{element.to_s.titlecase} by #{how}=>'#{what}' is enabled.}"
+    msg << " #{desc}" if desc.length > 0
     case element
       when :textfield, :textarea, :text_area, :text_field
         rtrn = browser.text_field(how, what).enabled? and not browser.text_field(how, what).readonly?
@@ -320,6 +159,7 @@ related methods: rescue_me()
   alias validate_disabled disabled?
 
   def verify_text_in_table_with_text(table, text, value)
+    #TODO This needs clarification, renaming
     msg   = "Table :id=>#{table.id} with text '#{text} contains '#{value}."
     index = get_index_of_row_with_text(table, text)
     if table[index].text =~ value
@@ -400,6 +240,24 @@ related methods: rescue_me()
   alias checkbox_checked? checked?
   alias checkbox_set? checked?
 
+  def not_checked?(browser, how, what, desc = '')
+    msg = "Checkbox #{how}=>#{what} is not checked."
+    msg << " #{desc}" if desc.length > 0
+    if not browser.checkbox(how, what).checked?
+      if validate(browser, @myName, __LINE__)
+        passed_to_log(msg)
+        true
+      end
+    else
+      failed_to_log(msg)
+    end
+  rescue
+    failed_to_log("Unable to validate #{msg}: '#{$!}'")
+  end
+
+  alias checkbox_checked? checked?
+  alias checkbox_set? checked?
+
   def exists?(browser, element, how, what, value = nil, desc = '')
     msg = "#{element.to_s.titlecase} with #{how}=>'#{what}' "
     msg << "and value=>'#{value}' " if value
@@ -433,6 +291,7 @@ related methods: rescue_me()
   alias not_exist? does_not_exist?
 
   def set?(browser, how, what, desc = '', no_fail = false)
+    #TODO Needs to handle radio value as well
     msg = "Radio #{how}=>#{what} is selected."
     msg << " #{desc}" if desc.length > 0
     if browser.radio(how, what).set?
@@ -455,7 +314,31 @@ related methods: rescue_me()
   alias radio_checked? set?
   alias radio_selected? set?
 
-  def radio_set_with_value?(browser, how, what, value, desc = '', no_fail = false)
+  def not_set?(browser, how, what, desc = '', no_fail = false)
+    #TODO Needs to handle radio value as well
+    msg = "Radio #{how}=>#{what} is not selectedd."
+    msg << " #{desc}" if desc.length > 0
+    if not browser.radio(how, what).set?
+      if validate(browser, @myName, __LINE__)
+        passed_to_log(msg)
+        true
+      end
+    else
+      if no_fail
+        passed_to_log("Radio #{how}=>#{what} is not selected.")
+      else
+        failed_to_log(msg)
+      end
+    end
+  rescue
+    failed_to_log("Unable to validate #{msg}: '#{$!}'")
+  end
+
+  alias radio_not_set? not_set?
+  alias radio_not_checked? not_set?
+  alias radio_not_selected? not_set?
+
+  def radio_with_value_set?(browser, how, what, value, desc = '', no_fail = false)
     msg = "Radio #{how}=>#{what} :value=>#{value} is selected."
     msg << " #{desc}" if desc.length > 0
     if browser.radio(how, what, value).set?
@@ -474,24 +357,46 @@ related methods: rescue_me()
     failed_to_log("Unable to validate #{msg}: '#{$!}'")
   end
 
-  def select_list_includes?(browser, how, what, option)
+  alias radio_set_with_value? radio_with_value_set?
+
+  def select_list_includes?(browser, how, what, option, desc = '')
+    msg = "Select list #{how}=>#{what} includes option '#{option}'."
+    msg << " #{desc}" if desc.length > 0
     select_list = browser.select_list(how, what)
     options     = select_list.options
     if option
       if options.include?(option)
-        passed_to_log("Select list options contain option '#{option}'.")
+        passed_to_log(msg)
         true
       else
-        failed_to_log("Select list options #{options} do not contain option '#{option}'.")
+        failed_to_log(msg)
         nil
       end
     end
   rescue
-    failed_to_log("Unable to verify select_list contains option '#{option}': '#{$!}'", __LINE__)
+    failed_to_log("Unable to verify #{msg}. '#{$!}'")
   end
 
   alias validate_select_list_contains select_list_includes?
   alias select_list_contains? select_list_includes?
+
+  def select_list_does_not_include?(browser, how, what, option, desc = '')
+    msg = "Select list #{how}=>#{what} does not include option '#{option}'."
+    msg << " #{desc}" if desc.length > 0
+    select_list = browser.select_list(how, what)
+    options     = select_list.options
+    if option
+      if not options.include?(option)
+        passed_to_log(msg)
+        true
+      else
+        failed_to_log(msg)
+        nil
+      end
+    end
+  rescue
+    failed_to_log("Unable to verify #{msg}. '#{$!}'")
+  end
 
   def string_equals?(actual, target, desc = '')
     msg = "Assert actual '#{actual}' equals expected '#{target}'. #{desc} "
@@ -509,6 +414,20 @@ related methods: rescue_me()
   alias validate_string_equals string_equals?
   alias text_equals string_equals?
   alias text_equals? string_equals?
+
+  def string_does_not_equal?(strg, target, desc = '')
+    msg = "String '#{strg}' does not equal '#{target}'."
+    msg << " '#{desc}' " if desc.length > 0
+    if strg == target
+      failed_to_log("#{msg} (#{__LINE__})")
+      true
+    else
+      passed_to_log("#{msg} (#{__LINE__})")
+    end
+  end
+
+  alias validate_string_not_equal string_does_not_equal?
+  alias validate_string_does_not_equal string_does_not_equal?
 
   def read_only?(browser, element, how, what, value = nil, desc = '')
     msg = "#{element.to_s.titlecase} with #{how}=>'#{what}' "
@@ -611,9 +530,8 @@ related methods: rescue_me()
 ##### end backward compatible methods #####
 
 
-# TODO Deprecated: all util1 methods should be catching
-# this issue
   def link_enabled?(browser, strg)
+    #TODO Use enabled?()
     count = string_count_in_string(browser.text, strg)
     if count > 0
       if browser.link(:text, strg).enabled?
@@ -634,9 +552,8 @@ related methods: rescue_me()
 
   alias validate_link_enabled link_enabled?
 
-  # TODO Deprecated: all util1 methods should be catching
-  # this issue
   def link_disabled?(browser, strg)
+    #TODO use disabled?()
     count = string_count_in_string(browser.text, strg)
     if count > 0
       if browser.link(:text, strg).enabled?
@@ -697,6 +614,7 @@ related methods: rescue_me()
 
   #Validate select list contains text
   def validate_list_by_id(browser, strg, text, message, select_if_present=true)
+    #TODO Use select_list_includes?() ?
     if browser.select_list(:id, strg).exists?
       select_list = browser.select_list(:id, strg)
       if select_list.include?(text)
@@ -727,6 +645,7 @@ related methods: rescue_me()
 
   #Validate select list contains text
   def validate_list_by_name(browser, strg, text, message, select_if_present=true)
+    #TODO Use select_list_includes?() ?
     if browser.select_list(:name, strg).exists?
       select_list = browser.select_list(:name, strg)
       if select_list.include?(text)
@@ -756,33 +675,9 @@ related methods: rescue_me()
   end
 
   #Validate select list does not contain text
-  def validate_no_list(browser, id, text, message)
-    if browser.select_list(:id, id).includes?(text)
-      if validate(browser, @myName, __LINE__)
-        failed_to_log(message + " (#{__LINE__})")
-      end
-    else
-      passed_to_log(message + " (#{__LINE__})")
-      true
-    end
-  rescue
-    failed_to_log("Unable to validate that '#{text}' did not in select list with name='#{listName}: '#{$!}'. (#{__LINE__})")
+  def validate_no_list(browser, id, text, desc = '')
+    select_list_does_not_include?(browser, :id, id, text, desc)
   end
-
-  def validate_resize(d, err, tol, min, act)
-    ary = [false, "failed, actual #{act} err #{err}"]
-    if err == 0
-      ary = [true, 'succeeded ']
-      #TODO need to find way to calculate this adjustment
-    elsif d <= min + 4
-      ary = [true, "reached minimum (#{min}) "]
-    elsif err.abs <= tol
-      ary = [true, "within tolerance (+-#{tol}px) "]
-    end
-    ary
-  end
-
-  alias validate_move validate_resize
 
   def validate_text(browser, ptrn, desc = '', skip_fail = false, skip_sleep = false)
     cls = browser.class.to_s
@@ -825,7 +720,7 @@ related methods: rescue_me()
     msg = "Expected exact text '#{expected}' in #{element} :#{how}=>#{what}."
     msg << " #{desc}" if desc.length > 0
     text = ''
-    who = browser.element(how, what)
+    who  = browser.element(how, what)
     if who
       text = who.text
       if text == expected
@@ -846,7 +741,7 @@ related methods: rescue_me()
   end
 
   def element_contains_text?(browser, element, how, what, expected, desc = '')
-    msg = "Expected #{element} :{how}=>#{what} to contain text '#{expected}'."
+    msg = "Element #{element} :{how}=>#{what} contains text '#{expected}'."
     msg << " #{desc}" if desc.length > 0
     who = browser.element(how, what)
     if who
@@ -948,7 +843,6 @@ related methods: rescue_me()
     failed_to_log("Unable to validate select_list: '#{$!}'", __LINE__)
   end
 
-
   def validate_select_list_contents(browser, how, what, list)
     mark_testlevel("#{__method__.to_s.titleize} (#{what})", 2)
     select_list = browser.select_list(how, what)
@@ -1000,8 +894,9 @@ related methods: rescue_me()
   alias validate_selections validate_selected_options
   alias validate_select_list_selections validate_selected_options
 
-  def validate_string_contains(strg, target, desc = '')
-    msg = "Assert '#{strg}' contains '#{target}'? #{desc} "
+  def string_contains?(strg, target, desc = '')
+    msg = "String '#{strg}' contains '#{target}'."
+    msg << " '#{desc}' " if desc.length > 0
     if strg.match(target)
       passed_to_log("#{msg} (#{__LINE__})")
       true
@@ -1010,10 +905,12 @@ related methods: rescue_me()
     end
   end
 
-  alias validate_string validate_string_contains
+  alias validate_string string_contains?
+  alias validate_string_contains string_contains?
 
-  def validate_string_does_not_contain(strg, target, message = '')
-    msg = "Assert '#{strg}' does not contain '#{target}'? #{message} "
+  def string_does_not_contain?(strg, target, desc = '')
+    msg = "String '#{strg}' does not contain '#{target}'."
+    msg << " '#{desc}' " if desc.length > 0
     if strg.match(target)
       failed_to_log("#{msg} (#{__LINE__})")
       true
@@ -1022,20 +919,9 @@ related methods: rescue_me()
     end
   end
 
-  alias validate_string_not_contains validate_string_does_not_contain
-  alias validate_string_not_contain validate_string_does_not_contain
-
-  def validate_string_does_not_equal(strg, target, message = '')
-    msg = "Assert '#{strg}' does not equal '#{target}'? #{message} "
-    if strg == target
-      failed_to_log("#{msg} (#{__LINE__})")
-      true
-    else
-      passed_to_log("#{msg} (#{__LINE__})")
-    end
-  end
-
-  alias validate_string_not_equal validate_string_does_not_equal
+  alias validate_string_not_contains string_does_not_contain?
+  alias validate_string_not_contain string_does_not_contain?
+  alias validate_string_does_not_contain string_does_not_contain?
 
   def validate_no_text(browser, ptrn, desc = '')
     cls = browser.class.to_s
@@ -1061,10 +947,10 @@ related methods: rescue_me()
     failed_to_log("Unable to validate #{msg}: '#{$!}'")
   end
 
-  def validate_textfield_not_value(browser, how, what, value, desc = '')
-    msg = "Text field #{how}=>#{what} does not contain '#{value}'"
+  def textfield_does_not_equal?(browser, how, what, expected, desc = '')
+    msg = "Text field #{how}=>#{what} does not equal '#{expected}'"
     msg << " #{desc}" if desc.length > 0
-    if not browser.text_field(how, what).value == value
+    if not browser.text_field(how, what).value == expected
       if validate(browser, @myName, __LINE__)
         passed_to_log(msg)
         true
@@ -1076,21 +962,23 @@ related methods: rescue_me()
     failed_to_log("Unable to validate that #{msg}: '#{$!}'")
   end
 
+  alias validate_textfield_not_value textfield_does_not_equal?
+
 ###################################
   def validate_textfield_not_value_by_name(browser, name, value, desc = '')
-    validate_textfield_not_value(browser, :name, name, value, desc)
+    textfield_does_not_equal?(browser, :name, name, value, desc)
   end
 
   alias validate_textfield_no_value_by_name validate_textfield_not_value_by_name
 
 ###################################
   def validate_textfield_not_value_by_id(browser, id, value, desc = '')
-    validate_textfield_not_value(browser, :id, id, value, desc)
+    textfield_does_not_equal?(browser, :id, id, value, desc)
   end
 
   alias validate_textfield_no_value_by_id validate_textfield_not_value_by_id
 
-  def validate_textfield_empty(browser, how, what, desc = '')
+  def textfield_empty?(browser, how, what, desc = '')
     msg = "Text field #{how}=>#{what} is empty."
     msg << desc if desc.length > 0
     value = browser.text_field(how, what).value
@@ -1106,6 +994,9 @@ related methods: rescue_me()
     failed_to_log("Unable to validate #{msg}  '#{$!}'")
   end
 
+  alias validate_textfield_empty textfield_empty?
+  alias text_field_empty? textfield_empty?
+
   def validate_textfield_empty_by_name(browser, name, message = '')
     validate_textfield_empty(browser, :name, name, message)
   end
@@ -1118,7 +1009,7 @@ related methods: rescue_me()
     validate_textfield_empty(browser, :title, title, message)
   end
 
-  def validate_textfield_value(browser, how, what, expected, desc = '')
+  def textfield_equals?(browser, how, what, expected, desc = '')
     msg    = "Expected '#{expected}' in textfield #{how}=>'#{what}'. #{desc}"
     actual = browser.text_field(how, what).value
     if actual.is_a?(Array)
@@ -1152,6 +1043,9 @@ related methods: rescue_me()
     failed_to_log("Unable to validate #{msg}: '#{$!}")
   end
 
+  alias validate_textfield_value textfield_equals?
+  alias text_field_equals? textfield_equals?
+
   def validate_textfield_dollar_value(browser, how, what, expected, with_cents = true, desc = '')
     desc << " Dollar formatting"
     if with_cents
@@ -1161,69 +1055,37 @@ related methods: rescue_me()
       expected.gsub!(/\.00$/, '')
       desc << ' with cents.'
     end
-    validate_textfield_value(browser, how, what, expected, desc)
+    textfield_equals?(browser, how, what, expected, desc)
   end
 
   def validate_textfield_value_by_name(browser, name, expected, desc = '')
-    validate_textfield_value(browser, :name, name, expected, desc)
+    textfield_equals?(browser, :name, name, expected, desc)
   end
 
   def validate_textfield_value_by_id(browser, id, expected, desc = '')
-    validate_textfield_value(browser, :id, id, expected, desc)
+    textfield_equals?(browser, :id, id, expected, desc)
   end
 
   def validate_textfield_visible_by_name(browser, strg, desc = '')
-    sleep_for(1)
-    if browser.text_field(:name, strg).visible?
-      passed_to_log("Textfield with :name='#{strg}' is visible as expected. #{desc}")
-      true
-    else
-      failed_to_log("Textfield with :name='#{strg}' is not visible. #{desc}")
-    end
-  rescue
-    failed_to_log("Unable to validate textfield with :name=>'#{strg}' is visible. #{desc}: '#{$!}'. (#{__LINE__})")
+    visible?(browser, :text_field, :name, strg, desc)
   end
 
   alias visible_textfield_by_name validate_textfield_visible_by_name
 
   def validate_textfield_disabled_by_name(browser, strg, desc = '')
-    sleep_for(1)
-    if browser.text_field(:name, strg).disabled?
-      passed_to_log("Textfield with :name='#{strg}' is disabled as expected. #{desc}")
-      true
-    else
-      failed_to_log("Textfield with :name='#{strg}' is not disabled. #{desc}")
-    end
-  rescue
-    failed_to_log("Unable to validate textfield with :name=>'#{strg}' is disabled. #{desc}: '#{$!}'. (#{__LINE__})")
+    disabled?(browser, :text_field, :name, strg, desc)
   end
 
   alias disabled_textfield_by_name validate_textfield_disabled_by_name
 
   def validate_textfield_enabled_by_name(browser, strg, desc = '')
-    sleep_for(1)
-    if browser.text_field(:name, strg).enabled?
-      passed_to_log("Textfield with :name='#{strg}' is enabled as expected. #{desc}")
-      true
-    else
-      failed_to_log("Textfield with :name='#{strg}' is not enabled. #{desc}")
-    end
-  rescue
-    failed_to_log("Unable to validate textfield with :name=>'#{strg}' is enabled. #{desc}: '#{$!}'. (#{__LINE__})")
+    enabled?(browser, :text_field, :name, strg, desc)
   end
 
   alias enabled_textfield_by_name validate_textfield_enabled_by_name
 
   def validate_textfield_not_visible_by_name(browser, strg, desc = '')
-    sleep_for(1)
-    if browser.text_field(:name, strg).visible?
-      failed_to_log("Textfield with :name='#{strg}' is visible. #{desc}")
-      true
-    else
-      passed_to_log("Textfield with :name='#{strg}' is not visible as expected. #{desc}")
-    end
-  rescue
-    failed_to_log("Unable to validate textfield with :name=>'#{strg}' is not visible. #{desc}: '#{$!}'. (#{__LINE__})")
+    not_visible?(browser, :text_field, :name, strg, desc)
   end
 
   alias visible_no_textfield_by_name validate_textfield_not_visible_by_name
@@ -1279,56 +1141,24 @@ related methods: rescue_me()
   alias validate_check checked_by_id?
   alias checkbox_is_checked? checked_by_id?
 
-  def checkbox_is_enabled?(browser, strg, message)
-    if browser.checkbox(:id, strg).enabled?
-      passed_to_log(message, __LINE__)
-      true
-    else
-      failed_to_log("Not Enabled. (#{__LINE__})")
-    end
-  rescue
-    failed_to_log("Unable to validate check box with id=#{strg}: '#{$!}'. (#{__LINE__})")
+  def checkbox_is_enabled?(browser, strg, desc = '')
+    enabled?(browser, :checkbox, :id, strg, desc)
   end
 
   alias validate_check_enabled checkbox_is_enabled?
 
-  def checkbox_is_disabled?(browser, strg, message)
-    if browser.checkbox(:id, strg).disabled?
-      passed_to_log(message, __LINE__)
-      true
-    else
-      failed_to_log("Not Disabled. (#{__LINE__})")
-    end
-  rescue
-    failed_to_log("Unable to validate check box with id=#{strg}: '#{$!}'. (#{__LINE__})")
+  def checkbox_is_disabled?(browser, strg, desc = '')
+    disabled?(browser, :checkbox, :id, strg, desc)
   end
 
   alias validate_check_disabled checkbox_is_disabled?
 
-  def validate_check_by_class(browser, strg, message)
-    if browser.radio(:class, strg).checked?
-      if validate(browser, @myName, __LINE__)
-        passed_to_log(message)
-        true
-      end
-    else
-      failed_to_log(message + " (#{__LINE__})")
-    end
-  rescue
-    failed_to_log("Unable to validate check box with id=#{strg}: '#{$!}'. (#{__LINE__})")
+  def validate_check_by_class(browser, strg, desc)
+    checked?(browser, :class, strg, desc)
   end
 
-  def checkbox_not_checked?(browser, strg, message)
-    if browser.radio(:id, strg).checked?
-      if validate(browser, @myName, __LINE__)
-        failed_to_log(message + " (#{__LINE__})")
-      end
-    else
-      passed_to_log(message)
-      true
-    end
-  rescue
-    failed_to_log("Unable to validate radio with id=#{strg}: '#{$!}'. (#{__LINE__})")
+  def checkbox_not_checked?(browser, strg, desc)
+    not_checked?(browser, :id, strg, desc)
   end
 
   alias validate_not_check checkbox_not_checked?
@@ -1345,194 +1175,5 @@ related methods: rescue_me()
   rescue
     failed_to_log("Unable to validate that '#{+source}' image appeared in page: '#{$!}'. (#{__LINE__})")
   end
-
-    #TODO unstub
-  def verify_column_hidden(browser, panel, table_index, column_name)
-    passed_to_log("TEST STUBBED: Column '#{column_name}' is hidden.")
-    return true
-    #    id = @column_data_display_ids[column_name]
-    #    ok = false
-
-    #    row = panel.tables[2][3]
-
-    #    row.each do |cell|
-    ##      strg = cell.to_s
-    ##      insp = cell.inspect
-    ##      ole  = cell.ole_object
-    ##      anId = cell.attribute_value(:id)
-    #      text = cell.text
-    #      if text =~ /#{id}/
-    #        if cell.to_s =~ /hidden/
-    #          passed_to_log( "Column '#{column_name}' is hidden.")
-    #        else
-    #          failed_to_log( "Column '#{column_name}' is not hidden.")
-    #        end
-    #        ok = true
-    #      end
-    #    end
-    #    if not ok
-    #      failed_to_log( "Column '#{column_name}' not found.")
-    #    end
-    #  rescue
-    #    failed_to_log("Unable to verify column '#{column_name}' is hidden: '#{$!}' (#{__LINE__})")
-  end
-
-  #TODO unstub
-  def verify_column_hidden_temp_ff(browser, data_index, row_index, column_name)
-    passed_to_log("TEST STUBBED: Column '#{column_name}' is hidden.")
-    return true
-
-    row     = browser.tables[data_index][row_index]
-    #    debug_to_log( "#{row.to_a}")
-    #TODO cells are all still there in the row.  Need to check for clue to hidden/visible in other tag attributes
-    act_ary = get_row_cells_text_as_array(row)
-
-    if not act_ary.include?(column_name)
-      passed_to_log("Column '#{column_name}' is hidden.")
-    else
-      failed_to_log("Column '#{column_name}' is not hidden.")
-    end
-  end
-
-  #TODO unstub
-  def verify_column_visible_temp_ff(browser, data_index, row_index, column_name)
-    passed_to_log("TEST STUBBED: Column '#{column_name}' is visible.")
-    return true
-
-    row     = browser.tables[data_index][row_index]
-    #TODO cells are all still there in the row.  Need to check for clue to hidden/visible in other tag attributes
-    act_ary = get_row_cells_text_as_array(row)
-
-    if act_ary.include?(column_name)
-      passed_to_log("Column '#{column_name}' is visible.")
-    else
-      failed_to_log("Column '#{column_name}' is not visible.")
-    end
-  end
-
-  #TODO unstub
-  def verify_column_visible(browser, panel, table_index, column_name)
-
-    passed_to_log("TEST STUBBED: Column '#{column_name}' is visible.")
-    return true
-
-    #    id = @column_data_display_ids[column_name]
-    #    ok  = false
-    #    row = panel.tables[table_index][1]
-    #    row.each do |cell|
-    #      if cell.id == id
-    #        if not cell.to_s =~ /hidden/
-    #          passed_to_log("Column '#{column_name}' is visible.")
-    #        else
-    #          failed_to_log("Column '#{column_name}' is not visible.")
-    #        end
-    #        ok = true
-    #      end
-    #    end
-    #    if not ok
-    #      failed_to_log("Column '#{column_name}' not found.")
-    #    end
-  rescue
-    failed_to_log("Unable to verify column '#{column_name} is visible': '#{$!}' (#{__LINE__})")
-  end
-
-  def verify_column_order(browser, table_index, row_index, exp_ary)
-    mark_testlevel("Verify Column Order", 2)
-    row     = browser.tables[table_index][row_index]
-    act_ary = get_row_cells_text_as_array(row)
-
-    if exp_ary == act_ary
-      passed_to_log("Column order [#{act_ary.join(', ')}] appeared as expected.")
-    else
-      failed_to_log("Column order [#{act_ary.join(', ')}] not as expected [#{exp_ary.join(', ')}].")
-    end
-    sleep_for(1)
-  end
-
-  def verify_column_sort(browser, nc_element, strg, table_index, column_index=nil)
-    mark_testlevel("Verify Column Sort '#{strg}'", 3)
-    if not column_index
-      column_index = get_index_for_column_head(nc_element, table_index, strg)
-    end
-
-    if column_index
-      bfr_ary = fetch_array_for_table_column(nc_element, table_index, column_index)
-      if strg =~ /date/i
-        exp_ary = bfr_ary.sort { |x, y| Date.parse(x) <=> Date.parse(y) }
-      else
-        exp_ary = bfr_ary.sort { |x, y| x.gsub(',', '') <=> y.gsub(',', '') }
-      end
-
-      if click_text(browser, strg)
-        if column_index
-          sleep_for(2.5)
-        else
-          sleep_for(1)
-        end
-        act_ary = fetch_array_for_table_column(nc_element, table_index, column_index)
-
-        if exp_ary == act_ary
-          passed_to_log("Click on column '#{strg}' produces expected sorted list.")
-          true
-        else
-          failed_to_log("Click on column '#{strg}' fails to produce expected sorted list.")
-          debug_to_log("Original order ['#{bfr_ary.join("', '")}']")
-          debug_to_log("Expected order ['#{exp_ary.join("', '")}']")
-          debug_to_log("  Actual order ['#{act_ary.join("', '")}']")
-        end
-      end
-    else
-      failed_to_log("Unable to locate column index for '#{strg}' to verify sort.")
-    end
-  rescue
-    failed_to_log("Unable to verify sort on column '#{strg}'. #{$!}")
-  end
-
-  def verify_column_sort_temp_ff(browser, strg, table_index, column_index=nil)
-    mark_testlevel("Verify Column Sort '#{strg}'", 3)
-
-    if not column_index
-      column_index = get_index_for_column_head(browser, table_index, strg)
-    end
-
-    if column_index
-      bfr_ary = fetch_array_for_table_column(browser, table_index, column_index)
-      if strg =~ /date/i
-        exp_ary = bfr_ary.sort { |x, y| Date.parse(x) <=> Date.parse(y) }
-      else
-        exp_ary = bfr_ary.sort { |x, y| x.gsub(',', '') <=> y.gsub(',', '') }
-      end
-
-      if click_text(browser, strg)
-        sleep_for(3)
-        act_ary = fetch_array_for_table_column(browser, table_index, column_index)
-
-        if exp_ary == act_ary
-          passed_to_log("Click on column '#{strg}' produces expected sorted list.")
-          true
-        else
-          failed_to_log("Click on column '#{strg}' fails to produce expected sorted list.")
-          debug_to_log("Original order ['#{bfr_ary.join("', '")}']")
-          debug_to_log("Expected order ['#{exp_ary.join("', '")}']")
-          debug_to_log("  Actual order ['#{act_ary.join("', '")}']")
-        end
-      end
-    else
-      failed_to_log("Unable to locate column index for '#{strg}' to verify sort.")
-    end
-  rescue
-    failed_to_log("Unable to verify sort on column '#{strg}'. #{$!}")
-  end
-
-  def exercise_sorting(browser, columnList, desc = '')
-  #TODO put rescue inside the do loop
-  #parameters: browser and a list of column link text values
-  #example: exercise_sorting(browser,['Division', 'Payee', 'Date'], 'Sortable columns on this page')
-    columnList.each do |column|
-      click(browser, :link, :text, column, desc)
-    end
-  end
-
-  alias validate_sorting exercise_sorting
 
 end

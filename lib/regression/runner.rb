@@ -1,4 +1,11 @@
-require 'regression/legacy'
+require 'regression/browser'
+require 'regression/find'
+require 'regression/user_input'
+require 'regression/waits'
+require 'regression/tables'
+require 'regression/page_data'
+require 'regression/drag_and_drop'
+require 'regression/utilities'
 require 'regression/logging'
 require 'regression/validations'
 
@@ -13,7 +20,14 @@ module Awetestlib
 
   # order matters here
     include Logging
-    include Legacy
+    include Browser
+    include Find
+    include UserInput
+    include Waits
+    include Tables
+    include PageData
+    include DragAndDrop
+    include Utilities
     include Validations
 
     ::DEBUG   = 0

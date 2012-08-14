@@ -267,7 +267,7 @@ module Utilities
 
   def rescue_me(e, me = nil, what = nil, where = nil, who = nil)
     #TODO: these are rescues from exceptions raised in Watir/Firewatir
-    debug_to_log("#{__method__}: Enter")
+    debug_to_log("#{__method__}: Begin rescue")
     ok = false
     begin
       gaak    = who.inspect

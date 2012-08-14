@@ -355,4 +355,20 @@ module DragAndDrop
     [bx + w, by + h]
   end
 
+  def verify_resize(d, err, tol, min, act)
+    ary = [false, "failed, actual #{act} err #{err}"]
+    if err == 0
+      ary = [true, 'succeeded ']
+      #TODO need to find way to calculate this adjustment
+    elsif d <= min + 4
+      ary = [true, "reached minimum (#{min}) "]
+    elsif err.abs <= tol
+      ary = [true, "within tolerance (+-#{tol}px) "]
+    end
+    ary
+  end
+
+  alias validate_move verify_resize
+  alias validate_resize verify_resize
+
 end
