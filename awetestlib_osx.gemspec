@@ -30,7 +30,8 @@ Gem::Specification.new do |s|
   s.add_dependency('multipart-post', '1.1.4')
   s.add_dependency('selenium-webdriver')
   s.add_dependency('nokogiri')
-
+  s.add_dependency('i18n')
+  s.add_dependency('rb-appscript')
 
   s.require_paths = ["lib"]   #,"ext"]
   s.files = `git ls-files`.split("\n")
