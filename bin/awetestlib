@@ -1,7 +1,18 @@
 $: << "./lib"
+require File.join(File.dirname(__FILE__),"awetestlib-helpers")
+
+cmd = ARGV[0]
+
+if cmd.nil?
+  print_usage
+  
+elsif cmd == "regression_setup"
+  require File.join(File.dirname(__FILE__),"awetestlib-regression-setup")
+  awetestlib_regression_setup
+
+else
 require 'optparse'
 require 'awetestlib'
-
 options = { }
 OptionParser.new do |opts|
   opts.banner = "Usage: awetestlib <script_file> [options]"
@@ -65,3 +76,5 @@ options[:script_file] = ARGV[0]
 IS_WIN_2008 = File.exists?("config/win2008.txt")
 
 Awetestlib::Runner.new(options).start
+
+end
