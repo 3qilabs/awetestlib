@@ -7,6 +7,15 @@ end
 
 def print_usage
   puts <<EOF
-  TODO: PUTS HELP INFO
+  Usage Options:
+  
+    awetestlib regression_setup
+      setup awetest regression and registers autoitx3.dll
+	  
+    awetestlib cucumber_setup
+      setup cucumber regression and provides skeleton folder structure
+	  
+    awetestlib <script_file> [parameters]
+      run an awetest regression script	
 EOF
 end

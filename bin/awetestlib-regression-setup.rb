@@ -1,6 +1,6 @@
 def awetestlib_regression_setup
   msg("Question") do
-    puts "I'm about to setup awetest regression support."
+    puts "I'm about to setup awetest regression support and register the AutoIt.dll"
     puts "Please hit return to confirm that's what you want."
 	puts "NOTE: You may need to run this command as an administrator."
   end
@@ -10,7 +10,7 @@ def awetestlib_regression_setup
   system("regsvr32 #{autoit_file}")
 
   msg("Info") do
-    puts "Configuring files and settings..."
+    puts "Configuring files and settings"
   end
 
 end
