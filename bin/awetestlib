@@ -20,6 +20,7 @@ else
 
 require 'optparse'
 require 'awetestlib'
+
 options = { }
 OptionParser.new do |opts|
   opts.banner = "Usage: awetestlib <script_file> [options]"
@@ -77,11 +78,10 @@ options[:environment] ||= {}
 options[:environment]["name"] = options[:environment_name]
 options[:environment]["url"] = options[:environment_url]
 options[:environment]["nodename"] = options[:environment_nodename]
-options[:script_type] = 'AwetestLegacy'
-options[:script_file] = ARGV[0]
+check_script_type(options)
 
 IS_WIN_2008 = File.exists?("config/win2008.txt")
+Awetestlib::Runner.new(options)
 
-Awetestlib::Runner.new(options).start
 
 end

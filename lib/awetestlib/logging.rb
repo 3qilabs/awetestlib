@@ -1,4 +1,4 @@
-#require 'screencap'
+module Awetestlib
 module Logging
 
   def self.included(mod)
@@ -13,40 +13,6 @@ module Logging
 
     t       = Time.now.utc
     @last_t ||= t
-
-    # if log_properties
-    #   log_args = {
-    #     :cycle =>                 @cycle,
-    #    :browser_sequence =>      @browser_sequence,
-    #     :session_num =>           @session_num,
-    #     :sequence =>              @sequence,
-    #     :job_id =>                log_properties['job_id'],
-    ##     :project_version_id =>    log_properties['project_version_id'],
-    #     :test_run_id =>           log_properties['test_run_id'],
-    #     :script_id =>             log_properties['script_id'],
-    #     :caller =>                caller.split(":")[0] || 'unknown',
-    #     :caller_line =>           caller.split(":")[1].to_i,
-    #     :caller_method =>         caller.split(":")[2],
-    #     :severity =>              severity,
-    #     :message =>               message.gsub(/[\x80-\xff]/,"?"),
-    #     :detail_timestamp =>      t.to_f.to_s,
-    #     :duration =>              t.to_f-@last_t.to_f,
-    #     :created_at =>            t,
-    ###     :company_id =>            log_properties['company_id'],
-    #     :project_id =>            log_properties['project_id'],
-    #     :level =>                 tag.andand.is_a?(Fixnum) ? tag : nil,
-    #     :pass =>                  pass_code_for(tag),
-    #     :test_category_id =>      log_properties['test_category_id'],
-    #     :test_case_id =>          log_properties['test_case_id'],
-    #     :application_role_id =>   nil, # not implemented yet
-    #     :screen_path =>           nil
-    #   }
-    #   Resque::Job.create(log_queue.to_sym, log_class, log_args) if log_queue && log_class
-    #
-    #   ::Screencap.capture(Shamisen::BROWSER_MAP[@browser],
-    #                       log_properties['test_run_id'], @sequence, root_path) if @screencap_path
-    #end
-
     @last_t = t
 
     dt       = t.strftime("%Y%m%d %H%M%S")+' '+t.usec.to_s[0, 4]
@@ -441,4 +407,5 @@ tags: error, fail, hits, reference, tag, tallies
     end
   end
 
+end
 end

@@ -26,3 +26,14 @@ def print_usage
 
 EOF
 end
+
+def check_script_type(options)
+  script_options = ['Regression', 'Cucumber']
+  if script_options.include? ARGV[0]
+    options[:script_type] = ARGV[0]
+    options[:script_file] = ARGV[1]
+  else
+    options[:script_type] = 'Regression'
+    options[:script_file] = ARGV[0]
+  end
+end
