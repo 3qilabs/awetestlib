@@ -1,5 +1,6 @@
 $: << "./lib"
 require File.join(File.dirname(__FILE__),"awetestlib-helpers")
+require 'fileutils'
 
 cmd = ARGV[0]
 
@@ -9,8 +10,14 @@ if cmd.nil?
 elsif cmd == "regression_setup"
   require File.join(File.dirname(__FILE__),"awetestlib-regression-setup")
   awetestlib_regression_setup
-
+elsif cmd == "rubymine_setup"
+  require File.join(File.dirname(__FILE__),"awetestlib-rubymine-setup")
+  awetestlib_rubymine_setup
+elsif cmd == "netbeans_setup"
+  require File.join(File.dirname(__FILE__),"awetestlib-netbeans-setup")
+  awetestlib_netbeans_setup
 else
+
 require 'optparse'
 require 'awetestlib'
 options = { }
