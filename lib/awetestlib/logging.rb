@@ -14,8 +14,7 @@ module Logging
     t       = Time.now.utc
     @last_t ||= t
     @last_t = t
-
-    dt       = t.strftime("%Y%m%d %H%M%S")+' '+t.usec.to_s[0, 4]
+	  dt       = t.strftime("%H%M%S")
     mySev    = translate_severity(severity)
     myCaller = get_caller(lnbr) || 'unknown'
 
@@ -200,11 +199,10 @@ category: Logging
 tags: log, error, fail, reference, tag, report
 =end
   def failed_to_log(message, lnbr = __LINE__, dbg = false)
-    message << " \n#{get_debug_list}" # if dbg or @debug_calls or @debug_calls_fail_only
+    message << " \n#{get_debug_list}" if dbg or @debug_calls or @debug_calls_fail_only
     @my_failed_count += 1 if @my_failed_count
     parse_error_references(message, true)
     log_message(WARN, "#{message}" + " (#{lnbr})]", FAIL, lnbr)
-    #debugger if debug_on_fail
   end
 
   alias validate_failed_tolog failed_to_log
@@ -218,7 +216,7 @@ category: Logging
 tags: log, error, fail, reference, tag, fatal, report
 =end
   def fatal_to_log(message, lnbr = __LINE__, dbg = false)
-    message << " \n#{get_debug_list}" #  if dbg or (@debug_calls and not @debug_calls_fail_only)
+    message << " \n#{get_debug_list}"  if dbg or (@debug_calls and not @debug_calls_fail_only)
     @my_failed_count += 1 if @my_failed_count
     parse_error_references(message, true)
     debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
@@ -318,7 +316,7 @@ tags: error, fail, reference, tag
     @start_timestamp = Time.now unless ts
     utc_ts = @start_timestamp.getutc
     loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
-    mark_testlevel(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})", 9)
+    mark_testlevel(">> Starting #{@myName.titleize}", 9)
   end
 
   alias start_to_log start_run
@@ -339,7 +337,7 @@ tags: log, begin, error, reference, validation, pass, fail, tallies, tag
 
     utc_ts = timestamp.getutc
     loc_tm = "#{timestamp.strftime("%H:%M:%S")} #{timestamp.zone}"
-    mark_testlevel(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm})", 9)
+    mark_testlevel(">> End #{@myName.titleize}", 9)
 
   end
 

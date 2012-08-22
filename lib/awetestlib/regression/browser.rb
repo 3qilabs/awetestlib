@@ -29,65 +29,50 @@ _Example_
 
       def open_browser(url = nil)
         debug_to_log("Opening browser: #{@targetBrowser.name}")
-        debug_to_log("#{__method__}: [#{get_caller_line}] #{get_callers}")
         case @targetBrowser.abbrev
           when 'IE'
             @myBrowser = open_ie
-            @myHwnd    = @myBrowser.hwnd
-          #@waiter    = Watir::Waiter.new(WAIT)
+            if @myBrowser.class.to_s == "Watir::IE"
+              @myHwnd = @myBrowser.hwnd
+              @waiter = Watir::Waiter.new(WAIT)
+            end
           when 'FF'
-            #version    = "11"
-            #@myBrowser = open_ff_for_version(version)
             @myBrowser = open_ff_for_version
           when 'S'
-            debug_to_log("Opening browser: #{@targetBrowser.name} legacy.rb:#{__LINE__}")
             aBrowser = Watir::Safari.new
-            debug_to_log("Browser instantiated")
             @myBrowser = aBrowser
-          #require 'shamisen/awetest_legacy/safari_waiter'
-          #@waiter    = Watir::Waiter
           when 'C', 'GC'
             @myBrowser = open_chrome
-          ##require 'shamisen/awetest_legacy/webdriver_waiter'
-          #require 'shamisen/support/webdriver_ext/browser'
-          #@waiter    = Watir::Waiter
-
           else
             raise "Unsupported browser: #{@targetBrowser.name}"
         end
-        get_browser_version(@myBrowser)
         if url
           go_to_url(@myBrowser, url)
         end
         @myBrowser
       end
 
-      def open_ie(process = true)
-        check_for_and_clear_other_browsers
-        Watir::Browser.default = 'ie'
-        #if process && !IS_WIN_2008
-        #  browser = Watir::IE.new_process
-        #else
-        browser                = Watir::IE.new
-        #end
+      def open_ie
+        if $watir_script
+          browser = Watir::IE.new
+        else
+          browser = Watir::Browser.new :ie
+        end
         browser
       end
 
       def open_ff_for_version(version = @targetVersion)
         if version.to_f < 4.0
           browser = open_ff
-          #waiter  = Watir::Waiter.new(WAIT)
         else
           browser = Watir::Browser.new(:firefox)
-          #require 'shamisen/awetest_legacy/webdriver_waiter'
-          #waiter = Watir::Waiter
         end
         browser
       end
 
       def open_ff
         Watir::Browser.default = 'firefox'
-        browser                = Watir::Browser.new
+        browser = Watir::Browser.new
       end
 
       def open_chrome
@@ -100,18 +85,6 @@ _Example_
         end
         message_tolog("URL: #{@myURL}")
         browser.goto(@myURL)
-        if validate(browser, @myName, __LINE__)
-    #      TODO .url method returns blank in Firewatir
-          if redirect
-            passed_to_log("Redirected to url '#{browser.url}'.")
-            true
-          elsif browser.url =~ /#{@myURL}/i # or @browserAbbrev == 'FF'
-            passed_to_log("Navigated to url '#{@myURL}'.")
-            true
-          else
-            failed_to_log("Navigated to url '#{browser.url}' but expected '#{@myURL}'.")
-          end
-        end
       rescue
         fatal_to_log("Unable to navigate to '#{@myURL}': '#{$!}'")
       end
@@ -893,11 +866,7 @@ category: Logon
           when 'IE'
             myClass =~ /Watir::/i # TODO: should this be /Watir::IE/i ?
           when 'FF'
-            if @version.to_f < 4.0
-              myClass =~ /FireWatir::/i
-            else
-              myClass =~ /Watir::Browser/i
-            end
+            myClass =~ /Watir::Browser/i
           when 'S'
             myClass =~ /Watir::Safari/i
           when 'C'

@@ -57,10 +57,6 @@ _Example_
             else
               browser.element(how, what).click
           end
-        rescue => e
-          if not rescue_me(e, __method__, "browser(#{msg1}).click", "#{browser.class}")
-            raise e
-          end
         end
         if validate(browser, @myName, __LINE__)
           passed_to_log(msg)

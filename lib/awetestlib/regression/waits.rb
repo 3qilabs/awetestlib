@@ -5,7 +5,6 @@ module Awetestlib
       def sleep_for(seconds, dbg = true, desc = '')
         msg = "Sleeping for #{seconds} seconds."
         msg << " #{desc}" if desc.length > 0
-        msg << "\n#{get_debug_list}" if dbg
         info_to_log(msg)
         sleep(seconds)
       end
