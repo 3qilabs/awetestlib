@@ -1,4 +1,4 @@
-#require 'screencap'
+module Awetestlib
 module Logging
 
   def self.included(mod)
@@ -13,43 +13,8 @@ module Logging
 
     t       = Time.now.utc
     @last_t ||= t
-
-    # if log_properties
-    #   log_args = {
-    #     :cycle =>                 @cycle,
-    #    :browser_sequence =>      @browser_sequence,
-    #     :session_num =>           @session_num,
-    #     :sequence =>              @sequence,
-    #     :job_id =>                log_properties['job_id'],
-    ##     :project_version_id =>    log_properties['project_version_id'],
-    #     :test_run_id =>           log_properties['test_run_id'],
-    #     :script_id =>             log_properties['script_id'],
-    #     :caller =>                caller.split(":")[0] || 'unknown',
-    #     :caller_line =>           caller.split(":")[1].to_i,
-    #     :caller_method =>         caller.split(":")[2],
-    #     :severity =>              severity,
-    #     :message =>               message.gsub(/[\x80-\xff]/,"?"),
-    #     :detail_timestamp =>      t.to_f.to_s,
-    #     :duration =>              t.to_f-@last_t.to_f,
-    #     :created_at =>            t,
-    ###     :company_id =>            log_properties['company_id'],
-    #     :project_id =>            log_properties['project_id'],
-    #     :level =>                 tag.andand.is_a?(Fixnum) ? tag : nil,
-    #     :pass =>                  pass_code_for(tag),
-    #     :test_category_id =>      log_properties['test_category_id'],
-    #     :test_case_id =>          log_properties['test_case_id'],
-    #     :application_role_id =>   nil, # not implemented yet
-    #     :screen_path =>           nil
-    #   }
-    #   Resque::Job.create(log_queue.to_sym, log_class, log_args) if log_queue && log_class
-    #
-    #   ::Screencap.capture(Shamisen::BROWSER_MAP[@browser],
-    #                       log_properties['test_run_id'], @sequence, root_path) if @screencap_path
-    #end
-
     @last_t = t
-
-    dt       = t.strftime("%Y%m%d %H%M%S")+' '+t.usec.to_s[0, 4]
+	  dt       = t.strftime("%H%M%S")
     mySev    = translate_severity(severity)
     myCaller = get_caller(lnbr) || 'unknown'
 
@@ -60,7 +25,6 @@ module Logging
         tag = '-LVL' + tag.to_s
       end
     end
-
     myMsg << "[%-5s]:" % tag
     #myMsg << '[' + t.to_f.to_s + ']:'
     #myMsg << '[' + myCaller + ']:'
@@ -171,6 +135,7 @@ tags: report, log, test level
     strg << message
     strg << " [#{desc}]" if desc.length > 0
     strg << " \n#{get_debug_list}" if dbg or @debug_calls
+    @report_class.add_to_report(message, "&nbsp")
     log_message(INFO, strg, lvl, 1)
   rescue
     failed_to_log("#{__method__}: #{$!}")
@@ -220,6 +185,7 @@ tags: log, error, pass, reference, tag, report
     message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
     @my_passed_count += 1 if @my_passed_count
     parse_error_references(message)
+    @report_class.add_to_report(message, "PASSED")
     log_message(INFO, "#{message}", PASS, lnbr)
   end
 
@@ -234,11 +200,11 @@ category: Logging
 tags: log, error, fail, reference, tag, report
 =end
   def failed_to_log(message, lnbr = __LINE__, dbg = false)
-    message << " \n#{get_debug_list}" # if dbg or @debug_calls or @debug_calls_fail_only
+    message << " \n#{get_debug_list}" if dbg or @debug_calls or @debug_calls_fail_only
     @my_failed_count += 1 if @my_failed_count
     parse_error_references(message, true)
+    @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]","FAILED")
     log_message(WARN, "#{message}" + " (#{lnbr})]", FAIL, lnbr)
-    #debugger if debug_on_fail
   end
 
   alias validate_failed_tolog failed_to_log
@@ -252,7 +218,7 @@ category: Logging
 tags: log, error, fail, reference, tag, fatal, report
 =end
   def fatal_to_log(message, lnbr = __LINE__, dbg = false)
-    message << " \n#{get_debug_list}" #  if dbg or (@debug_calls and not @debug_calls_fail_only)
+    message << " \n#{get_debug_list}"  if dbg or (@debug_calls and not @debug_calls_fail_only)
     @my_failed_count += 1 if @my_failed_count
     parse_error_references(message, true)
     debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
@@ -352,7 +318,7 @@ tags: error, fail, reference, tag
     @start_timestamp = Time.now unless ts
     utc_ts = @start_timestamp.getutc
     loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
-    mark_testlevel(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})", 9)
+    debug_to_log(">> Starting #{@myName.titleize}")
   end
 
   alias start_to_log start_run
@@ -364,16 +330,16 @@ tags: log, begin, error, reference, validation, pass, fail, tallies, tag
   def finish_run(ts = nil)
     timestamp = Time.now unless ts
 
-    mark_testlevel(">> #{@myName.titleize} duration: #{sec2hms(timestamp - @start_timestamp)}", 0)
+    mark_testlevel(">> Duration: #{sec2hms(timestamp - @start_timestamp)}", 0)
 
-    mark_testlevel(">> #{@myName.titleize} validations: #{@my_passed_count + @my_failed_count} "+
-                   "fail: #{@my_failed_count}]", 0) if @my_passed_count and @my_failed_count
+    mark_testlevel(">> Validations: #{@my_passed_count + @my_failed_count} | "+
+                   "Fails: #{@my_failed_count}", 0) if @my_passed_count and @my_failed_count
 
     tally_error_references
 
     utc_ts = timestamp.getutc
     loc_tm = "#{timestamp.strftime("%H:%M:%S")} #{timestamp.zone}"
-    mark_testlevel(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm})", 9)
+    debug_to_log(">> End #{@myName.titleize}")
 
   end
 
@@ -441,4 +407,5 @@ tags: error, fail, hits, reference, tag, tallies
     end
   end
 
+end
 end

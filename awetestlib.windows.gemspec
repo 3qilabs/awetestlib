@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency('i18n')
   s.add_dependency('andand')
   s.add_dependency('watirloo')
-  s.add_dependency('win32-process')
+  s.add_dependency('win32-process', '0.6.6')
   s.add_dependency('win32screenshot')
   s.add_dependency('spreadsheet', '0.6.8')
   s.add_dependency('google-spreadsheet-ruby', '0.1.6')
