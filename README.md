@@ -27,23 +27,21 @@ Additionally, you will need to install DevKit to compile a few dependent gems. Y
 ### Usage
 
 1. Run the following command to see the different usages
-
   - `awetestlib`
 
 2. To setup the awetestlib gem with Netbeans or Rubymine, run either of the commands
-
   - `awetestlib rubymine_setup`
 
   or 
-
   - `awetestlib netbeans_setup`
 
   You can now start your scripts within the IDE. Use the Run Configuration button.
 
 3. If you prefer to run your tests from command line, you can use the following command
-
   - `awetestlib <script_file> [parameters]`
 
+  For example: To run a script named demo.rb in Firefox, your command will look like.
+  - `awetestlib demo.rb -b FF`
 
 The full list of parameters for the command line currently are:
 
@@ -54,6 +52,4 @@ The full list of parameters for the command line currently are:
         -x, --excel EXCEL_FILE           Specify an excel file containing variables to be loaded
         -v, --version VERSION            Specify a browser version
 
-For example: To run a script named demo.rb in Firefox, your command will look like:
 
-  - `awetestlib demo.rb -b FF`
