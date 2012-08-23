@@ -20,6 +20,7 @@ Additionally, you will need to install DevKit to compile a few dependent gems. Y
 1. In a terminal or command prompt, install the awetestlib gem
   - `gem install awetestlib --no-ri --no-rdoc`
 
+
 2. To setup the regression module, run the following command and verify the step
   - `awetestlib regression_setup`
 
