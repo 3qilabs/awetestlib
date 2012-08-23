@@ -250,6 +250,10 @@ module Awetestlib
           @ai = ''
         end
 
+        if @xls_path
+          require 'roo'
+        end
+
       end
 
       def module_for(script_file)

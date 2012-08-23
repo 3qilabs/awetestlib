@@ -34,6 +34,6 @@ module Awetestlib
     require 'appscript'
   end
 
-  require 'roo'
+  #require 'roo' #moved to awetestlib runner
 
 end

@@ -135,6 +135,7 @@ tags: report, log, test level
     strg << message
     strg << " [#{desc}]" if desc.length > 0
     strg << " \n#{get_debug_list}" if dbg or @debug_calls
+    @report_class.add_to_report(message, "")
     log_message(INFO, strg, lvl, 1)
   rescue
     failed_to_log("#{__method__}: #{$!}")
@@ -317,7 +318,7 @@ tags: error, fail, reference, tag
     @start_timestamp = Time.now unless ts
     utc_ts = @start_timestamp.getutc
     loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
-    mark_testlevel(">> Starting #{@myName.titleize}", 9)
+    debug_to_log(">> Starting #{@myName.titleize}")
   end
 
   alias start_to_log start_run

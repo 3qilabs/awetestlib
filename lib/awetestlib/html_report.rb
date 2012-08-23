@@ -67,17 +67,20 @@ module Awetestlib
         <style type=text/css>
         .title { font-family: verdana; font-size: 30px;  font-weight: bold; align: left; color: #000000;}
         .bold_text { font-family: verdana; font-size: 12px;  font-weight: bold;}
+        .bold_large_text { font-family: verdana; font-size: 13px;  font-weight: bold;}
         .normal_text { font-family: verdana; font-size: 12px;  font-weight: normal;}
         .small_text { font-family: verdana; font-size: 10px;  font-weight: normal; }
         .border { border: 1px solid #000000;}
-        .border_left { border-top: 1px solid #000000; border-left: 1px solid #000000; border-right: 1px solid #000000;}
-        .border_right { border-top: 1px solid #000000; border-right: 1px solid #000000;}
+        .mark_testlevel_left { border-top: 1px solid #858585; border-left: 1px solid #858585;background-color:#E2F4FE;}
+        .mark_testlevel_right { border-top: 1px solid #858585;border-right: 1px solid #858585;background-color:#E2F4FE;}F
+        .border_left { border-top: 1px solid #858585; border-left: 1px solid #858585; border-right: 1px solid #858585;}
+        .border_right { border-top: 1px solid #858585; border-right: 1px solid #858585;}
         .result_ok { font-family: verdana; font-size: 12px;  font-weight: bold; text-align: center; color: green;}
         .result_nok { font-family: verdana; font-size: 12px;  font-weight: bold; text-align: center; color: red;}
         .overall_ok { font-family: verdana; font-size: 12px;  font-weight: bold; text-align: left; color: green;}
         .overall_nok { font-family: verdana; font-size: 12px;  font-weight: bold; text-align: left; color: red;}
-        .bborder_left { border-top: 1px solid #000000; border-left: 1px solid #000000; border-bottom: 1px solid #000000; background-color:#000000;font-family: verdana; font-size: 12px;  font-weight: bold; text-align: center; color: white;}
-        .bborder_right { border-right: 1px solid #000000; background-color:#000000;font-family: verdana; font-size: 12px;  font-weight: bold; text-align: center; color: white;}
+        .bborder_left { border-top: 1px solid #858585; border-left: 1px solid #858585; border-bottom: 1px solid #858585; background-color:#858585;font-family: verdana; font-size: 12px;  font-weight: bold; text-align: center; color: white;}
+        .bborder_right { border-right: 1px solid #858585; background-color:#858585;font-family: verdana; font-size: 12px;  font-weight: bold; text-align: center; color: white;}
         </style>
         </head>
         <body>
@@ -133,14 +136,16 @@ module Awetestlib
     end
 
     def add_to_report(step, result)
-      @reportContent2 = @reportContent2 + '<tr><td class=border_left width=80%><p class=normal_text>' + step + '</p></td>'
-
       # Format the body of the HTML report
       if (result == 'PASSED')
+        @reportContent2 = @reportContent2 + '<tr><td class=border_left width=80%><p class=normal_text>' + step + '</p></td>'
         @reportContent2 = @reportContent2 + '<td class=border_right width=20%><p class=result_ok>' + result + '</p></td>'
-      else
-        @overallResult = 'FAILED'
+      elsif (result == 'FAILED')
+        @reportContent2 = @reportContent2 + '<tr><td class=border_left width=80%><p class=normal_text>' + step + '</p></td>'
         @reportContent2 = @reportContent2 + '<td class=border_right width=20%><p class=result_nok>' + result + '</p></td>'
+      else
+        @reportContent2 = @reportContent2 + '<tr><td class=mark_testlevel_left width=80%><p class=bold_large_text>' + step + '</p></td>'
+        @reportContent2 = @reportContent2 + '<td class=mark_testlevel_right width=20%><p class=result_nok>' + result + '</p></td>'
       end
 
     end
