@@ -156,9 +156,11 @@ module Awetestlib
       #end
 
       def initialize(options)
+
         options.each_pair do |k, v|
           self.send("#{k}=", v)
         end
+        load script_file
         setup_global_test_vars(options)
 
         # load and extend with library module if it exists
@@ -209,15 +211,15 @@ module Awetestlib
         case @targetBrowser.abbrev
 
           when 'IE'
-            if version.to_f >= 9.0
-              require 'watir-webdriver'
-            else
+            if $watir_script
               require 'watir/ie'
               require 'watir'
               require 'watir/process'
               require 'watirloo'
               require 'patches/watir'
               Watir::IE.visible = true
+            else
+              require 'watir-webdriver'
             end
           when 'FF'
             if @targetBrowser.version.to_f < 4.0
