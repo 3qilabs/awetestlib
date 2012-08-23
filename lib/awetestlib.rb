@@ -1,4 +1,4 @@
-require 'yaml'
+#require 'yaml'    #Couldn't find use anywhere
 require 'active_support/core_ext/hash'
 
 module Awetestlib
@@ -25,15 +25,15 @@ module Awetestlib
   #require 'active_support/inflector'
   #require 'active_support/core_ext/object'
   #require 'active_support/core_ext/hash'
-
+  require 'awetestlib/runner'
   require 'andand'
-  require 'regression/runner'
+  require 'awetestlib/regression/runner'
 
 
   if USING_OSX
     require 'appscript'
   end
 
-  require 'roo'
+  #require 'roo' #moved to awetestlib runner
 
 end
