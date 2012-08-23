@@ -330,16 +330,16 @@ tags: log, begin, error, reference, validation, pass, fail, tallies, tag
   def finish_run(ts = nil)
     timestamp = Time.now unless ts
 
-    mark_testlevel(">> #{@myName.titleize} duration: #{sec2hms(timestamp - @start_timestamp)}", 0)
+    mark_testlevel(">> Duration: #{sec2hms(timestamp - @start_timestamp)}", 0)
 
-    mark_testlevel(">> #{@myName.titleize} validations: #{@my_passed_count + @my_failed_count} "+
-                   "fail: #{@my_failed_count}]", 0) if @my_passed_count and @my_failed_count
+    mark_testlevel(">> Validations: #{@my_passed_count + @my_failed_count} | "+
+                   "Fails: #{@my_failed_count}", 0) if @my_passed_count and @my_failed_count
 
     tally_error_references
 
     utc_ts = timestamp.getutc
     loc_tm = "#{timestamp.strftime("%H:%M:%S")} #{timestamp.zone}"
-    mark_testlevel(">> End #{@myName.titleize}", 9)
+    debug_to_log(">> End #{@myName.titleize}")
 
   end
 
