@@ -32,6 +32,7 @@ Gem::Specification.new do |s|
   s.add_dependency('nokogiri')
   s.add_dependency('i18n')
   s.add_dependency('rb-appscript')
+  s.add_dependency('json', '1.4.6') #for safari support
 
   s.require_paths = ["lib"]   #,"ext"]
   s.files = `git ls-files`.split("\n")
