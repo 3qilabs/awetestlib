@@ -8,7 +8,7 @@ require 'awetestlib/regression/drag_and_drop'
 require 'awetestlib/regression/utilities'
 require 'awetestlib/logging'
 require 'awetestlib/regression/validations'
-
+require 'awetestlib/html_report'
 #require 'rbconfig'
 require 'ostruct'
 require 'active_support'
@@ -255,6 +255,7 @@ module Awetestlib
       end
 
       def before_run
+        initiate_html_report
         start_run
       end
 
@@ -268,8 +269,30 @@ module Awetestlib
       end
 
       def after_run
+        @report_class.finish_report(@html_report_file)
+        open_report_file
         finish_run
         @myLog.close if @myLog
+      end
+
+      def initiate_html_report
+        @html_report_name = File.join(File.dirname(__FILE__), '..', '..', '..', 'tmp', @myName)
+        @html_report_dir = File.dirname(@html_report_name)
+        FileUtils.mkdir @html_report_dir unless File.directory? @html_report_dir
+        @report_class = Awetestlib::HtmlReport.new(@myName)
+        @html_report_file = @report_class.create_report(@html_report_name)
+      end
+
+      def open_report_file
+        full_report_file = File.expand_path(@html_report_file)
+        if USING_WINDOWS
+          system("explorer file:///#{full_report_file}")
+        elsif USING_OSX
+          system("open #{full_report_file}")
+        else
+          puts "Can find report in #{full_report_file}"
+        end
+
       end
 
     end
