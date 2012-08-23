@@ -25,7 +25,6 @@ module Logging
         tag = '-LVL' + tag.to_s
       end
     end
-
     myMsg << "[%-5s]:" % tag
     #myMsg << '[' + t.to_f.to_s + ']:'
     #myMsg << '[' + myCaller + ']:'
@@ -185,6 +184,7 @@ tags: log, error, pass, reference, tag, report
     message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
     @my_passed_count += 1 if @my_passed_count
     parse_error_references(message)
+    @report_class.add_to_report(message, "PASSED")
     log_message(INFO, "#{message}", PASS, lnbr)
   end
 
@@ -202,6 +202,7 @@ tags: log, error, fail, reference, tag, report
     message << " \n#{get_debug_list}" if dbg or @debug_calls or @debug_calls_fail_only
     @my_failed_count += 1 if @my_failed_count
     parse_error_references(message, true)
+    @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]","FAILED")
     log_message(WARN, "#{message}" + " (#{lnbr})]", FAIL, lnbr)
   end
 
