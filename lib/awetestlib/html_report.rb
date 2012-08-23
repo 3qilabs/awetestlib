@@ -72,7 +72,7 @@ module Awetestlib
         .small_text { font-family: verdana; font-size: 10px;  font-weight: normal; }
         .border { border: 1px solid #000000;}
         .mark_testlevel_left { border-top: 1px solid #858585; border-left: 1px solid #858585;background-color:#E2F4FE;}
-        .mark_testlevel_right { border-top: 1px solid #858585;border-right: 1px solid #858585;background-color:#E2F4FE;}F
+        .mark_testlevel_right { border-top: 1px solid #858585; border-right: 1px solid #858585;background-color:#E2F4FE;}
         .border_left { border-top: 1px solid #858585; border-left: 1px solid #858585; border-right: 1px solid #858585;}
         .border_right { border-top: 1px solid #858585; border-right: 1px solid #858585;}
         .result_ok { font-family: verdana; font-size: 12px;  font-weight: bold; text-align: center; color: green;}

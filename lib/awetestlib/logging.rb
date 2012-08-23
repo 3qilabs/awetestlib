@@ -135,7 +135,7 @@ tags: report, log, test level
     strg << message
     strg << " [#{desc}]" if desc.length > 0
     strg << " \n#{get_debug_list}" if dbg or @debug_calls
-    @report_class.add_to_report(message, "")
+    @report_class.add_to_report(message, "&nbsp")
     log_message(INFO, strg, lvl, 1)
   rescue
     failed_to_log("#{__method__}: #{$!}")
