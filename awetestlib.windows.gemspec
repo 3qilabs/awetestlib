@@ -31,9 +31,8 @@ Gem::Specification.new do |s|
   s.add_dependency('selenium-webdriver')
   s.add_dependency('pry')
   s.add_dependency('rdoc', '~> 3.11')
-  s.add_dependency('yard')
 
-  s.has_rdoc = 'yard'
+
   s.require_paths = ["lib"]
   s.files = `git ls-files`.split("\n")
   s.executables = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
