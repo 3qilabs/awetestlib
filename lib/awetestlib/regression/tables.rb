@@ -2,19 +2,44 @@ module Awetestlib
   module Regression
     module Tables
 
-      def get_index_for_column_head(panel, table_index, strg)
+      def get_index_for_column_head(panel, table_index, strg, desc = '')
+        table = panel.tables[table_index]
+        get_column_index(table, strg, desc, true)
+      end
+
+      def get_column_index(table, strg, desc = '', header = false)
+        msg = "Get index of "
+        msg << " header" if header
+        msg << " column containing #{strg}. "
+        msg << " #{desc}" if desc.length > 0
         rgx = Regexp.new(strg)
-        panel.tables[table_index].each do |row|
+        row_idx = 0
+        index   = -1
+        found   = false
+        table.each do |row|
+          row_idx += 1
           if row.text =~ rgx
-            index = 1
+            col_idx = 1
             row.each do |cell|
               if cell.text =~ rgx
-                return index
+                index = col_idx
+                found = true
+                break
               end
-              index += 1
+              col_idx += 1
             end
           end
+          break if found or header
         end
+        if found
+          passed_to_log("#{msg} at index #{index}.")
+          index
+        else
+          failed_to_log("#{msg}")
+          nil
+        end
+      rescue
+        failed_to_log("Unable to #{msg} '#{$!}'")
       end
 
       def get_index_of_last_row(table, pad = 2, every = 1)
