@@ -43,13 +43,6 @@ module Awetestlib
         @y_tolerance             = 4
       end
 
-      def build_message(strg1, desc = '', strg2 = '', strg3 = '')
-        msg = "#{strg1}"
-        msg << " #{desc}" if desc.length > 0
-        msg << " #{strg2}" if strg2.length > 0
-        msg << " #{strg3}" if strg3.length > 0
-      end
-
       def get_trace(lnbr)
         callertrace = "\nCaller trace: (#{lnbr})\n"
         Kernel.caller.each_index do |x|
