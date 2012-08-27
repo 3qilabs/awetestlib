@@ -44,11 +44,7 @@ module Awetestlib
       ::PASS = '-PASS'
       ::FAIL = '-FAIL'
 
-      # @return [Watir::Browser] the browser referenced by the attribute browser
-      attr_accessor :browser
-      # @return [String] abbreviation for the targeted browser (e.g., IE, FF, GC)
-      attr_accessor :browser_abbrev
-      attr_accessor :version, :env,
+      attr_accessor :browser, :browser_abbrev, :version, :env,
                     :library, :script_type, :script_file,
                     :log_properties, :log_queue, :log_class,
                     :notify_queue, :notify_class, :notify_id,
@@ -249,7 +245,6 @@ module Awetestlib
         if USING_WINDOWS
           require 'watir/win32ole'
           @ai = ::WIN32OLE.new('AutoItX3.Control')
-          require 'pry'
         else
           # TODO: Need alternative for Mac?
           @ai = ''
