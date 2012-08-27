@@ -160,6 +160,7 @@ module Awetestlib
         options.each_pair do |k, v|
           self.send("#{k}=", v)
         end
+        script_file = options[:script_file]
         load script_file
         setup_global_test_vars(options)
 
