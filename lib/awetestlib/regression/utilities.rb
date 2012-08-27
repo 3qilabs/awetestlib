@@ -48,6 +48,7 @@ module Awetestlib
         msg << " #{desc}" if desc.length > 0
         msg << " #{strg2}" if strg2.length > 0
         msg << " #{strg3}" if strg3.length > 0
+        msg
       end
 
       def get_trace(lnbr)
