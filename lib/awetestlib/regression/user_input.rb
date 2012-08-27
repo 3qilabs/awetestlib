@@ -4,7 +4,7 @@ module Awetestlib
 
       # @!group Core
 
-      # Click a specific DOM element identified by one of its attributes and that attribute's value.
+      # Click a specific DOM element by one of its attributes and that attribute's value.
       #
       # @example
       #  # html for a link element:
@@ -62,7 +62,7 @@ module Awetestlib
 
       # @!group Click
 
-      # Click a button element identified by the value of its _id_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element by the value of its _id_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param [Watir::Browser, Watir::Container] browser A reference to the browser window or container element to be tested.
       # @param [String|Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
@@ -71,7 +71,7 @@ module Awetestlib
         click(browser, :button, :id, what, desc)
       end
 
-      # Click a button element identified by the value of its index within the container referred to by <b>+browser+</b>.
+      # Click a button element by the value of its index within the container referred to by <b>+browser+</b>.
       # @param [Watir::Browser, Watir::Container] browser A reference to the browser window or container element to be tested.
       # @param [Fixnum] what An integer that indicates the index of the element within the container.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
@@ -79,7 +79,7 @@ module Awetestlib
         click(browser, :link, :index, what, desc)
       end
 
-      # Click a link element identified by the value of its _href_ attribute. Take care to escape characters in the url that are reserved by Regexp.
+      # Click a link element by the value of its _href_ attribute. Take care to escape characters in the url that are reserved by Regexp.
       # @param (see #click_button_by_id)
       def click_link_by_href(browser, what, desc = '')
         click(browser, :link, :href, what, desc)
@@ -87,50 +87,50 @@ module Awetestlib
 
       alias click_href click_link_by_href
 
-      # Click a link element identified by the value of its _href_ attribute and do not wait for the browser to reach ready state.
+      # Click a link element by the value of its _href_ attribute and do not wait for the browser to reach ready state.
       # Take care to escape characters in the url that are reserved by Regexp.
       # @param (see #click_button_by_id)
       def click_link_no_wait_by_href(browser, what, desc = '')
         click_no_wait(browser, :link, :href, what, desc)
       end
 
-      # Click a button element identified by the value of its index within the container referred to by <b>+browser+</b>.
+      # Click a button element by the value of its index within the container referred to by <b>+browser+</b>.
       # @param (see #click_link_by_index)
       def click_button_by_index(browser, what, desc = '')
         click(browser, :button, :index, what, desc)
       end
 
-      # Click a button element identified by the value of its _name_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element by the value of its _name_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param (see #click_button_by_id)
       def click_button_by_name(browser, what, desc = '')
         click(browser, :button, :name, what, desc)
       end
 
-      # Click a button element identified by the value of its _text_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element by the value of its _text_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param (see #click_button_by_id)
       def click_button_by_text(browser, what, desc = '')
         click(browser, :button, :text, what, desc)
       end
 
-      # Click a button element identified by the value of its _class_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element by the value of its _class_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param (see #click_button_by_id)
       def click_button_by_class(browser, what, desc = '')
         click(browser, :button, :class, what, desc)
       end
 
-      # Click a button element identified by the value of its _value_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element by the value of its _value_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param (see #click_button_by_id)
       def click_button_by_value(browser, what, desc = '')
         click(browser, :button, :value, what, desc)
       end
 
-      # Click a button element identified by the value of its _title_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element by the value of its _title_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param (see #click_button_by_id)
       def click_button_by_title(browser, what, desc = '')
         click(browser, :button, :title, what, desc)
       end
 
-      # Click a link element identified by the value of its _id_ attribute.
+      # Click a link element by the value of its _id_ attribute.
       # @param (see #click_button_by_id)
       def click_link_by_id(browser, what, desc = '')
         click(browser, :link, :id, what, desc)
@@ -138,7 +138,7 @@ module Awetestlib
 
       alias click_id click_link_by_id
 
-      # Click a link element identified by the value of its _name_ attribute.
+      # Click a link element by the value of its _name_ attribute.
       # @param (see #click_button_by_id)
       def click_link_by_name(browser, what, desc = '')
         click(browser, :link, :name, what, desc)
@@ -146,38 +146,38 @@ module Awetestlib
 
       alias click_name click_link_by_name
 
-      # Click a file_field element identified by the value of its _id_ attribute.
+      # Click a file_field element by the value of its _id_ attribute.
       # @param (see #click_button_by_id)
       def click_file_field_by_id(browser, what, desc = '')
         click(browser, :file_field, :id, what, desc)
       end
 
-      # Click an image element identified by the value of its _id_ attribute.
+      # Click an image element by the value of its _id_ attribute.
       # @param (see #click_button_by_id)
       def click_img_by_alt(browser, what, desc = '')
         click(browser, :image, :alt, what, desc)
       end
 
-      # Click an image element identified by the value of its _title_ attribute.
+      # Click an image element by the value of its _title_ attribute.
       # @param (see #click_button_by_id)
       def click_img_by_title(browser, what, desc = '')
         click(browser, :image, :title, what, desc)
       end
 
-      # Click an image element identified by the value of its _src_ attribute.
+      # Click an image element by the value of its _src_ attribute.
       # Take care to escape characters in the source url that are reserved by Regexp.
       # @param (see #click_button_by_id)
       def click_img_by_src(browser, what, desc = '')
         click(browser, :image, :src, what, desc)
       end
 
-      # Click a link element identified by the value of its _value_ attribute.
+      # Click a link element by the value of its _value_ attribute.
       # @param (see #click_button_by_id)
       def click_link_by_value(browser, what, desc = '')
         click(browser, :link, :value, what, desc)
       end
 
-      # Click a link element identified by the value in its text (innerHTML).
+      # Click a link element by the value in its text (innerHTML).
       # @param (see #click_button_by_id)
       def click_link_by_text(browser, what, desc = '')
         click(browser, :link, :text, what, desc)
@@ -187,7 +187,7 @@ module Awetestlib
       alias click_text click_link_by_text
       alias click_js_button click_link_by_text
 
-      # Click a link element identified by the value of its _class_ attribute.
+      # Click a link element by the value of its _class_ attribute.
       # @param (see #click_button_by_id)
       def click_link_by_class(browser, what, desc = '')
         click(browser, :link, :class, what, desc)
@@ -195,7 +195,7 @@ module Awetestlib
 
       alias click_class click_link_by_class
 
-      # Click a span element identified by the value in its text (innerHTML).
+      # Click a span element by the value in its text (innerHTML).
       # @param (see #click_button_by_id)
       def click_span_by_text(browser, what, desc = '')
         click(browser, :span, :text, what)
@@ -203,7 +203,7 @@ module Awetestlib
 
       alias click_span_with_text click_span_by_text
 
-      # Click a link element identified by the value of its _title_ attribute.
+      # Click a link element by the value of its _title_ attribute.
       # @param (see #click_button_by_id)
       def click_link_by_title(browser, what, desc = '')
         click(browser, :link, :title, what, desc)
@@ -279,7 +279,7 @@ module Awetestlib
 
       # @!group Click No Wait
 
-      # Click a button element identified by the value of its _id_ attribute
+      # Click a button element by the value of its _id_ attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       def click_button_no_wait_by_id(browser, what, desc = '')
@@ -288,14 +288,14 @@ module Awetestlib
 
       alias click_button_by_id_no_wait click_button_no_wait_by_id
 
-      # Click a button element identified by the value of its _name_ attribute
+      # Click a button element by the value of its _name_ attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       def click_button_no_wait_by_name(browser, what, desc = '')
         click_no_wait(browser, :button, :name, what, desc)
       end
 
-      # Click a button element identified by the value of its _class_ attribute
+      # Click a button element by the value of its _class_ attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       def click_button_no_wait_by_class(browser, what, desc = '')
@@ -304,7 +304,7 @@ module Awetestlib
 
       alias click_button_by_class_no_wait click_button_no_wait_by_class
 
-      # Click a link element identified by the value of its _id_ attribute
+      # Click a link element by the value of its _id_ attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       def click_link_no_wait_by_id(browser, what, desc = '')
@@ -316,7 +316,7 @@ module Awetestlib
       alias click_id_no_wait click_link_no_wait_by_id
       alias click_no_wait_link_by_id click_link_no_wait_by_id
 
-      # Click an image element identified by the value of its _alt_ attribute
+      # Click an image element by the value of its _alt_ attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       def click_img_no_wait_by_alt(browser, what, desc = '')
@@ -325,21 +325,21 @@ module Awetestlib
 
       alias click_img_by_alt_no_wait click_img_no_wait_by_alt
 
-      # Click a button element identified by the value in its text (innerHTML)
+      # Click a button element by the value in its text (innerHTML)
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       def click_button_no_wait_by_text(browser, what, desc = '')
         click_no_wait(browser, :button, :text, what, desc)
       end
 
-      # Click a button element identified by the value of its _value_ attribute
+      # Click a button element by the value of its _value_ attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       def click_button_no_wait_by_value(browser, what, desc = '')
         click_no_wait(browser, :button, :value, what, desc)
       end
 
-      # Click a button element identified by the value of its _name_ attribute
+      # Click a button element by the value of its _name_ attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       def click_link_by_name_no_wait(browser, what, desc = '')
@@ -349,7 +349,7 @@ module Awetestlib
       alias click_no_wait_name click_link_by_name_no_wait
       alias click_name_no_wait click_link_by_name_no_wait
 
-      # Click a link element identified by the value in its text (innerHTML)
+      # Click a link element by the value in its text (innerHTML)
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       def click_link_by_text_no_wait(browser, what, desc = '')
@@ -359,7 +359,7 @@ module Awetestlib
       alias click_no_wait_text click_link_by_text_no_wait
       alias click_text_no_wait click_link_by_text_no_wait
 
-      # Click a link element identified by the value of its _title_ attribute
+      # Click a link element by the value of its _title_ attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       def click_title_no_wait(browser, what, desc = '')
@@ -370,7 +370,7 @@ module Awetestlib
 
       # @!group Xpath
 
-      # Click a button element identified by the value of its _id_ attribute using the xpath functionality in Watir.
+      # Click a button element by the value of its _id_ attribute using the xpath functionality in Watir.
       # A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @note Normally used only when the element is not located by other methods.
       # @param (see #click_button_by_id)
@@ -388,7 +388,7 @@ module Awetestlib
 
       alias click_button_by_xpath click_button_by_xpath_and_id
 
-      # Click a link element identified by the value of its _id_ attribute using the xpath functionality in Watir.
+      # Click a link element by the value of its _id_ attribute using the xpath functionality in Watir.
       # @note Normally used only when the element is not located by other methods.
       # @param (see #click_button_by_id)
       def click_link_by_xpath_and_id(browser, what, desc = '')
@@ -405,7 +405,7 @@ module Awetestlib
 
       alias click_link_by_xpath click_link_by_xpath_and_id
 
-      # Click a link element identified by the value of its _id_ attribute using the xpath functionality in Watir.
+      # Click a link element by the value of its _id_ attribute using the xpath functionality in Watir.
       # @note Normally used only when the element is not located by other methods.
       # @param (see #click_button_by_id)
       def click_img_by_xpath_and_name(browser, what, desc = '')
@@ -428,7 +428,7 @@ module Awetestlib
 
       # @!group Core
 
-      # Click an image element identified by the value of its _src_ attribute and its index
+      # Click an image element by the value of its _src_ attribute and its index
       # within the array of image elements with src containing <b>+what+</b> and
       # within the container referred to by <b>+browser+</b>.
       # @param [Watir::Browser, Watir::Container] browser A reference to the browser window or container element to be tested.
@@ -590,7 +590,7 @@ module Awetestlib
         #    end
       end
 
-      def select_option_from_list(list, which, value, desc = '', nofail = false)
+      def select_option_from_list(list, which, value, desc = '')
         msg = build_message("Select :#{which}=>'#{value}", desc)
         ok  = true
         if list
@@ -608,13 +608,6 @@ module Awetestlib
           if ok
             passed_to_log(msg)
             true
-          else
-            if nofail
-              passed_to_log("#{msg} Option not found. No Fail specified.")
-              true
-            else
-              failed_to_log("#{msg} Option not found.")
-            end
           end
         else
           failed_to_log("#{msg} Select list not found.")
@@ -623,58 +616,173 @@ module Awetestlib
         failed_to_log("Unable to #{msg} '#{$!}'")
       end
 
-      def select_option(browser, how, what, which, value, desc = '', nofail = false)
+      def select_option(browser, how, what, which, value, desc = '')
         list = browser.select_list(how, what)
         msg = build_message(" from list with :#{how}=>'#{what}", desc)
-        select_option_from_list(list, which, value, msg, nofail)
+        select_option_from_list(list, which, value, msg)
       end
 
       # @!endgroup Core
 
-      # @!group Select
-
-      def select_option_by_id_and_option_text(browser, what, option, nofail = false, desc = '')
-        select_option(browser, :id, what, :text, option, desc, nofail)
+      def select_option_by_id_and_option_text(browser, what, option, nofail=false, desc = '')
+        msg = "Select list id=#{what} option text='#{option}' selected."
+        msg << " #{desc}" if desc.length > 0
+        list = browser.select_list(:id, strg)
+        list.select(option)
+        #      browser.select_list(:id, strg).select(option)   #(browser.select_list(:id, strg).getAllContents[option])
+        if validate(browser, @myName, __LINE__)
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        if !nofail
+          failed_to_log("#{msg} '#{$!}'")
+        end
       end
 
       alias select_option_by_id select_option_by_id_and_option_text
       alias select_option_by_id_and_text select_option_by_id_and_option_text
 
       def select_option_by_name_and_option_text(browser, what, option, desc = '')
-        select_option(browser, :name, what, :text, option, desc)
+        msg = "Select list name=#{what} option text='#{option}' selected."
+        msg << " #{desc}" if desc.length > 0
+        begin
+          list = browser.select_list(:name, strg)
+        rescue => e
+          if not rescue_me(e, __method__, "#{__LINE__}: select_list(:name,'#{what}')", "#{browser.class}")
+            raise e
+          end
+        end
+        begin
+          list.select(option)
+        rescue => e
+          if not rescue_me(e, __method__, "#{__LINE__}: select_list#select('#{option}')", "#{browser.class}")
+            raise e
+          end
+        end
+        if validate(browser, @myName, __LINE__)
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log("#{msg} '#{$!}'")
       end
 
       alias select_option_by_name select_option_by_name_and_option_text
 
       def select_option_by_title_and_option_text(browser, what, option, desc = '')
-        select_option(browser, :title, what, :text, option, desc)
+        msg = "Select list name=#{what} option text='#{option}' selected."
+        msg << " #{desc}" if desc.length > 0
+        browser.select_list(:title, strg).select(option)
+        if validate(browser, @myName, __LINE__)
+          passed_to_log(msg)
+        end
+      rescue
+        failed_to_log("#{msg} '#{$!}'")
       end
 
       def select_option_by_class_and_option_text(browser, what, option, desc = '')
-        select_option(browser, :class, what, :text, option, desc)
+        msg = "Select list class=#{what} option text='#{option}' selected."
+        msg << " #{desc}" if desc.length > 0
+        browser.select_list(:class, strg).select(option)
+        if validate(browser, @myName, __LINE__)
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log("#{msg} '#{$!}'")
       end
 
       def select_option_by_name_and_option_value(browser, what, option, desc = '')
-        select_option(browser, :name, what, :value, option, desc)
+        msg = "Select list name=#{what} option value='#{option}' selected."
+        msg << " #{desc}" if desc.length > 0
+        begin
+          list = browser.select_list(:name, strg)
+        rescue => e
+          if not rescue_me(e, __method__, "#{__LINE__}: select_list(:name,'#{what}')", "#{browser.class}")
+            raise e
+          end
+        end
+        begin
+          list.select_value(option)
+        rescue => e
+          if not rescue_me(e, __method__, "#{__LINE__}: select_list#select_value('#{option}')", "#{browser.class}")
+            raise e
+          end
+        end
+        if validate(browser, @myName, __LINE__)
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log("#{msg} '#{$!}'")
       end
 
       def select_option_by_id_and_option_value(browser, what, option, desc = '')
-        select_option(browser, :id, what, :value, option, desc)
+        msg = "Select list name=#{what} option value='#{option}' selected."
+        msg << " #{desc}" if desc.length > 0
+        begin
+          list = browser.select_list(:id, strg)
+        rescue => e
+          if not rescue_me(e, __method__, "#{__LINE__}: select_list(:text,'#{what}')", "#{browser.class}")
+            raise e
+          end
+        end
+        sleep(0.5) unless @targetBrowser.abbrev == 'IE'
+        begin
+          list.select_value(option)
+        rescue => e
+          if not rescue_me(e, __method__, "#{__LINE__}: select_list#select_value('#{option}')", "#{browser.class}")
+            raise e
+          end
+        end
+        if validate(browser, @myName, __LINE__)
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log("#{msg} '#{$!}'")
       end
 
-      def select_option_by_id_and_index(browser, what, option, desc = '')
-        select_option(browser, :id, what, :index, option, desc)
+      def select_option_by_id_and_index(browser, what, idx, desc = '')
+        msg = "Select list id=#{what} index='#{idx}' selected."
+        msg << " #{desc}" if desc.length > 0
+        list = browser.select_list(:id, strg)
+        all  = list.getAllContents
+        txt  = all[idx]
+        browser.select_list(:id, strg).set(browser.select_list(:id, strg).getAllContents[idx])
+        if validate(browser, @myName, __LINE__)
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log("#{msg} '#{$!}'")
       end
 
-      def select_option_by_name_and_index(browser, what, option, desc = '')
-        select_option(browser, :name, what, :index, option, desc)
+      def select_option_by_name_and_index(browser, what, idx)
+      # TODO add check that both list and option exist
+        msg = "Select list name=#{what} index='#{idx}' selected."
+        msg << " #{desc}" if desc.length > 0
+        browser.select_list(:name, strg).set(browser.select_list(:name, strg).getAllContents[idx])
+        if validate(browser, @myName, __LINE__)
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log("#{msg} '#{$!}'")
       end
 
-      def select_option_by_xpath_and_index(browser, what, option, desc = '')
-        select_option(browser, :xpath, what, :index, option, desc)
+      def select_option_by_xpath_and_index(browser, what, idx)
+        msg = "Select list xpath=#{what} index='#{idx}' selected."
+        msg << " #{desc}" if desc.length > 0
+        browser.select_list(:xpath, strg).set(browser.select_list(:xpath, strg).getAllContents[idx])
+        if validate(browser, nil, __LINE__)
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log("#{msg} '#{$!}'")
       end
-
-      # @!endgroup Select
 
       # @!group Core
 
@@ -696,24 +804,6 @@ module Awetestlib
         end
       rescue
         failed_to_log("#{msg} '#{$!}'")
-      end
-
-      def set_file_field(browser, how, what, filespec, desc = '')
-        msg = "Set file field #{how}=>#{what} to '#{filespec}."
-        msg << " #{desc}" if desc.length > 0
-        ff = browser.file_field(how, what)
-        if ff
-          ff.set filespec
-          sleep_for(8)
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(msg)
-            true
-          end
-        else
-          failed_to_log("#{msg} File field not found.")
-        end
-      rescue
-        failed_to_log("Unable to #{msg} '#{$!}'")
       end
 
       # @!endgroup Core
@@ -818,18 +908,6 @@ module Awetestlib
         set_radio(browser, :name, what, value, desc)
       end
 
-      def set_file_field_by_name(browser, what, path, desc = '')
-        set_file_field(browser, :name, what, path, desc)
-      end
-
-      def set_file_field_by_id(browser, what, path, desc = '')
-        set_file_field(browser, :id, what, path, desc)
-      end
-
-      # @!endgroup Set
-
-      # @!group Core
-
       def clear(browser, element, how, what, value = nil, desc = '')
         msg = "Clear #{element} #{how}=>'#{what}' "
         msg << ", value=>#{value} " if value
@@ -852,10 +930,6 @@ module Awetestlib
         failed_to_log("#{msg} '#{$!}'")
       end
 
-      # @!endgroup Core
-
-      # @!group Clear
-
       def clear_checkbox(browser, how, what, value = nil, desc = '')
         clear(browser, :checkbox, how, what, value, desc)
       end
@@ -871,8 +945,6 @@ module Awetestlib
       def clear_radio(browser, how, what, value = nil, desc = '')
         clear(browser, :radio, how, what, value, desc)
       end
-
-      # @!endgroup Clear
 
     # Set skip_value_check = true when string is altered by application and/or
     # this method will be followed by validate_text
@@ -898,6 +970,32 @@ module Awetestlib
         end
       rescue
         failed_to_log("Textfield id='#{id}' could not be cleared: '#{$!}'. (#{__LINE__})")
+      end
+
+      def set_file_field(browser, how, what, filespec, desc = '')
+        msg = "Set file field #{how}=>#{what} to '#{filespec}."
+        msg << " #{desc}" if desc.length > 0
+        ff = browser.file_field(how, what)
+        if ff
+          ff.set filespec
+          sleep_for(8)
+          if validate(browser, @myName, __LINE__)
+            passed_to_log(msg)
+            true
+          end
+        else
+          failed_to_log("#{msg} File field not found.")
+        end
+      rescue
+        failed_to_log("Unable to #{msg} '#{$!}'")
+      end
+
+      def set_file_field_by_name(browser, what, path, desc = '')
+        set_file_field(browser, :name, what, path, desc)
+      end
+
+      def set_file_field_by_id(browser, what, path, desc = '')
+        set_file_field(browser, :id, what, path, desc)
       end
 
 =begin rdoc
@@ -991,7 +1089,7 @@ _Example_
 
 =begin rdoc
   :category: A_rdoc_test
-Enter a string into a text field element identifiedelement identified by the value in its id attribute.
+Enter a string into a text field element identifiedelement by the value in its id attribute.
 
 _Parameters_::
 
@@ -1062,26 +1160,34 @@ _Example_
         failed_to_log("Unable to '#{msg}': '#{$!}'")
       end
 
-      # @!group Core
+=begin rdoc
+  :category: A_rdoc_test
+Allows a generic way to fire browser or javascript events on page elements.
+Raises UnknownObjectException if the object is not found or ObjectDisabledException if the object is currently disabled.
+_Parameters_::
 
-      # Fire an event on a specific DOM element identified by one of its attributes and that attribute's value.
-      #
-      # @example
-      #  # html for a link element:
-      #  # <a href="http://pragmaticprogrammer.com/titles/ruby/" id="one" name="book">Pickaxe</a>
-      #
-      #  fire_event(browser, :link, :text, 'Pickaxe', 'onMouseOver')
-      #
-      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      # @param [Symbol] element The kind of element to click. Must be one of the elements recognized by Watir.
-      #   Some common values are :link, :button, :image, :div, :span.
-      # @param [Symbol] how The element attribute used to identify the specific element.
-      #   Valid values depend on the kind of element.
-      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
-      # @param [String|Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
-      # @param [String] event A string identifying the event to be fired.
-      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
-      #
+*browser* - a reference to the browser window to be tested
+
+*element* - the kind of element to click. Must be one of the elements recognized by Watir.
+Some common values are :link, :button, :image, :div, :span.
+
+*how* - the element attribute used to identify the specific element. Valid values depend on the kind of element.
+Common values: :text, :id, :title, :name, :class, :href (:link only)
+
+*what* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+
+*event* - a string indicating the event to be triggered, e.g., 'onMouseOver', 'onClick', and etc.
+
+*desc* - a string containing a message or description intended to appear in the log and/or report output
+
+_Example_
+
+  # html for a link element:
+  # <a href="http://pragmaticprogrammer.com/titles/ruby/" id="one" name="book">Pickaxe</a>
+  fire_event(browser, :link, :text, 'Pickaxe', 'onMouseOver')
+
+=end
+
       def fire_event(browser, element, how, what, event, desc = '')
         msg  = "#{element.to_s.titlecase}: #{how}=>'#{what}' event:'#{event}'"
         msg1 = "#{element.to_s.titlecase}(#{how}, '#{what}')"
@@ -1112,60 +1218,28 @@ _Example_
       rescue
         failed_to_log("Unable to fire event: #{msg}. '#{$!}' #{desc}")
       end
-      
-      # @!endgroup Core
-      
-      # @!group Fire Event
 
-      # Fire an event on a link element identified by the value in its text (innerHTML)
-      #
-      # @example
-      #  # html for a link element:
-      #  # <a href="http://pragmaticprogrammer.com/titles/ruby/" id="one" name="book">Pickaxe</a>
-      #
-      #  fire_event_on_link_by_text(browser, 'Pickaxe', 'onMouseOver')
-      #
-      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      # @param [String|Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
-      # @param [String] event A string identifying the event to be fired.
-      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
-      #
-      def fire_event_on_link_by_text(browser, what, event, desc = '')
+      def fire_event_on_link_by_text(browser, what, event = 'onclick', desc = '')
         fire_event(browser, :link, :text, what, event, desc)
       end
 
       alias fire_event_text fire_event_on_link_by_text
       alias fire_event_by_text fire_event_on_link_by_text
 
-      # Fire an event on a link element identified by the value in its _id_ attribute.
-      #
-      # @example
-      #  # html for a link element:
-      #  # <a href="http://pragmaticprogrammer.com/titles/ruby/" id="one" name="book">Pickaxe</a>
-      #
-      #  fire_event_on_link_by_id(browser, 'one', 'onMouseOver')
-      #
-      # @param (see #fire_event_on_link_by_text)
-      #
-      def fire_event_on_link_by_id(browser, what, event, desc = '')
+      def fire_event_on_link_by_id(browser, what, event = 'onclick', desc = '')
         fire_event(browser, :link, :id, what, event, desc)
       end
 
       alias fire_event_id fire_event_on_link_by_id
       alias fire_event_by_id fire_event_on_link_by_id
 
-      # Fire an event on a image element identified by the value in its _src_ attribute.
-      # Take care to escape characters in the source url that are reserved by Regexp.
-      # @param (see #fire_event_on_link_by_text)
-      #
-      def fire_event_on_image_by_src(browser, what, event, desc = '')
+      def fire_event_on_image_by_src(browser, what, event = 'onclick', desc = '')
         fire_event(browser, :img, :src, what, event, desc)
       end
 
       alias fire_event_src fire_event_on_image_by_src
       alias fire_event_image_by_src fire_event_on_image_by_src
 
-      # @!endgroup Fire Event
 
     end
   end
