@@ -245,7 +245,6 @@ module Awetestlib
         if USING_WINDOWS
           require 'watir/win32ole'
           @ai = ::WIN32OLE.new('AutoItX3.Control')
-          require 'pry'
         else
           # TODO: Need alternative for Mac?
           @ai = ''
