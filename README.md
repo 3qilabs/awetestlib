@@ -10,10 +10,10 @@ After completing this guide you will be able to run tests locally from command l
 ### Prerequisites
 
 You need to have Ruby 1.8.7 installed. You can download Ruby 1.8.7 
-[here](http://http://rubyinstaller.org/downloads/)
+[here](http://rubyinstaller.org/downloads/)
 
 Additionally, you will need to install DevKit to compile a few dependent gems. You can download DevKit
-[here](http://http://rubyinstaller.org/downloads/)
+[here](http://rubyinstaller.org/downloads/)
 
 ### Install
 

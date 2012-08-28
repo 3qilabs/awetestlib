@@ -10,7 +10,7 @@ def print_usage
   Usage Options:
   
     awetestlib regression_setup
-      setup awetest regression and registers autoitx3.dll
+      setup awetest regression and register autoitx3.dll
 
     awetestlib rubymine_setup
       setup a sample rubymine project
@@ -19,7 +19,7 @@ def print_usage
       setup a sample netbeans project
 
     awetestlib cucumber_setup
-      setup cucumber regression and provides skeleton folder structure
+      setup cucumber regression and provide skeleton folder structure
 
     awetestlib <script_file> [parameters]
       run an awetest regression script

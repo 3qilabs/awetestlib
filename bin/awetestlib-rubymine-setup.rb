@@ -1,4 +1,3 @@
-
 def edit_config_file
   @new_config_file = File.join(FileUtils.pwd,"sample_rubymine",".idea","workspace.xml")
   @demo_script = File.join(FileUtils.pwd,"sample_rubymine", "demo.rb")

@@ -16,6 +16,9 @@ elsif cmd == "rubymine_setup"
 elsif cmd == "netbeans_setup"
   require File.join(File.dirname(__FILE__),"awetestlib-netbeans-setup")
   awetestlib_netbeans_setup
+elsif cmd == 'cucumber_setup'
+  require File.join(File.dirname(__FILE__),"awetestlib-cucumber-setup")
+  awetestlib_cucumber_setup
 else
 
 require 'optparse'
