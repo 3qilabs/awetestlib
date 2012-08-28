@@ -52,7 +52,7 @@ module Awetestlib
       end
 
       # Create the report name
-      strTime = '_' + strDay + strMonth + strYear + '_' + strHour + strMinutes + strSeconds + '.html'
+      strTime = '_' + strMonth + strDay + strYear + '_' + strHour + strMinutes + strSeconds + '.html'
       strNiceTime = strDay + '-' + strMonth + '-' + strYear + ' @ ' + strHour + ':' + strMinutes + ':' + strSeconds
       strTotalReport = reportName + strTime
 
@@ -94,7 +94,7 @@ module Awetestlib
         <tbody>
         <tr>
         <td style=width: 150px;>&nbsp;</td>
-        <td align=left><img src="../images/logo.png"></img></td>
+        <td align=left><img src="https://raw.github.com/3qilabs/awetestlib/develop/images/logo.png"></img></td>
         <td align=right><p class=title>Test Report</p></td>
         </tr>
         </tbody>

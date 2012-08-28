@@ -283,7 +283,7 @@ module Awetestlib
       end
 
       def initiate_html_report
-        @html_report_name = File.join(File.dirname(__FILE__), '..', '..', '..', 'tmp', @myName)
+        @html_report_name = File.join(FileUtils.pwd, 'awetest_reports', @myName)
         @html_report_dir = File.dirname(@html_report_name)
         FileUtils.mkdir @html_report_dir unless File.directory? @html_report_dir
         @report_class = Awetestlib::HtmlReport.new(@myName)

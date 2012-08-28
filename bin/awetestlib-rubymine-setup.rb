@@ -5,6 +5,7 @@ def edit_config_file
   workspace_text = File.read(@new_config_file)
   new_workspace_text = workspace_text.gsub(/SAMPLE-SCRIPT/,@demo_script )
   new_workspace_text = new_workspace_text.gsub(/RUBY-SCRIPT/, @awetestlib_file)
+  new_workspace_text = new_workspace_text.gsub(/WORK-DIR/, File.dirname(@demo_script))
   File.open(@new_config_file, "w") {|file| file.puts new_workspace_text}
 end
 
