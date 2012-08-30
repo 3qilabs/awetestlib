@@ -41,7 +41,7 @@ Additionally, you will need to install DevKit to compile a few dependent gems. Y
 
   - [Netbeans IDE setup](https://github.com/3qilabs/awetestlib/blob/develop/netbeans_setup.md)
 
-  - [Rubymine IDE setup(TODO)](TODO)
+  - [Rubymine IDE setup](https://github.com/3qilabs/awetestlib/blob/develop/rubymine_setup.md)
 
 3. If you prefer to run your tests from command line, you can use the following command
   - `awetestlib <script_file> [parameters]`
