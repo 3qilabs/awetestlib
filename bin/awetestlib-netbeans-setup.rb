@@ -1,6 +1,6 @@
 def edit_config_file
-  @new_config_file = File.join(FileUtils.pwd,"sample_netbeans","nbproject","private","configs", "Demo.properties")
-  @demo_script = File.join(FileUtils.pwd,"sample_netbeans", "demo.rb")
+  @new_config_file = File.join(FileUtils.pwd, @proj_dir, "nbproject","private","configs", "Demo.properties")
+  @demo_script = File.join(FileUtils.pwd, @proj_dir, "demo.rb")
   workspace_text = File.read(@new_config_file)
   new_workspace_text = workspace_text.gsub(/SAMPLE-SCRIPT/,@demo_script )
   new_workspace_text = new_workspace_text.gsub(/WORK-DIR/, File.dirname(@demo_script))
@@ -8,31 +8,53 @@ def edit_config_file
 end
 
 def edit_private_file
-  @new_private_file = File.join(FileUtils.pwd,"sample_netbeans","nbproject","private", "private.properties")
+  @new_private_file = File.join(FileUtils.pwd, @proj_dir, "nbproject", "private", "private.properties")
   @bin_dir = File.join(File.dirname(__FILE__))
   workspace_text = File.read(@new_private_file)
   new_workspace_text = workspace_text.gsub(/BIN-DIR/,@bin_dir )
   File.open(@new_private_file, "w") {|file| file.puts new_workspace_text}
 end
 
+# def rename_project_name
+#   unless ARGV[1].nil?
+#     new_dir = File.join(FileUtils.pwd, ARGV[1])
+#     File.rename (@netbeans_dir, new_dir)
+#     config_file = File.join(FileUtils.pwd,ARGV[1],"nbproject","private","configs", "Demo.properties")
+#     workspace_text = File.read(config_file)
+#     new_workspace_text = workspace_text.gsub("sample_netbeans",ARGV[1])
+#     File.open(config_file, "w") {|file| file.puts new_workspace_text}
+#   end
+
+# end
+
+
 def awetestlib_netbeans_setup
-  @netbeans_dir = File.join(FileUtils.pwd, "sample_netbeans")
+  if ARGV[1].nil?
+    @proj_dir = "sample_netbeans"
+  else
+    @proj_dir = ARGV[1]
+  end
+
+  @netbeans_dir = File.join(FileUtils.pwd, @proj_dir)
   @source_dir = File.join(File.dirname(__FILE__), '..', 'setup_samples', 'sample_netbeans')
 
   if File.exists?(@netbeans_dir)
-    puts "Sample Netbeans directory already exists."
+    puts "Netbeans project directory already exists."
     exit 1
   end
 
   msg("Question") do
-    puts "I'm about to create a sample netbeans project in this directory"
+    puts "I'm about to create a netbeans project named #{ARGV[1]} in this directory" if ARGV[1]
+    puts "I'm about to create a netbeans project named sample_netbeans in this directory" if ARGV[1].nil?
     puts "Please hit return to confirm that's what you want."
     puts "NOTE: You may need to run this command as an administrator."
   end
   exit 2 unless STDIN.gets.chomp == ''
+
   FileUtils.cp_r(@source_dir, @netbeans_dir)
   edit_config_file
   edit_private_file
+
   msg("Info") do
     puts "Configuring files and settings"
   end

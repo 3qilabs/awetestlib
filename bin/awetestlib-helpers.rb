@@ -12,11 +12,11 @@ def print_usage
     awetestlib regression_setup
       setup awetest regression and register autoitx3.dll
 
-    awetestlib rubymine_setup
-      setup a sample rubymine project
+    awetestlib rubymine_setup <project_name>
+      setup a rubymine project 
 
-    awetestlib netbeans_setup
-      setup a sample netbeans project
+    awetestlib netbeans_setup <project_name>
+      setup a netbeans project
 
     awetestlib cucumber_setup
       setup cucumber regression and provide skeleton folder structure
