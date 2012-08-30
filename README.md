@@ -37,6 +37,12 @@ Additionally, you will need to install DevKit to compile a few dependent gems. Y
 
   You can now start your scripts within the IDE. Use the Run Configuration button.
 
+  For additional information on IDE setup, refer to the links below:
+
+  - [Netbeans IDE setup](https://github.com/3qilabs/awetestlib/blob/develop/netbeans_setup.md)
+
+  - [Rubymine IDE setup(TODO)](TODO)
+
 3. If you prefer to run your tests from command line, you can use the following command
   - `awetestlib <script_file> [parameters]`
 
