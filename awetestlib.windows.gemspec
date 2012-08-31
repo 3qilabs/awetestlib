@@ -31,7 +31,7 @@ Gem::Specification.new do |s|
   s.add_dependency('selenium-webdriver')
   s.add_dependency('pry')
   s.add_dependency('rdoc', '~> 3.11')
-
+  s.add_dependency('cucumber')
 
   s.require_paths = ["lib"]
   s.files = `git ls-files`.split("\n")
