@@ -16,7 +16,8 @@ def awetestlib_cucumber_setup
   FileUtils.cp_r(@source_dir, @cucumber_dir)
   msg("Info") do
     puts "Configuring files and settings"
-    puts "From the sample_cucumber/features folder, you may now run the following command: cucumber yahoo_mail.feature"
+    puts "From the sample_cucumber/features folder, you may now run command below:"
+    puts "cucumber yahoo_mail.feature"
   end
 
 end
