@@ -15,17 +15,13 @@ def edit_private_file
   File.open(@new_private_file, "w") {|file| file.puts new_workspace_text}
 end
 
-# def rename_project_name
-#   unless ARGV[1].nil?
-#     new_dir = File.join(FileUtils.pwd, ARGV[1])
-#     File.rename (@netbeans_dir, new_dir)
-#     config_file = File.join(FileUtils.pwd,ARGV[1],"nbproject","private","configs", "Demo.properties")
-#     workspace_text = File.read(config_file)
-#     new_workspace_text = workspace_text.gsub("sample_netbeans",ARGV[1])
-#     File.open(config_file, "w") {|file| file.puts new_workspace_text}
-#   end
+def edit_project_file
+  @new_project_file = File.join(FileUtils.pwd, @proj_dir, "nbproject", "project.xml")
+  project_text = File.read(@new_project_file)
+  new_project_text = project_text.gsub(/PROJECT-NAME/, @proj_dir)
+  File.open(@new_project_file, "w") {|file| file.puts new_project_text}
 
-# end
+end
 
 
 def awetestlib_netbeans_setup
@@ -54,6 +50,7 @@ def awetestlib_netbeans_setup
   FileUtils.cp_r(@source_dir, @netbeans_dir)
   edit_config_file
   edit_private_file
+  edit_project_file
 
   msg("Info") do
     puts "Configuring files and settings"
