@@ -58,6 +58,8 @@ The full list of parameters for the command line currently are:
         -x, --excel EXCEL_FILE           Specify an excel file containing variables to be loaded
         -v, --version VERSION            Specify a browser version
 
+To get started writing your own script, refer to the [Getting Started Scripting](https://github.com/3qilabs/awetestlib/wiki/Getting-Started---Scripting) wiki
+
 ### Cucumber Support 
 
 One of the technologies that the Awetest framework supports is [Cucumber](http://cukes.info/). To get setup with cucumber, you can run the following command: `awetestlib cucumber_setup` which will create your typical cucumber folder structure.
