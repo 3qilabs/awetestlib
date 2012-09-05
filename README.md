@@ -25,7 +25,7 @@ In a terminal or command prompt, install the awetestlib gem
 
     gem install awetestlib --no-ri --no-rdoc
 
-Note: You may need to use sudo
+Note: This could take up to 5 minutes for first time installs and you may need to use 'sudo'
 
 
 To setup the regression module, run the following command and verify the step
