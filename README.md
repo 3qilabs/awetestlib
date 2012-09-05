@@ -49,7 +49,19 @@ To setup support for Safari browser, please follow the instructions at [SafariDr
 ### Setup Chrome
 To setup support for Google Chrome browser, please download the latest Chromedriver version from [here](http://code.google.com/p/chromedriver/downloads/list) 
 
-Then move the executables in your PATH
+Then move the executables in your PATH. To find your PATHs, type the command below in your terminal/command prompt
+
+For Mac OSX:
+
+    echo $PATH
+
+For Windows:
+
+    PATH
+    
+### Setup Internet Explorer
+To setup support for Internet Explorer, please download the latest IEDriver version from [here](http://code.google.com/p/selenium/downloads/list) 
+and move the executable into your PATH.
 
 
 ### Setup IDEs (Rubymine, Netbeans)
