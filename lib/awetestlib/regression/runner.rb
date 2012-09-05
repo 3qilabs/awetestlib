@@ -44,11 +44,7 @@ module Awetestlib
       ::PASS = '-PASS'
       ::FAIL = '-FAIL'
 
-      # @return [Watir::Browser] the browser referenced by the attribute browser
-      attr_accessor :browser
-      # @return [String] abbreviation for the targeted browser (e.g., IE, FF, GC)
-      attr_accessor :browser_abbrev
-      attr_accessor :version, :env,
+      attr_accessor :browser, :browser_abbrev, :version, :env,
                     :library, :script_type, :script_file,
                     :log_properties, :log_queue, :log_class,
                     :notify_queue, :notify_class, :notify_id,
@@ -164,6 +160,7 @@ module Awetestlib
         options.each_pair do |k, v|
           self.send("#{k}=", v)
         end
+        script_file = options[:script_file]
         load script_file
         setup_global_test_vars(options)
 
@@ -248,7 +245,6 @@ module Awetestlib
         if USING_WINDOWS
           require 'watir/win32ole'
           @ai = ::WIN32OLE.new('AutoItX3.Control')
-          require 'pry'
         else
           # TODO: Need alternative for Mac?
           @ai = ''
@@ -287,7 +283,7 @@ module Awetestlib
       end
 
       def initiate_html_report
-        @html_report_name = File.join(File.dirname(__FILE__), '..', '..', '..', 'tmp', @myName)
+        @html_report_name = File.join(FileUtils.pwd, 'awetest_reports', @myName)
         @html_report_dir = File.dirname(@html_report_name)
         FileUtils.mkdir @html_report_dir unless File.directory? @html_report_dir
         @report_class = Awetestlib::HtmlReport.new(@myName)

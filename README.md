@@ -10,10 +10,10 @@ After completing this guide you will be able to run tests locally from command l
 ### Prerequisites
 
 You need to have Ruby 1.8.7 installed. You can download Ruby 1.8.7 
-[here](http://http://rubyinstaller.org/downloads/)
+[here](http://rubyinstaller.org/downloads/)
 
 Additionally, you will need to install DevKit to compile a few dependent gems. You can download DevKit
-[here](http://http://rubyinstaller.org/downloads/)
+[here](http://rubyinstaller.org/downloads/)
 
 ### Install
 
@@ -37,6 +37,12 @@ Additionally, you will need to install DevKit to compile a few dependent gems. Y
 
   You can now start your scripts within the IDE. Use the Run Configuration button.
 
+  For additional information on IDE setup, refer to the links below:
+
+  - [Netbeans IDE setup](https://github.com/3qilabs/awetestlib/blob/develop/netbeans_setup.md)
+
+  - [Rubymine IDE setup](https://github.com/3qilabs/awetestlib/blob/develop/rubymine_setup.md)
+
 3. If you prefer to run your tests from command line, you can use the following command
   - `awetestlib <script_file> [parameters]`
 
@@ -51,5 +57,13 @@ The full list of parameters for the command line currently are:
         -r, --root_path ROOT_PATH        Specify the root path
         -x, --excel EXCEL_FILE           Specify an excel file containing variables to be loaded
         -v, --version VERSION            Specify a browser version
+
+To get started writing your own script, refer to the [Getting Started Scripting](https://github.com/3qilabs/awetestlib/wiki/Getting-Started---Scripting) wiki
+
+### Cucumber Support 
+
+One of the technologies that the Awetest framework supports is [Cucumber](http://cukes.info/). To get setup with cucumber, you can run the following command: `awetestlib cucumber_setup` which will create your typical cucumber folder structure.
+
+
 
 
