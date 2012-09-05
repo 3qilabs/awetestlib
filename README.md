@@ -46,6 +46,10 @@ Run the following command to see the different usages
 
 To setup support for Safari browser, please follow the instructions at [SafariDriver](http://code.google.com/p/selenium/wiki/SafariDriver) 
 
+### Setup Chrome
+To setup support for Google Chrome browser, please download the latest Chromedriver version from [here](http://code.google.com/p/chromedriver/downloads/list) 
+
+Then move the executables in your PATH
 
 
 ### Setup IDEs (Rubymine, Netbeans)
