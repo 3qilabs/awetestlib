@@ -699,8 +699,7 @@ module Awetestlib
         end
 
       def set_file_field(browser, how, what, filespec, desc = '')
-        msg = "Set file field #{how}=>#{what} to '#{filespec}."
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("Set file field #{how}=>#{what} to '#{filespec}.", desc)
         ff = browser.file_field(how, what)
         if ff
           ff.set filespec
@@ -714,6 +713,35 @@ module Awetestlib
         end
       rescue
         failed_to_log("Unable to #{msg} '#{$!}'")
+      end
+
+      def set_radio_two_attributes(browser, how1, what1, how2, what2, desc = '')
+        msg = build_message("Set radio #{how1}='#{what1}', #{how2}= #{what2}", desc)
+        browser.radio(how1 => what1, how2 => what2).set
+        if validate(browser, @myName, __LINE__)
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log("#{msg} '#{$!}'")
+      end
+
+      def set_radio_no_wait_by_index(browser, index, desc = '')
+        #TODO: Not supported by Watir 1.8.x
+        msg    = "Radio :index=#{index} "
+        radios = browser.radios
+        debug_to_log("\n#{radios}")
+        radio = radios[index]
+        debug_to_log("\n#{radio}")
+        radio.click_no_wait
+        if validate(browser)
+          msg << 'set ' + desc
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        msg << 'not found ' + desc
+        failed_to_log("#{msg} (#{__LINE__})")
       end
 
       # @!endgroup Core
@@ -748,18 +776,6 @@ module Awetestlib
         set(browser, :radio, how, what, value, desc)
       end
 
-      def set_radio_two_attributes(browser, how1, what1, how2, what2, desc = '')
-        msg = "Set radio #{how1}='#{what1}', #{how2}= #{what2}"
-        msg << " '#{desc}' " if desc.length > 0
-        browser.radio(how1 => what1, how2 => what2).set
-        if validate(browser, @myName, __LINE__)
-          passed_to_log(msg)
-          true
-        end
-      rescue
-        failed_to_log("#{msg} '#{$!}'")
-      end
-
       def set_radio_by_class(browser, what, value = nil, desc = '')
         set(browser, :radio, :class, what, value, desc)
       end
@@ -782,24 +798,6 @@ module Awetestlib
 
       def set_radio_by_value(browser, what, desc = '')
         set(browser, :radio, :value, what, nil, desc)
-      end
-
-      def set_radio_no_wait_by_index(browser, index, desc = '')
-        #TODO: Not supported by Watir 1.8.x
-        msg    = "Radio :index=#{index} "
-        radios = browser.radios
-        debug_to_log("\n#{radios}")
-        radio = radios[index]
-        debug_to_log("\n#{radio}")
-        radio.click_no_wait
-        if validate(browser)
-          msg << 'set ' + desc
-          passed_to_log(msg)
-          true
-        end
-      rescue
-        msg << 'not found ' + desc
-        failed_to_log("#{msg} (#{__LINE__})")
       end
 
       def set_radio_by_name_and_index(browser, name, index, desc = '')
@@ -874,6 +872,8 @@ module Awetestlib
 
       # @!endgroup Clear
 
+      # @1group Core
+
     # Set skip_value_check = true when string is altered by application and/or
     # this method will be followed by validate_text
       def clear_textfield(browser, how, which, skip_value_check = false)
@@ -900,43 +900,13 @@ module Awetestlib
         failed_to_log("Textfield id='#{id}' could not be cleared: '#{$!}'. (#{__LINE__})")
       end
 
-=begin rdoc
-  :category: A_rdoc_test
-Enter a string into a text field element identified by an attribute type and a value.
-After the entry the value in the text field is validated against the input value unless the *skip_value_check*
-parameter is set to true
-
-_Parameters_::
-
-*browser* - a reference to the browser window to be tested
-
-*how* - the element attribute used to identify the specific element. Valid values depend on the kind of element.
-Common values: :text, :id, :title, :name, :class, :href (:link only)
-
-*what* - a string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
-
-*value* - a string to be entered in the text field
-
-*desc* - a string containing a message or description intended to appear in the log and/or report output
-
-*skip_value_check* (Optional, default is false). Set to true to prevent the built-in verification
-that the text field actually contains the value entered.  Useful when application reformats
-or otherwise edits the input string.
-
-_Example_
-
-  set_text_field(browser, :name, /thisTextfield/, 'The text to enter')
-
-=end
-
       def set_text_field(browser, how, what, value, desc = '', skip_value_check = false)
         #TODO: fix this to handle Safari password field
-        msg = "Set textfield #{how}='#{what}' to '#{value}'"
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("Set textfield #{how}='#{what}' to '#{value}'", desc)
         msg << " (Skip value check)" if skip_value_check
         if browser.text_field(how, what).exists?
           tf = browser.text_field(how, what)
-          debug_to_log("#{tf.inspect}")
+          #debug_to_log("#{tf.inspect}")
           if validate(browser, @myName, __LINE__)
             tf.set(value)
             if validate(browser, @myName, __LINE__)
@@ -952,7 +922,7 @@ _Example_
             end
           end
         else
-          failed_to_log("Textfield #{how}='#{what}' not found to set to '#{value}''")
+          failed_to_log("#{msg}: Textfield #{how}='#{what}' not found")
         end
       rescue
         failed_to_log("Unable to '#{msg}': '#{$!}'")
@@ -960,58 +930,57 @@ _Example_
 
       alias set_textfield set_text_field
 
-      def set_textfield_by_name(browser, name, value, desc = '', skip_value_check = false)
-        if browser.text_field(:name, name).exists?
-          tf = browser.text_field(:name, name)
-          # Workaround because browser.text_field doesn't work for password fields in Safari
-        elsif @browserAbbrev.eql?("S")
-          tf = browser.password(:name, name)
-        end
-        if tf.exists?
-          if validate(browser, @myName, __LINE__)
-            tf.set(value)
-            if validate(browser, @myName, __LINE__)
-              if tf.value == value
-                passed_to_log("Set textfield name='#{name}' to '#{value}' #{desc}")
-                true
-              elsif skip_value_check
-                passed_to_log("Set textfield name='#{name}' to '#{value}' #{desc} (skip value check)")
-                true
-              else
-                failed_to_log("Set textfield name='#{name}' to '#{value}': Found:'#{tf.value}'.  #{desc} (#{__LINE__})")
-              end
-            end
-          end
-        else
-          failed_to_log("Textfield name='#{name}' not found to set to '#{value}'.  #{desc} (#{__LINE__})")
+      #Enter a string into a text field element identified by an attribute type and a value.
+      #After the entry the value in the text field is validated against the *valid_value*. Use when the application reformats
+      #or performs edits on the input value.
+
+      def set_text_field_and_validate(browser, how, what, value, desc = '', valid_value = nil)
+        #NOTE: use when value and valid_value differ as with dollar reformatting
+        if set_text_field(browser, how, what, value, desc, true)
+          expected = valid_value ? valid_value : value
+          validate_textfield_value(browser, how, what, expected)
         end
       rescue
-        failed_to_log("Textfield name='#{name}' could not be set to '#{value}': '#{$!}'. #{desc} (#{__LINE__})")
+        failed_to_log("Unable to '#{msg}': '#{$!}'")
       end
 
-=begin rdoc
-  :category: A_rdoc_test
-Enter a string into a text field element identifiedelement identified by the value in its id attribute.
+      #def set_password_by_name(browser, name, value, desc = '', skip_value_check = false)
+      #  set_text_field(browser, how, what, value, desc, skip_value_check)
+      #  if browser.text_field(:name, name).exists?
+      #    tf = browser.text_field(:name, name)
+      #    # Workaround because browser.text_field doesn't work for password fields in Safari
+      #  elsif @browserAbbrev.eql?("S")
+      #    tf = browser.password(:name, name)
+      #  end
+      #  if tf.exists?
+      #    if validate(browser, @myName, __LINE__)
+      #      tf.set(value)
+      #      if validate(browser, @myName, __LINE__)
+      #        if tf.value == value
+      #          passed_to_log("Set textfield name='#{name}' to '#{value}' #{desc}")
+      #          true
+      #        elsif skip_value_check
+      #          passed_to_log("Set textfield name='#{name}' to '#{value}' #{desc} (skip value check)")
+      #          true
+      #        else
+      #          failed_to_log("Set textfield name='#{name}' to '#{value}': Found:'#{tf.value}'.  #{desc} (#{__LINE__})")
+      #        end
+      #      end
+      #    end
+      #  else
+      #    failed_to_log("Textfield name='#{name}' not found to set to '#{value}'.  #{desc} (#{__LINE__})")
+      #  end
+      #rescue
+      #  failed_to_log("Textfield name='#{name}' could not be set to '#{value}': '#{$!}'. #{desc} (#{__LINE__})")
+      #end
 
-_Parameters_::
+      # @!endgroup Core
 
-*browser* - a reference to the browser window to be tested
+      # @!group Set
 
-*id* - a string or a regular expression to be found in the id attribute that uniquely identifies the element.
-
-*value* - a string to be entered in the text field
-
-*desc* - a string containing a message or description intended to appear in the log and/or report output
-
-*skip_value_check* (Optional, default is false). Set to true to prevent the built-in verification
-that the text field actually contains the value entered.  Useful when application reformats
-or otherwise edits the input string.
-
-_Example_
-
-  set_text_field_by_id(browser, /thisTextfield/, 'The text to enter')
-
-=end
+      def set_textfield_by_name(browser, name, value, desc = '', skip_value_check = false)
+        set_text_field(browser, :name, name, value, desc, skip_value_check)
+      end
 
       def set_textfield_by_id(browser, id, value, desc = '', skip_value_check = false)
         set_text_field(browser, :id, id, value, desc, skip_value_check)
@@ -1051,16 +1020,6 @@ _Example_
   set_text_field_and_validate(browser, :id, /AmountTendered/, '7500', 'Dollar formatting', '$7,500.00')
 
 =end
-
-      def set_text_field_and_validate(browser, how, what, value, desc = '', valid_value = nil)
-        #NOTE: use when value and valid_value differ as with dollar reformatting
-        if set_text_field(browser, how, what, value, desc, true)
-          expected = valid_value ? valid_value : value
-          validate_textfield_value(browser, how, what, expected)
-        end
-      rescue
-        failed_to_log("Unable to '#{msg}': '#{$!}'")
-      end
 
       # @!group Core
 

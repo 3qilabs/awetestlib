@@ -108,7 +108,7 @@
     <configuration default="false" name="Demo" type="RubyRunConfigurationType" factoryName="Ruby">
       <module name="sample_rubymine" />
       <RUBY_RUN_CONFIG NAME="RUBY_ARGS" VALUE="-rubygems" />
-      <RUBY_RUN_CONFIG NAME="WORK DIR" VALUE="" />
+      <RUBY_RUN_CONFIG NAME="WORK DIR" VALUE="WORK-DIR" />
       <RUBY_RUN_CONFIG NAME="SHOULD_USE_SDK" VALUE="false" />
       <RUBY_RUN_CONFIG NAME="ALTERN_SDK_NAME" VALUE="" />
       <RUBY_RUN_CONFIG NAME="myPassParentEnvs" VALUE="true" />
