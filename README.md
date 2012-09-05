@@ -28,6 +28,8 @@ In a terminal or command prompt, install the awetestlib gem
 Note: This could take up to 5 minutes for first time installs and you may need to use 'sudo'
 
 
+### Setup Regression Module
+
 To setup the regression module, run the following command and verify the step
   
     awetestlib regression_setup
@@ -37,6 +39,8 @@ To setup the regression module, run the following command and verify the step
 Run the following command to see the different usages
 
     awetestlib
+
+### Setup IDEs (Rubymine, Netbeans)
 
 To setup the awetestlib gem with Rubymine use:
 
