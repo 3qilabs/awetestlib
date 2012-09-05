@@ -13,34 +13,40 @@ You need to have Ruby 1.8.7 installed. You can download Ruby 1.8.7
 [here](http://rubyinstaller.org/downloads/)
 
 You can check your Ruby version using:
-- 'ruby -v'
+
+    ruby -v
 
 Additionally, you will need to install DevKit to compile a few dependent gems. You can download DevKit
 [here](http://rubyinstaller.org/downloads/)
 
 ### Install
 
-1. In a terminal or command prompt, install the awetestlib gem
--`gem install awetestlib --no-ri --no-rdoc`
+In a terminal or command prompt, install the awetestlib gem
+  
+    gem install awetestlib --no-ri --no-rdoc
 
 
-2. To setup the regression module, run the following command and verify the step
-- `awetestlib regression_setup`
+To setup the regression module, run the following command and verify the step
+  
+    awetestlib regression_setup
 
 ### Usage
 
-1. Run the following command to see the different usages
-  - `awetestlib`
+Run the following command to see the different usages
 
-2. To setup the awetestlib gem with Netbeans or Rubymine, run either of the commands
-  - `awetestlib rubymine_setup`
+    awetestlib
 
-  or 
-  - `awetestlib netbeans_setup`
+To setup the awetestlib gem with Rubymine use:
 
-  You can now start your scripts within the IDE. Use the Run Configuration button.
+    awetestlib rubymine_setup <ProjectName>
+    
+To setup awetestlib with Netbeans use:
+ 
+    awetestlib netbeans_setup <ProjectName>
 
-  For additional information on IDE setup, refer to the links below:
+You can now start your scripts within the IDE. Use the Run Configuration button.
+
+For additional information on IDE setup, refer to the links below:
 
   - [Netbeans IDE setup](https://github.com/3qilabs/awetestlib/blob/develop/netbeans_setup.md)
 
