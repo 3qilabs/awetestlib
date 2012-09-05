@@ -695,8 +695,8 @@ module Awetestlib
           true
         end
       rescue
-        failed_to_log("#{msg} '#{$!}'")
-      end
+          failed_to_log("#{msg} '#{$!}'")
+        end
 
       def set_file_field(browser, how, what, filespec, desc = '')
         msg = "Set file field #{how}=>#{what} to '#{filespec}."
@@ -766,7 +766,7 @@ module Awetestlib
 
       def set_radio_by_id(browser, what, value = nil, desc = '')
         set(browser, :radio, :id, what, value, desc)
-      end
+        end
 
       def set_radio_by_index(browser, index, desc = '')
         set(browser, :radio, :index, index, value, desc)
@@ -1112,7 +1112,7 @@ _Example_
       rescue
         failed_to_log("Unable to fire event: #{msg}. '#{$!}' #{desc}")
       end
-      
+
       # @!endgroup Core
       
       # @!group Fire Event

@@ -302,7 +302,7 @@ tags: log, caller, trace, report
       end
     end
     logger               = ActiveSupport::BufferedLogger.new(logFile)
-    logger.level         = Logger::DEBUG
+    logger.level         = ActiveSupport::BufferedLogger::DEBUG
     logger.auto_flushing = (true)
     logger.add(INFO, "#{logFile}\n#{ENV["OS"]}")
     logger
