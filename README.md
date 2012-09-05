@@ -7,7 +7,7 @@ After completing this guide you will be able to run tests locally from command l
 
 ------------
 
-### Prerequisites
+## Prerequisites
 
 You need to have Ruby 1.8.7 installed. You can download Ruby 1.8.7 
 [here](http://rubyinstaller.org/downloads/)
@@ -19,7 +19,7 @@ You can check your Ruby version using:
 Additionally, you will need to install DevKit to compile a few dependent gems. You can download DevKit
 [here](http://rubyinstaller.org/downloads/)
 
-### Install
+## Install
 
 In a terminal or command prompt, install the awetestlib gem
 
@@ -28,17 +28,25 @@ In a terminal or command prompt, install the awetestlib gem
 Note: This could take up to 5 minutes for first time installs and you may need to use 'sudo'
 
 
-### Setup Regression Module
+## Setup Regression Module
 
 To setup the regression module, run the following command and verify the step
   
     awetestlib regression_setup
 
-### Usage
+## Usage
 
 Run the following command to see the different usages
 
     awetestlib
+
+## Setup Browsers
+
+### Setup Safari (Mac OS X only)
+
+To setup support for Safari browser, please follow the instructions at [SafariDriver](http://code.google.com/p/selenium/wiki/SafariDriver) 
+
+
 
 ### Setup IDEs (Rubymine, Netbeans)
 
