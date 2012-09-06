@@ -7,37 +7,76 @@ After completing this guide you will be able to run tests locally from command l
 
 ------------
 
-### Prerequisites
+## Prerequisites
 
 You need to have Ruby 1.8.7 installed. You can download Ruby 1.8.7 
 [here](http://rubyinstaller.org/downloads/)
 
+You can check your Ruby version using:
+
+    ruby -v
+
 Additionally, you will need to install DevKit to compile a few dependent gems. You can download DevKit
 [here](http://rubyinstaller.org/downloads/)
 
-### Install
+## Install
 
-1. In a terminal or command prompt, install the awetestlib gem
-  - `gem install awetestlib --no-ri --no-rdoc`
+In a terminal or command prompt, install the awetestlib gem
+
+    gem install awetestlib --no-ri --no-rdoc
+
+Note: This could take up to 5 minutes for first time installs and you may need to use 'sudo'
 
 
-2. To setup the regression module, run the following command and verify the step
-  - `awetestlib regression_setup`
+## Setup Regression Module
 
-### Usage
+To setup the regression module, run the following command and verify the step
+  
+    awetestlib regression_setup
 
-1. Run the following command to see the different usages
-  - `awetestlib`
+## Usage
 
-2. To setup the awetestlib gem with Netbeans or Rubymine, run either of the commands
-  - `awetestlib rubymine_setup`
+Run the following command to see the different usages
 
-  or 
-  - `awetestlib netbeans_setup`
+    awetestlib
 
-  You can now start your scripts within the IDE. Use the Run Configuration button.
+## Setup Browsers
 
-  For additional information on IDE setup, refer to the links below:
+### Setup Safari (Mac OS X only)
+
+To setup support for Safari browser, please follow the instructions at [SafariDriver](http://code.google.com/p/selenium/wiki/SafariDriver) 
+
+### Setup Chrome
+To setup support for Google Chrome browser, please download the latest Chromedriver version from [here](http://code.google.com/p/chromedriver/downloads/list) 
+
+Then move the executables in your PATH. To find your PATHs, type the command below in your terminal/command prompt
+
+For Mac OSX:
+
+    echo $PATH
+
+For Windows:
+
+    PATH
+    
+### Setup Internet Explorer
+To setup support for Internet Explorer, please download the latest IEDriver version from [here](http://code.google.com/p/selenium/downloads/list) 
+and move the executable into your PATH.
+
+
+### Setup IDEs (Rubymine, Netbeans)
+
+To setup the awetestlib gem with Rubymine use:
+
+    awetestlib rubymine_setup <ProjectName>
+    
+To setup awetestlib with Netbeans use:
+ 
+    awetestlib netbeans_setup <ProjectName>
+
+You can now start your scripts within the IDE. Use the Run Configuration button.
+
+For additional information on IDE setup, refer to the links below:
 
   - [Netbeans IDE setup](https://github.com/3qilabs/awetestlib/blob/develop/netbeans_setup.md)
 
@@ -58,12 +97,12 @@ The full list of parameters for the command line currently are:
         -x, --excel EXCEL_FILE           Specify an excel file containing variables to be loaded
         -v, --version VERSION            Specify a browser version
 
-To get started writing your own script, refer to the [Getting Started Scripting](https://github.com/3qilabs/awetestlib/wiki/Getting-Started---Scripting) wiki
+To start writing your own script, refer to the [Scripting Guide/Wiki](https://github.com/3qilabs/awetestlib/wiki/Getting-Started---Scripting) wiki
 
 ### Cucumber Support 
 
 One of the technologies that the Awetest framework supports is [Cucumber](http://cukes.info/). To get setup with cucumber, you can run the following command: `awetestlib cucumber_setup` which will create your typical cucumber folder structure.
 
-
+Visit our [wiki](https://github.com/3qilabs/awetestlib/wiki/Predefined-Cucumber-Web-Steps) to see the list of predefined steps provided by awetestlib
 
 
