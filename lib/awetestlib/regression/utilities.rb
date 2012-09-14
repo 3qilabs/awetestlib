@@ -326,7 +326,7 @@ module Awetestlib
       end
 
       def get_caller_line
-        last_caller = get_callers[0]
+        last_caller = get_call_list[0]
         line        = last_caller.split(':', 3)[1]
         line
       end
@@ -895,6 +895,15 @@ module Awetestlib
         end
       rescue
         failed_to_log("Unable to #{msg} '#{$!}'")
+      end
+
+      def do_taskkill(severity, pid)
+        if pid and pid > 0 and pid < 538976288
+          info_to_log("Executing taskkill for pid #{pid}")
+          log_message(severity, %x[taskkill /t /f /pid #{pid}])
+        end
+      rescue
+        error_to_log("#{$!}  (#{__LINE__})")
       end
 
 

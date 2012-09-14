@@ -1,44 +1,8 @@
 module Awetestlib
   module Regression
+    # Contains methods to verify content, accessibility, or appearance of page elements.
     module Validations
 
-      def self.included(mod)
-        # puts "RegressionSupport::Validations extended by #{mod}"
-      end
-
-      def modal_exists?(browser, button = nil)
-        rtrn = nil
-        if @browserAbbrev == 'IE'
-          Timeout::timeout(2) do
-            begin
-              if browser.enabled_popup
-                hwnd = browser.enabled_popup(5)
-                debug_to_log("Modal popup with handle #{hwnd} found. (#{__LINE__})")
-                wc = WinClicker.new
-                wc.makeWindowActive(hwnd)
-                rtrn = wc.getWindowTitle(hwnd)
-                if button
-                  wc.clickWindowsButton_hWnd(hwnd, button)
-                end
-                wc = nil
-              end
-            rescue Timeout::Error
-              debug_to_log("No Modal popup found. (#{__LINE__})")
-              return rtrn
-            end
-            return rtrn
-          end
-          rtrn
-        else
-          rtrn
-        end
-      end
-
-      def validate_message(browser, message)
-        if validate(browser, @myName, __LINE__)
-          message_to_log(message)
-        end
-      end
 
       def validate_style_value(browser, element, how, what, type, expected, desc = '')
         #TODO: works only with watir-webdriver
@@ -685,8 +649,7 @@ module Awetestlib
         cls = browser.class.to_s
         cls.gsub!('Watir::', '')
         cls.gsub!('IE', 'Browser')
-        msg = "#{cls} text contains  '#{ptrn}'."
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("#{cls} text contains  '#{ptrn}'.", desc)
         if ptrn.is_a?(Regexp)
           target = ptrn
         else
@@ -695,7 +658,7 @@ module Awetestlib
         sleep_for(2) unless skip_sleep
         myText = browser.text
         if not myText.match(target)
-          sleep_for(2) unless skip_sleep #TODO try a wait_until here
+          sleep_for(2) unless skip_sleep #TODO try a wait_until here?
           myText = browser.text
         end
         if myText.match(target)
@@ -1177,6 +1140,21 @@ module Awetestlib
       rescue
         failed_to_log("Unable to validate that '#{+source}' image appeared in page: '#{$!}'. (#{__LINE__})")
       end
+
+      # @!group Deprecated
+      # @deprecated
+      def self.included(mod)
+        # puts "RegressionSupport::Validations extended by #{mod}"
+      end
+
+      # @deprecated
+      def validate_message(browser, message)
+        if validate(browser, @myName, __LINE__)
+          message_to_log(message)
+        end
+      end
+
+      # @!endgroup Deprecated
 
     end
   end

@@ -1,3 +1,4 @@
+$watir_script = true
 module CreateZohoAccount1
 
   def run_test(browser)

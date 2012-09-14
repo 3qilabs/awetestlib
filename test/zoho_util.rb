@@ -35,7 +35,9 @@ module ZohoUtil
   end
 
   def zoho_login(browser, userid, password, url, validation = 'Welcome joeklienwatir at Software')
-    mark_testlevel("#{__method__.to_s.titleize}", 8)
+    msg = build_message("#{__method__.to_s.titleize}", "userid:'#{userid}",
+                        "password:'#{password}", "URL:#{url}")
+    mark_testlevel(msg, 8)
     set_textfield_by_name(browser, 'lid', userid)
     set_textfield_by_name(browser, 'pwd', password)
     click_button_by_value(browser, 'Sign In')
