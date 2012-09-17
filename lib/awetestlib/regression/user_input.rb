@@ -27,8 +27,7 @@ module Awetestlib
       #   Common values: :text, :id, :title, :name, :class, :href (:link only)
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
-      # @return [Boolean] True if the Watir or Watir-webdriver function does not throw an exception
-      # and the browser does not show a fatal error condition.
+      # @return [Boolean] True if the Watir or Watir-webdriver function does not throw an exception.
       #
       def click(browser, element, how, what, desc = '')
         #debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
@@ -59,10 +58,8 @@ module Awetestlib
               browser.element(how, what).click
           end
         end
-        if validate(browser, @myName, __LINE__)
           passed_to_log(msg)
           true
-        end
       rescue
         failed_to_log("Unable to #{msg}. '#{$!}'")
       end
@@ -294,10 +291,8 @@ module Awetestlib
             raise e
           end
         end
-        if validate(browser, @myName, __LINE__)
           passed_to_log(msg)
           true
-        end
       rescue
         failed_to_log("Unable to #{msg}  '#{$!}'")
         sleep_for(1)
@@ -459,10 +454,8 @@ module Awetestlib
         msg = "Click image by src='#{what}' and index=#{index}"
         msg << " #{desc}" if desc.length > 0
         browser.image(:src => what, :index => index).click
-        if validate(browser, @myName, __LINE__)
           passed_to_log(msg)
           true
-        end
       rescue
         failed_to_log("Unable to #{msg} '#{$!}'")
       end
@@ -487,10 +480,8 @@ module Awetestlib
           index = get_index_of_row_with_text(table, text, column)
           if index
             table[index].click
-            if validate(browser, @myName, __LINE__)
               passed_to_log(msg)
               index
-            end
           else
             failed_to_log("#{msg} Row not found.")
           end
@@ -514,10 +505,8 @@ module Awetestlib
           index = get_index_of_row_with_text(table, text, column)
           if index
             table[index].fire_event('ondblclick')
-            if validate(browser, @myName, __LINE__)
               passed_to_log(msg)
               index
-            end
           else
             failed_to_log("#{msg} Row not found.")
           end
@@ -780,10 +769,8 @@ module Awetestlib
           else
             failed_to_log("#{__method__}: #{element} not supported")
         end
-        if validate(browser, @myName, __LINE__)
           passed_to_log(msg)
           true
-        end
       rescue
           failed_to_log("#{msg} '#{$!}'")
         end
@@ -803,10 +790,8 @@ module Awetestlib
         if ff
           ff.set filespec
           sleep_for(8)
-          if validate(browser, @myName, __LINE__)
             passed_to_log(msg)
             true
-          end
         else
           failed_to_log("#{msg} File field not found.")
         end
@@ -827,10 +812,8 @@ module Awetestlib
       def set_radio_two_attributes(browser, how1, what1, how2, what2, desc = '')
         msg = build_message("Set radio #{how1}='#{what1}', #{how2}= #{what2}", desc)
         browser.radio(how1 => what1, how2 => what2).set
-        if validate(browser, @myName, __LINE__)
           passed_to_log(msg)
           true
-        end
       rescue
         failed_to_log("#{msg} '#{$!}'")
       end
@@ -843,11 +826,9 @@ module Awetestlib
       #  radio = radios[index]
       #  debug_to_log("\n#{radio}")
       #  radio.click_no_wait
-      #  if validate(browser)
       #    msg << 'set ' + desc
       #    passed_to_log(msg)
       #    true
-      #  end
       #rescue
       #  msg << 'not found ' + desc
       #  failed_to_log("#{msg} (#{__LINE__})")
@@ -1061,10 +1042,8 @@ module Awetestlib
           else
             failed_to_log("#{__method__}: #{element} not supported")
         end
-        if validate(browser, @myName, __LINE__)
           passed_to_log(msg)
           true
-        end
       rescue
         failed_to_log("#{msg} '#{$!}'")
       end
@@ -1126,8 +1105,7 @@ module Awetestlib
       # @!group Core
 
       # Set text field as identified by the attribute specified in +how+ with value in +what+ to the string specified in +value+.
-      # This method differs from set() in that it validates that the text field has been set to the specified value
-      # and verifies that the browser is still functional.
+      # This method differs from set() in that it validates that the text field has been set to the specified value.
       # The value verification can be turned off by setting +skip_value_check+ to true.
       # This is useful when the text_field performs formatting on the entered string. See set_text_field_and_validate()
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
@@ -1146,9 +1124,7 @@ module Awetestlib
         if browser.text_field(how, what).exists?
           tf = browser.text_field(how, what)
           #debug_to_log("#{tf.inspect}")
-          if validate(browser, @myName, __LINE__)
             tf.set(value)
-            if validate(browser, @myName, __LINE__)
               if tf.value == value
                 passed_to_log(msg)
                 true
@@ -1158,8 +1134,6 @@ module Awetestlib
               else
                 failed_to_log("#{msg}: Found:'#{tf.value}'.")
               end
-            end
-          end
         else
           failed_to_log("#{msg}: Textfield #{how}='#{what}' not found")
         end
@@ -1171,7 +1145,7 @@ module Awetestlib
 
       # Clear text field as identified by the attribute specified in +how+ with value in +what+ to the string specified in +value+.
       # This method differs from set() in that 1( it uses the Watir #clear method, 2( it validates that the text field has been
-      # set to the specified value and 3( verifies that the browser is still functional.
+      # set to the specified value.
       # The value verification can be turned off by setting +skip_value_check+ to true.
       # This is useful when the text_field performs formatting on the entered string. See set_text_field_and_validate()
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
@@ -1184,9 +1158,7 @@ module Awetestlib
       def clear_textfield(browser, how, what, skip_value_check = false)
         if browser.text_field(how, what).exists?
           tf = browser.text_field(how, what)
-          if validate(browser, @myName, __LINE__)
             tf.clear
-            if validate(browser, @myName, __LINE__)
               if tf.value == ''
                 passed_to_log("Textfield #{how}='#{what}' cleared.")
                 true
@@ -1196,8 +1168,6 @@ module Awetestlib
               else
                 failed_to_log("Textfield  #{how}='#{what}' not cleared: Found:'#{tf.value}'. (#{__LINE__})")
               end
-            end
-          end
         else
           failed_to_log("Textfield id='#{id}' to clear. (#{__LINE__})")
         end
@@ -1243,9 +1213,7 @@ module Awetestlib
       #    tf = browser.password(:name, name)
       #  end
       #  if tf.exists?
-      #    if validate(browser, @myName, __LINE__)
       #      tf.set(value)
-      #      if validate(browser, @myName, __LINE__)
       #        if tf.value == value
       #          passed_to_log("Set textfield name='#{name}' to '#{value}' #{desc}")
       #          true
@@ -1255,8 +1223,6 @@ module Awetestlib
       #        else
       #          failed_to_log("Set textfield name='#{name}' to '#{value}': Found:'#{tf.value}'.  #{desc} (#{__LINE__})")
       #        end
-      #      end
-      #    end
       #  else
       #    failed_to_log("Textfield name='#{name}' not found to set to '#{value}'.  #{desc} (#{__LINE__})")
       #  end
@@ -1269,8 +1235,7 @@ module Awetestlib
       # @!group Set
 
       # Set text field as identified by its :name attribute with value in +what+ to the string specified in +value+.
-      # This method validates that the text field has been set to the specified value
-      # and verifies that the browser is still functional.
+      # This method validates that the text field has been set to the specified value.
       # The value verification can be turned off by setting +skip_value_check+ to true.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
@@ -1284,8 +1249,7 @@ module Awetestlib
       end
 
       # Set text field as identified by its :id attribute with value in +what+ to the string specified in +value+.
-      # This method validates that the text field has been set to the specified value
-      # and verifies that the browser is still functional.
+      # This method validates that the text field has been set to the specified value.
       # The value verification can be turned off by setting +skip_value_check+ to true.
       # @param (see #set_textfield_by_name)
       # @return (see #click)
@@ -1294,8 +1258,7 @@ module Awetestlib
       end
 
       # Set text field as identified by its :class attribute with value in +what+ to the string specified in +value+.
-      # This method validates that the text field has been set to the specified value
-      # and verifies that the browser is still functional.
+      # This method validates that the text field has been set to the specified value.
       # The value verification can be turned off by setting +skip_value_check+ to true.
       # @param (see #set_textfield_by_name)
       # @return (see #click)
@@ -1304,8 +1267,7 @@ module Awetestlib
       end
 
       # Set text field as identified by its :class attribute with value in +what+ to the string specified in +value+.
-      # This method validates that the text field has been set to the specified value
-      # and verifies that the browser is still functional.
+      # This method validates that the text field has been set to the specified value.
       # The value verification can be turned off by setting +skip_value_check+ to true.
       # @param (see #set_textfield_by_name)
       def set_textfield_by_class(browser, what, value, desc = '', skip_value_check = false)
@@ -1357,10 +1319,8 @@ module Awetestlib
             raise e
           end
         end
-        if validate(browser, @myName, __LINE__)
           passed_to_log("Fire event: #{msg}. #{desc}")
           true
-        end
       rescue
         failed_to_log("Unable to fire event: #{msg}. '#{$!}' #{desc}")
       end

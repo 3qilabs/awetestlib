@@ -3,11 +3,24 @@ module Awetestlib
     # Contains methods to verify content, accessibility, or appearance of page elements.
     module Validations
 
+      # @!group Core
 
+      # Verify that element style attribute contains expected value in style +type+.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] element The kind of element to click. Must be one of the elements recognized by Watir.
+      #   Some common values are :link, :button, :image, :div, :span.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @param [String] type The name of the style type (sub-attribute) where +expected+ is to be found.
+      # @param [String] expected The value in +type+ expected.
+      # @return [Boolean] True if the style type contains the expected value
+      #
       def validate_style_value(browser, element, how, what, type, expected, desc = '')
         #TODO: works only with watir-webdriver
-        msg = "Expected CSS style #{type} value '#{expected}' in #{element} with #{how} = #{what}"
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("Expected Style #{type} value '#{expected}' in #{element} with #{how} = #{what}", desc)
         case element
           when :link
             actual = browser.link(how => what).style type
@@ -19,24 +32,30 @@ module Awetestlib
             actual = browser.span(how => what).style type
           when :div
             actual = browser.div(how => what).style type
+          else
+            if browser.element(how => what).responds_to?("style")
+              actual = browser.element(how => what).style type
+            else
+              failed_to_log("#{msg}: Element #{element} does not reponds to style command.")
+            end
         end
         if expected == actual
           passed_to_log(msg)
+          true
         else
           failed_to_log(msg)
         end
       rescue
-        failed_to_log( "Unable to validate #{msg} '#{$!}'")
+        failed_to_log("Unable to verify that #{msg} '#{$!}'")
       end
 
-      ##### begin core validation methods #####
-
-      def arrays_match?(exp, act, dir, col, org = nil)
+      # @!todo Clarify and rename
+      def arrays_match?(exp, act, dir, col, org = nil, desc = '')
         if exp == act
-          passed_to_log("Click on #{dir} column '#{col}' produces expected sorted list.")
+          passed_to_log("Click on #{dir} column '#{col}' produces expected sorted list. #{desc}")
           true
         else
-          failed_to_log("Click on #{dir} column '#{col}' fails to produce expected sorted list.")
+          failed_to_log("Click on #{dir} column '#{col}' fails to produce expected sorted list. #{desc}")
           debug_to_log("Original order ['#{org.join("', '")}']") if org
           debug_to_log("Expected order ['#{exp.join("', '")}']")
           debug_to_log("  Actual order ['#{act.join("', '")}']")
@@ -45,9 +64,19 @@ module Awetestlib
 
       alias arrays_match arrays_match?
 
+      # Verify that a DOM element is enabled.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] element The kind of element to click. Must be one of the elements recognized by Watir.
+      #   Some common values are :link, :button, :image, :div, :span.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] Returns true if the element is enabled.
       def enabled?(browser, element, how, what, desc = '')
-        msg = "#{element.to_s.titlecase} by #{how}=>'#{what}' is enabled.}"
-        msg << " #{desc}" if desc.length > 0
+        #TODO: handle identification of element with value as well as other attribute. see exists?
+        msg = build_message("#{element.to_s.titlecase} by #{how}=>'#{what}' is enabled.}", desc)
         case element
           when :textfield, :textarea, :text_area, :text_field
             rtrn = browser.text_field(how, what).enabled? and not browser.text_field(how, what).readonly?
@@ -69,30 +98,12 @@ module Awetestlib
 
       alias validate_enabled enabled?
 
-      def date_string_equals?(actual, expected, desc = '', fail_on_format = true)
-        rtrn = false
-        msg  = "Assert actual date '#{actual}' equals expected date '#{expected}'. #{desc} "
-        if actual == expected
-          rtrn = true
-        elsif DateTime.parse(actual).to_s == DateTime.parse(expected).to_s
-          msg << " with different formatting. "
-          if not fail_on_format
-            rtrn = true
-          end
-        end
-        msg << " #{desc}" if desc.length > 0
-        if rtrn
-          passed_to_log("#{msg}")
-        else
-          failed_to_log("#{msg}")
-        end
-        rtrn
-      rescue
-        failed_to_log("Unable to #{msg}. #{$!}")
-      end
-
+      # Verify that a DOM element is disabled.
+      # @param (see #enabled?)
+      # @return [Boolean] Returns true if the element is disabled.
       def disabled?(browser, element, how, what, desc = '')
-        msg = "#{element.to_s.titlecase} by #{how}=>'#{what}' is disabled. #{desc}"
+        #TODO: handle identification of element with value as well as other attribute. see exists?
+        msg = build_message("#{element.to_s.titlecase} by #{how}=>'#{what}' is disabled.", desc)
         case element
           when :textfield, :textarea, :text_area, :text_field
             rtrn = browser.text_field(how, what).disabled? ||
@@ -104,11 +115,9 @@ module Awetestlib
           when :radio
             rtrn = browser.radio(how, what).disabled?
           when :button
-            rtrn = browser.button(how, value).disabled?
+            rtrn = browser.button(how, what).disabled?
           else
-            msg = "#{__method__} does not yet support '#{element}'. #{desc}"
-            debug_to_log(msg)
-            raise msg
+            rtrn = browser.element(how, what).disabled?
         end
         if rtrn
           passed_to_log("#{msg}")
@@ -124,20 +133,12 @@ module Awetestlib
       alias validate_not_enabled disabled?
       alias validate_disabled disabled?
 
-      def verify_text_in_table_with_text(table, text, value)
-        #TODO This needs clarification, renaming
-        msg   = "Table :id=>#{table.id} with text '#{text} contains '#{value}."
-        index = get_index_of_row_with_text(table, text)
-        if table[index].text =~ value
-          passed_to_log(msg)
-          true
-        else
-          failed_to_log(msg)
-        end
-      end
-
+      # Verify that a DOM element is visible.
+      # @param (see #enabled?)
+      # @return [Boolean] Returns true if the element is visible.
       def visible?(browser, element, how, what, desc = '')
-        msg  = "#{element.to_s.titlecase} #{how}=>'#{what}' is visible. #{desc}"
+        #TODO: handle identification of element with value as well as other attribute. see exists?
+        msg  = build_message("#{element.to_s.titlecase} #{how}=>'#{what}' is visible.", desc)
         rtrn = false
         case how
           when :index
@@ -162,8 +163,12 @@ module Awetestlib
 
       alias validate_visible visible?
 
+      # Verify that a DOM element is not visible.
+      # @param (see #enabled?)
+      # @return [Boolean] Returns true if the element is not visible.
       def not_visible?(browser, element, how, what, desc = '')
-        msg  = "#{element.to_s.titlecase} #{how}=>'#{what}' is not visible. #{desc}"
+        #TODO: handle identification of element with value as well as other attribute.  see exists?
+        msg  = build_message("#{element.to_s.titlecase} #{how}=>'#{what}' is not visible.", desc)
         rtrn = false
         case how
           when :index
@@ -188,47 +193,62 @@ module Awetestlib
 
       alias validate_not_visible not_visible?
 
+      # Verify that a checkbox is checked.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] Returns true if the checkbox is checked.
       def checked?(browser, how, what, desc = '')
-        msg = "Checkbox #{how}=>#{what} is checked."
-        msg << " #{desc}" if desc.length > 0
+        #TODO: handle identification of element with value as well as other attribute.  see exists?
+        msg = build_message("Checkbox #{how}=>#{what} is checked.", desc)
         if browser.checkbox(how, what).checked?
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(msg)
-            true
-          end
+          passed_to_log(msg)
+          true
         else
           failed_to_log(msg)
         end
       rescue
-        failed_to_log("Unable to validate #{msg}: '#{$!}'")
+        failed_to_log("Unable to verify that #{msg}: '#{$!}'")
       end
 
       alias checkbox_checked? checked?
       alias checkbox_set? checked?
 
+      # Verify that a checkbox is not checked.
+      # @param (see #checked?)
+      # @return [Boolean] Returns true if the checkbox is not checked.
       def not_checked?(browser, how, what, desc = '')
-        msg = "Checkbox #{how}=>#{what} is not checked."
-        msg << " #{desc}" if desc.length > 0
+        #TODO: handle identification of element with value as well as other attribute. see exists?
+        msg = build_message("Checkbox #{how}=>#{what} is not checked.", desc)
         if not browser.checkbox(how, what).checked?
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(msg)
-            true
-          end
+          passed_to_log(msg)
+          true
         else
           failed_to_log(msg)
         end
       rescue
-        failed_to_log("Unable to validate #{msg}: '#{$!}'")
+        failed_to_log("Unable to verify that #{msg}: '#{$!}'")
       end
 
       alias checkbox_checked? checked?
       alias checkbox_set? checked?
 
+      # Verify that a DOM element exists on the page.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String, Regexp] value A string or a regular expression to be found in the value attribute of the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] True if the element exists.
       def exists?(browser, element, how, what, value = nil, desc = '')
-        msg = "#{element.to_s.titlecase} with #{how}=>'#{what}' "
-        msg << "and value=>'#{value}' " if value
-        msg << "exists"
-        e = get_element(browser, element, how, what, value)
+        msg2 = "and value=>'#{value}' " if value
+        msg = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'exists.', desc)
+        e   = get_element(browser, element, how, what, value)
         if e
           passed_to_log("#{msg}? #{desc}")
           true
@@ -236,14 +256,15 @@ module Awetestlib
           failed_to_log("#{msg}? #{desc} [#{get_callers(1)}]")
         end
       rescue
-        failed_to_log("Unable to determine if #{msg}. #{desc} '#{$!}' [#{get_callers(1)}]")
+        failed_to_log("Unable to verify that #{msg}. #{desc} '#{$!}' [#{get_callers(1)}]")
       end
 
+      # Verify that a DOM element does not exist on the page.
+      # @param (see #exists?)
+      # @return [Boolean] True if the element does not exist.
       def does_not_exist?(browser, element, how, what, value = nil, desc = '')
-        msg = "#{element.to_s.titlecase} with #{how}=>'#{what}' "
-        msg << "and value=>'#{value}' " if value
-        msg << "does not exist."
-        msg << " #{desc}" if desc.length > 0
+        msg2 = "and value=>'#{value}' " if value
+        msg = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'does not exist.', desc)
         if browser.element(how, what).exists?
           failed_to_log(msg)
         else
@@ -256,15 +277,15 @@ module Awetestlib
 
       alias not_exist? does_not_exist?
 
+      # Verify that a radio button is set.
+      # @param (see #checked?)
+      # @return [Boolean] Returns true if the radio button is set.
       def set?(browser, how, what, desc = '', no_fail = false)
-        #TODO Needs to handle radio value as well
-        msg = "Radio #{how}=>#{what} is selected."
-        msg << " #{desc}" if desc.length > 0
+        #TODO: handle identification of element with value as well as other attribute. see radio_with_value_set?
+        msg = build_message("Radio #{how}=>#{what} is selected.", desc)
         if browser.radio(how, what).set?
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(msg)
-            true
-          end
+          passed_to_log(msg)
+          true
         else
           if no_fail
             passed_to_log("Radio #{how}=>#{what} is not selected.")
@@ -273,22 +294,22 @@ module Awetestlib
           end
         end
       rescue
-        failed_to_log("Unable to validate #{msg}: '#{$!}'")
+        failed_to_log("Unable to verify taht #{msg}: '#{$!}'")
       end
 
       alias radio_set? set?
       alias radio_checked? set?
       alias radio_selected? set?
 
+      # Verify that a radio button is not set.
+      # @param (see #checked?)
+      # @return [Boolean] Returns true if the radio button is not set.
       def not_set?(browser, how, what, desc = '', no_fail = false)
-        #TODO Needs to handle radio value as well
-        msg = "Radio #{how}=>#{what} is not selectedd."
-        msg << " #{desc}" if desc.length > 0
+        #TODO: handle identification of element with value as well as other attribute. see radio_with_value_set?
+        msg = build_message("Radio #{how}=>#{what} is not selected.", desc)
         if not browser.radio(how, what).set?
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(msg)
-            true
-          end
+          passed_to_log(msg)
+          true
         else
           if no_fail
             passed_to_log("Radio #{how}=>#{what} is not selected.")
@@ -297,30 +318,38 @@ module Awetestlib
           end
         end
       rescue
-        failed_to_log("Unable to validate #{msg}: '#{$!}'")
+        failed_to_log("Unable to verify that #{msg}: '#{$!}'")
       end
 
       alias radio_not_set? not_set?
       alias radio_not_checked? not_set?
       alias radio_not_selected? not_set?
 
+      # Verify that a radio button, identified by both the value (+what+) in attribute +how+
+      # and the +value+ in its value attribute, is set.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String, Regexp] value A string or a regular expression to be found in the value attribute of the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] Returns true if the radio button is set.
       def radio_with_value_set?(browser, how, what, value, desc = '', no_fail = false)
-        msg = "Radio #{how}=>#{what} :value=>#{value} is selected."
-        msg << " #{desc}" if desc.length > 0
+        msg2 = 'not' if no_fail
+        msg = build_message("Radio #{how}=>#{what} :value=>#{value} is", msg2, 'selected.', desc)
         if browser.radio(how, what, value).set?
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(msg)
-            true
-          end
+          passed_to_log(msg)
+          true
         else
           if no_fail
-            passed_to_log("Radio #{how}=>#{what} :value=>#{value} is not selected.")
+            passed_to_log(msg)
           else
             failed_to_log(msg)
           end
         end
       rescue
-        failed_to_log("Unable to validate #{msg}: '#{$!}'")
+        failed_to_log("Unable to verify that #{msg}: '#{$!}'")
       end
 
       alias radio_set_with_value? radio_with_value_set?
@@ -395,6 +424,31 @@ module Awetestlib
       alias validate_string_not_equal string_does_not_equal?
       alias validate_string_does_not_equal string_does_not_equal?
 
+      def date_string_equals?(actual, expected, desc = '', fail_on_format = true)
+        rtrn = false
+        msg  = build_message("Actual date '#{actual}' equals expected date '#{expected}'.", desc)
+        if actual == expected
+          rtrn = true
+        elsif DateTime.parse(actual).to_s == DateTime.parse(expected).to_s
+          msg << " with different formatting. "
+          if not fail_on_format
+            rtrn = true
+          end
+        end
+        msg << " #{desc}" if desc.length > 0
+        if rtrn
+          passed_to_log("#{msg}")
+        else
+          failed_to_log("#{msg}")
+        end
+        rtrn
+      rescue
+        failed_to_log("Unable to #{msg}. #{$!}")
+      end
+
+      # Verify that a DOM element is in read-only state.
+      # @param (see #enabled?)
+      # @return [Boolean] Returns true if the element is in read-only state.
       def read_only?(browser, element, how, what, value = nil, desc = '')
         msg = "#{element.to_s.titlecase} with #{how}=>'#{what}' "
         msg << "and value=>'#{value}' " if value
@@ -412,6 +466,9 @@ module Awetestlib
         failed_to_log("Unable to determine if #{msg}. #{desc} '#{$!}' [#{get_callers(1)}]")
       end
 
+      # Verify that a DOM element is not in read-only state.
+      # @param (see #enabled?)
+      # @return [Boolean] Returns true if the element is not in read-only state.
       def not_read_only?(browser, element, how, what, value = nil, desc = '')
         msg = "#{element.to_s.titlecase} with #{how}=>'#{what}' "
         msg << "and value=>'#{value}' " if value
@@ -429,23 +486,110 @@ module Awetestlib
         failed_to_log("Unable to determine if #{msg}. #{desc} '#{$!}' [#{get_callers(1)}]")
       end
 
+      # Verify that a DOM element is ready, i.e., both exists and is enabled.
+      # @param (see #exists?)
+      # @return [Boolean] Returns true if the element is ready.
       def ready?(browser, element, how, what, value = '', desc = '')
-        msg = "#{element.to_s.titlecase} with #{how}=>'#{what}' "
-        msg << "and value=>'#{value}' " if value
+        msg2 = "and value=>'#{value}' " if value
+        msg = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'exists and is enabled.', desc)
         e = get_element(browser, element, how, what, value)
         if e and e.enabled?
-          passed_to_log("#{msg}? #{desc}")
+          passed_to_log(msg)
           true
         else
-          failed_to_log("#{msg}? #{desc} [#{get_callers(1)}]")
+          failed_to_log(msg)
         end
       rescue
-        failed_to_log("Unable to determine if #{msg}. #{desc} '#{$!}' [#{get_callers(1)}]")
+        failed_to_log("Unable to determine if #{msg}. '#{$!}' [#{get_callers(1)}]")
       end
 
-    ##### end core validation methods #####
+      def textfield_equals?(browser, how, what, expected, desc = '')
+        msg    = build_message("Expected value to equal '#{expected}' in textfield #{how}=>'#{what}'.", desc)
+        actual = browser.text_field(how, what).value
+        if actual.is_a?(Array)
+          actual = actual[0].to_s
+        end
+        if actual == expected
+          passed_to_log(msg)
+          true
+        else
+          act_s = actual.strip
+          exp_s = expected.strip
+          if act_s == exp_s
+            passed_to_log("#{msg} (stripped)")
+            true
+          else
+            debug_to_report(
+                "#{__method__} (spaces underscored):\n "+
+                    "expected:[#{expected.gsub(' ', '_')}] (#{expected.length})\n "+
+                    "actual:[#{actual.gsub(' ', '_')}] (#{actual.length}) (spaces underscored)"
+            )
+            failed_to_log("#{msg}. Found: '#{actual}'")
+          end
+        end
+      rescue
+        failed_to_log("Unable to verify that #{msg}: '#{$!}")
+      end
 
-    ##### begin methods using @ai #####
+      alias validate_textfield_value textfield_equals?
+      alias text_field_equals? textfield_equals?
+
+      def textfield_contains?(browser, how, what, value, desc = '')
+        msg = build_message("Text field #{how}=>#{what} contains '#{value}'.", desc)
+        contents = browser.text_field(how, what).value
+        if contents =~ /#{value}/
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log("#{msg} Contents: '#{contents}'")
+        end
+      rescue
+        failed_to_log("Unable to verify that #{msg}  '#{$!}'")
+      end
+
+      def textfield_empty?(browser, how, what, desc = '')
+        msg = "Text field #{how}=>#{what} is empty."
+        msg << desc if desc.length > 0
+        contents = browser.text_field(how, what).value
+        if contents.to_s.length == 0
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log("#{msg} Contents: '#{contents}'")
+        end
+      rescue
+        failed_to_log("Unable to verify that #{msg}  '#{$!}'")
+      end
+
+      alias validate_textfield_empty textfield_empty?
+      alias text_field_empty? textfield_empty?
+
+      def validate_textfield_dollar_value(browser, how, what, expected, with_cents = true, desc = '')
+        desc << " Dollar formatting"
+        if with_cents
+          expected << '.00' if not expected =~ /\.00$/
+          desc << ' without cents.'
+        else
+          expected.gsub!(/\.00$/, '')
+          desc << ' with cents.'
+        end
+        textfield_equals?(browser, how, what, expected, desc)
+      end
+
+      def validate_url(browser, url, message = '')
+        if browser.url.to_s.match(url)
+          passed_to_log('Found "'+url.to_s+'" ' + message)
+          true
+        else
+          failed_to_log('Did not find "'+url.to_s+'" ' + message + " (#{__LINE__})")
+        end
+      rescue
+        failed_to_log("Unable to validate that current url is '#{url}': '#{$!}'. (#{__LINE__})")
+      end
+
+      # @!endgroup Core
+
+      # @!group AutoIT
 
       def window_exists?(title)
         title = translate_popup_title(title)
@@ -471,74 +615,61 @@ module Awetestlib
 
       alias window_no_exists window_does_not_exist?
 
-    ##### end methods using @ai #####
+      # @!endgroup AutoIT
 
-    ##### backward compatible methods #####
+      # @!group Legacy
 
-      def validate_link_exist(browser, link, logit = true, desc = '')
-        exists?(browser, :link, :text, link, nil, desc)
+      # Verify that link identified by :text exists.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return (see #exists?)
+      def validate_link_exist(browser, what, desc = '')
+        exists?(browser, :link, :text, what, nil, desc)
       end
 
-      def link_not_exist?(browser, link, desc = '')
-        does_not_exist?(browser, :link, :text, link, nil, desc)
+      # Verify that link identified by :text does not exist.
+      # @param (see #validate_link_exist)
+      # @return (see #does_not_exist?)
+      def link_not_exist?(browser, what, desc = '')
+        does_not_exist?(browser, :link, :text, what, nil, desc)
       end
 
       alias validate_link_not_exist link_not_exist?
 
-      def validate_div_visible_by_id(browser, strg)
-        visible?(browser, :div, :id, strg)
+      # Verify that div identified by :id is visible.
+      # @param (see #validate_link_exist)
+      # @return [Boolean] True if the element is visible.
+      def validate_div_visible_by_id(browser, what)
+        visible?(browser, :div, :id, what)
       end
 
-      def validate_div_not_visible_by_id(browser, strg, desc = '')
-        not_visible?(browser, :div, :id, strg, desc)
+      # Verify that div identified by :id is not visible.
+      # @param (see #validate_link_exist)
+      # @return [Boolean] True if the element is not visible.
+      def validate_div_not_visible_by_id(browser, what, desc = '')
+        not_visible?(browser, :div, :id, what, desc)
       end
 
-    ##### end backward compatible methods #####
-
-
-      def link_enabled?(browser, strg)
-        #TODO Use enabled?()
-        count = string_count_in_string(browser.text, strg)
-        if count > 0
-          if browser.link(:text, strg).enabled?
-            if validate(browser, @myName, __LINE__)
-              passed_to_log(strg + " is enabled. (#{__LINE__})")
-              true
-            end
-          else
-            failed_to_log(strg + " is not enabled.")
-          end
-        else
-          failed_to_log("Link '#{strg.to_s}' (by :text) not found. Cannot validate if enabled. (#{__LINE__}) " + desc)
-        end
-      rescue
-        failed_to_log("Unable to validate that link with :text '#{text}' is enabled: '#{$!}'. (#{__LINE__})")
-        debug_to_log("#{strg} appears #{count} times in browser.text.")
+      # Verify that div identified by :text is enabled.
+      # @param (see #validate_link_exist)
+      # @return [Boolean] True if the element is enabled.
+      def link_enabled?(browser, what, desc = '')
+        enabled?(browser, :link, :text, what, desc)
       end
 
       alias validate_link_enabled link_enabled?
 
-      def link_disabled?(browser, strg)
-        #TODO use disabled?()
-        count = string_count_in_string(browser.text, strg)
-        if count > 0
-          if browser.link(:text, strg).enabled?
-            if validate(browser, @myName, __LINE__)
-              failed_to_log(strg + " is enabled. (#{__LINE__})")
-            end
-          else
-            passed_to_log(strg + " is not enabled.")
-            true
-          end
-        else
-          failed_to_log("Link '#{strg.to_s}' (by :text) not found. Cannot validate if disabled. (#{__LINE__}) " + desc)
-        end
-      rescue
-        failed_to_log("Unable to validate that link with :text '#{text}' is enabled: '#{$!}'. (#{__LINE__})")
-        debug_to_log("#{strg} appears #{count} times in browser.text.")
+      # Verify that div identified by :text is disabled.
+      # @param (see #validate_link_exist)
+      # @return [Boolean] True if the element is disabled.
+      def link_disabled?(browser, what, desc = '')
+        disabled?(browser, :link, :text, what, desc)
       end
 
       alias validate_link_not_enabled link_disabled?
+
+      # @!endgroup Legacy
 
       def popup_exists?(popup, message=nil)
         if not message
@@ -573,76 +704,28 @@ module Awetestlib
         ary
       end
 
-      def validate_list(browser, listId, text, message)
-        message_to_log("Method validate_list() is deprecated: use validate_list_by_xxx instead")
-        validate_list_by_id(browser, listId, text, message)
+      #Validate select list contains text
+      def validate_list_by_id(browser, what, option, desc = '', select_if_present = true)
+        if select_list_includes?(browser, :id, what, option, desc)
+          if select_if_present
+            select_option(browser, :id, what, :text, option, desc, false)
+          else
+            passed_to_log(message)
+            true
+          end
+        end
       end
 
       #Validate select list contains text
-      def validate_list_by_id(browser, strg, text, message, select_if_present=true)
-        #TODO Use select_list_includes?() ?
-        if browser.select_list(:id, strg).exists?
-          select_list = browser.select_list(:id, strg)
-          if select_list.include?(text)
-            if select_if_present
-              if select_option_by_id_and_option_text(browser, strg, text)
-                if validate(browser, @myName, __LINE__)
-                  passed_to_log(message)
-                  true
-                end
-              else
-                failed_to_log(message + " (#{__LINE__})")
-              end
-            else
-              if validate(browser, @myName, __LINE__)
-                passed_to_log(message)
-                true
-              end
-            end
+      def validate_list_by_name(browser, what, option, desc = '', select_if_present = true)
+        if select_list_includes?(browser, :name, what, option, desc)
+          if select_if_present
+            select_option(browser, :name, what, :text, option, desc, false)
           else
-            failed_to_log(message + "  Not found. (#{__LINE__})")
+            passed_to_log(message)
+            true
           end
-        else
-          failed_to_log("Select list with id='#{strg} not found. (#{__LINE__})")
         end
-      rescue
-        failed_to_log("Unable to validate selectlist with id='#{strg}: '#{$!}'. (#{__LINE__})")
-      end
-
-      #Validate select list contains text
-      def validate_list_by_name(browser, strg, text, message, select_if_present=true)
-        #TODO Use select_list_includes?() ?
-        if browser.select_list(:name, strg).exists?
-          select_list = browser.select_list(:name, strg)
-          if select_list.include?(text)
-            if select_if_present
-              if select_option_by_name_and_option_text(browser, strg, text)
-                if validate(browser, @myName, __LINE__)
-                  passed_to_log(message)
-                  true
-                end
-              else
-                failed_to_log(message + " (#{__LINE__})")
-              end
-            else
-              if validate(browser, @myName, __LINE__)
-                passed_to_log(message)
-                true
-              end
-            end
-          else
-            failed_to_log(message + "  Not found. (#{__LINE__})")
-          end
-        else
-          failed_to_log("Select list with name='#{strg} not found. (#{__LINE__})")
-        end
-      rescue
-        failed_to_log("Unable to validate that '#{text}' appeared in select list with name='#{strg}: '#{$!}'. (#{__LINE__})")
-      end
-
-      #Validate select list does not contain text
-      def validate_no_list(browser, id, text, desc = '')
-        select_list_does_not_include?(browser, :id, id, text, desc)
       end
 
       def validate_text(browser, ptrn, desc = '', skip_fail = false, skip_sleep = false)
@@ -663,10 +746,8 @@ module Awetestlib
         end
         if myText.match(target)
           #if myText.match(ptrn)
-          if validate(browser, @myName, __LINE__)
-            passed_to_log("#{msg}")
-            true
-          end
+          passed_to_log("#{msg}")
+          true
         else
           if skip_fail
             debug_to_log("#{cls}  text does not contain the text: '#{ptrn}'.  #{desc}")
@@ -676,10 +757,12 @@ module Awetestlib
           #debug_to_log("\n#{myText}")
         end
       rescue
-        failed_to_log("Unable to validate #{msg} '#{$!}'")
+        failed_to_log("Unable to verify that #{msg} '#{$!}'")
       end
 
       alias validate_link validate_text
+
+      # @!group Core
 
       def text_in_element_equals?(browser, element, how, what, expected, desc = '')
         msg = "Expected exact text '#{expected}' in #{element} :#{how}=>#{what}."
@@ -699,10 +782,6 @@ module Awetestlib
         end
       rescue
         failed_to_log("Unable to verify #{msg} '#{$!}'")
-      end
-
-      def text_in_span_equals?(browser, how, what, expected, desc = '')
-        text_in_element_equals?(browser, :span, how, what, expected, desc)
       end
 
       def element_contains_text?(browser, element, how, what, expected, desc = '')
@@ -736,6 +815,23 @@ module Awetestlib
         failed_to_log("Unable to verify #{msg} '#{$!}'")
       end
 
+      # @!endgroup Core
+
+      # @!group Legacy
+
+      def validate_list(browser, listId, text, message)
+        validate_list_by_id(browser, listId, text, message)
+      end
+
+      #Validate select list does not contain text
+      def validate_no_list(browser, id, text, desc = '')
+        select_list_does_not_include?(browser, :id, id, text, desc)
+      end
+
+      def text_in_span_equals?(browser, how, what, expected, desc = '')
+        text_in_element_equals?(browser, :span, how, what, expected, desc)
+      end
+
       def span_contains_text?(browser, how, what, expected, desc = '')
         element_contains_text?(browser, :span, how, what, expected, desc)
       end
@@ -744,19 +840,6 @@ module Awetestlib
 
       def validate_text_in_span_by_id(browser, id, strg = '', desc = '')
         element_contains_text?(browser, :span, :id, id, strg, desc)
-      end
-
-      def validate_url(browser, url, message = '')
-        if browser.url.to_s.match(url)
-          if validate(browser, @myName, __LINE__)
-            passed_to_log('Found "'+url.to_s+'" ' + message)
-            true
-          end
-        else
-          failed_to_log('Did not find "'+url.to_s+'" ' + message + " (#{__LINE__})")
-        end
-      rescue
-        failed_to_log("Unable to validate that current url is '#{url}': '#{$!}'. (#{__LINE__})")
       end
 
       def validate_select_list(browser, how, what, opt_type, list = nil, multiple = false, ignore = ['Select One'], limit = 5)
@@ -901,25 +984,21 @@ module Awetestlib
         end
         browser_text = browser.text
         if browser_text.match(target)
-          if validate(browser, @myName, __LINE__)
-            failed_to_log("#{msg} [#{browser_text.match(target)[0]}]")
-          end
+          failed_to_log("#{msg} [#{browser_text.match(target)[0]}]")
         else
           passed_to_log(msg)
           true
         end
       rescue
-        failed_to_log("Unable to validate #{msg}: '#{$!}'")
+        failed_to_log("Unable to verify that #{msg}: '#{$!}'")
       end
 
       def textfield_does_not_equal?(browser, how, what, expected, desc = '')
         msg = "Text field #{how}=>#{what} does not equal '#{expected}'"
         msg << " #{desc}" if desc.length > 0
         if not browser.text_field(how, what).value == expected
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(msg)
-            true
-          end
+          passed_to_log(msg)
+          true
         else
           failed_to_log(msg)
         end
@@ -929,38 +1008,17 @@ module Awetestlib
 
       alias validate_textfield_not_value textfield_does_not_equal?
 
-    ###################################
       def validate_textfield_not_value_by_name(browser, name, value, desc = '')
         textfield_does_not_equal?(browser, :name, name, value, desc)
       end
 
       alias validate_textfield_no_value_by_name validate_textfield_not_value_by_name
 
-    ###################################
       def validate_textfield_not_value_by_id(browser, id, value, desc = '')
         textfield_does_not_equal?(browser, :id, id, value, desc)
       end
 
       alias validate_textfield_no_value_by_id validate_textfield_not_value_by_id
-
-      def textfield_empty?(browser, how, what, desc = '')
-        msg = "Text field #{how}=>#{what} is empty."
-        msg << desc if desc.length > 0
-        value = browser.text_field(how, what).value
-        if value.to_s.length == 0
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(msg)
-            true
-          end
-        else
-          failed_to_log("#{msg} Contains '#{value}'")
-        end
-      rescue
-        failed_to_log("Unable to validate #{msg}  '#{$!}'")
-      end
-
-      alias validate_textfield_empty textfield_empty?
-      alias text_field_empty? textfield_empty?
 
       def validate_textfield_empty_by_name(browser, name, message = '')
         validate_textfield_empty(browser, :name, name, message)
@@ -972,55 +1030,6 @@ module Awetestlib
 
       def validate_textfield_empty_by_title(browser, title, message = '')
         validate_textfield_empty(browser, :title, title, message)
-      end
-
-      def textfield_equals?(browser, how, what, expected, desc = '')
-        msg    = "Expected '#{expected}' in textfield #{how}=>'#{what}'. #{desc}"
-        actual = browser.text_field(how, what).value
-        if actual.is_a?(Array)
-          actual = actual[0].to_s
-        end
-        #debug_to_report("#{actual.inspect}")
-        #debug_to_report("#{actual}")
-        if actual == expected
-          if validate(browser, @myName, __LINE__)
-            passed_to_log("#{msg}")
-            true
-          end
-        else
-          act_s = actual.strip
-          exp_s = expected.strip
-          if act_s == exp_s
-            if validate(browser, @myName, __LINE__)
-              passed_to_log("#{msg} (stripped)")
-              true
-            end
-          else
-            debug_to_report(
-                "#{__method__} (spaces underscored):\n "+
-                    "expected:[#{expected.gsub(' ', '_')}] (#{expected.length})\n "+
-                    "actual:[#{actual.gsub(' ', '_')}] (#{actual.length})"
-            )
-            failed_to_log("#{msg}. Found: '#{actual}'")
-          end
-        end
-      rescue
-        failed_to_log("Unable to validate #{msg}: '#{$!}")
-      end
-
-      alias validate_textfield_value textfield_equals?
-      alias text_field_equals? textfield_equals?
-
-      def validate_textfield_dollar_value(browser, how, what, expected, with_cents = true, desc = '')
-        desc << " Dollar formatting"
-        if with_cents
-          expected << '.00' if not expected =~ /\.00$/
-          desc << ' without cents.'
-        else
-          expected.gsub!(/\.00$/, '')
-          desc << ' with cents.'
-        end
-        textfield_equals?(browser, how, what, expected, desc)
       end
 
       def validate_textfield_value_by_name(browser, name, expected, desc = '')
@@ -1055,48 +1064,21 @@ module Awetestlib
 
       alias visible_no_textfield_by_name validate_textfield_not_visible_by_name
 
-      def validate_radio_not_set(browser, radio, message)
-        if browser.radio(:id, radio).checked?
-          if validate(browser, @myName, __LINE__)
-            failed_to_log(message + " (#{__LINE__})")
-          end
-        else
-          passed_to_log(message)
-          true
-        end
-      rescue
-        failed_to_log("Unable to validate that radio with id='#{radio} is clear': '#{$!}'. (#{__LINE__})")
+      def validate_radio_not_set(browser, what, desc = '')
+        not_set?(browser, :id, what, desc)
       end
 
       alias validate_not_radioset validate_radio_not_set
 
-      def radio_is_set?(browser, radio, message)
-        if browser.radio(:id, radio).checked?
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(message)
-            true
-          end
-        else
-          failed_to_log(message + " (#{__LINE__})")
-        end
-      rescue
-        failed_to_log("Unable to validate that radio with id='#{radio} is clear': '#{$!}'. (#{__LINE__})")
+      def radio_is_set?(browser, what, desc = '')
+        set?(browser, :id, what, desc)
       end
 
       alias validate_radioset radio_is_set?
       alias validate_radio_set radio_is_set?
 
-      def validate_radioset_by_name(browser, radio, message)
-        if browser.radio(:name, radio).checked?
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(message)
-            true
-          end
-        else
-          failed_to_log(message + " (#{__LINE__})")
-        end
-      rescue
-        failed_to_log("Unable to validate that radio with name='#{radio} is clear': '#{$!}'. (#{__LINE__})")
+      def validate_radioset_by_name(browser, what, desc = '')
+        set?(browser, :name, what, desc)
       end
 
       def checked_by_id?(browser, strg, desc = '')
@@ -1128,18 +1110,11 @@ module Awetestlib
 
       alias validate_not_check checkbox_not_checked?
 
-      def validate_image(browser, source, desc = '', nofail=false)
-        if browser.image(:src, source).exists?
-          if validate(browser, @myName, __LINE__)
-            passed_to_log("Found '#{source}' image. #{desc}")
-            true
-          end
-        else
-          failed_to_log("Did not find '#{source}' image. #{desc} (#{__LINE__})") unless nofail
-        end
-      rescue
-        failed_to_log("Unable to validate that '#{+source}' image appeared in page: '#{$!}'. (#{__LINE__})")
+      def validate_image(browser, source, desc = '', nofail = false)
+        exists?(browser, :image, :src, desc)
       end
+
+      # @!endgroup Legacy
 
       # @!group Deprecated
       # @deprecated
@@ -1147,11 +1122,9 @@ module Awetestlib
         # puts "RegressionSupport::Validations extended by #{mod}"
       end
 
-      # @deprecated
+      # @deprecated Use #message_to_log
       def validate_message(browser, message)
-        if validate(browser, @myName, __LINE__)
-          message_to_log(message)
-        end
+        message_to_log(message)
       end
 
       # @!endgroup Deprecated

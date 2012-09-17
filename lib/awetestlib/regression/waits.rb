@@ -9,7 +9,7 @@ module Awetestlib
         sleep(seconds)
       end
 
-    # howLong is integer, whatFor is a browser object
+      # howLong is integer, whatFor is a browser object
 =begin rdoc
 :tags:wait
 howLong is the number of seconds, text is a string to be found, threshold is the number of seconds
@@ -151,10 +151,8 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         stop = Time.now.to_f
         #debug_to_log("#{__method__}: start:#{start} stop:#{stop}")
         #    sleep 1
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("#{msg} (#{stop - start} seconds)")
-          true
-        end
+        passed_to_log("#{msg} (#{stop - start} seconds)")
+        true
       rescue
         failed_to_log("Unable to complete #{msg}: '#{$!}'")
       end
@@ -178,11 +176,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         end
         stop = Time.now.to_f
         #debug_to_log("#{__method__}: start:#{start} stop:#{stop} block: #{block.to_s}")
-        #    sleep 1
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") #  {#{block.to_s}}")
-          true
-        end
+                                                                     #    sleep 1
+        passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") #  {#{block.to_s}}")
+        true
       rescue
         failed_to_log("Unable to complete #{msg}. '#{$!}'")
       end
@@ -205,11 +201,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         end
         stop = Time.now.to_f
         #debug_to_log("#{__method__}: start:#{start} stop:#{stop} block: #{block.to_s}")
-        #    sleep 1
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") unless skip_pass #  {#{block.to_s}}")
-          true
-        end
+                                                                                      #    sleep 1
+        passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") unless skip_pass #  {#{block.to_s}}")
+        true
       rescue
         failed_to_log("Unable to complete #{msg}  '#{$!}'")
       end
@@ -335,10 +329,8 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         stop = Time.now.to_f
         #debug_to_log("#{__method__}: start:#{start} stop:#{stop}")
         #    sleep 1
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("Wait until (#{what} :#{how}=>#{value}) enabled. #{desc} (#{stop - start} seconds)")
-          true
-        end
+        passed_to_log("Wait until (#{what} :#{how}=>#{value}) enabled. #{desc} (#{stop - start} seconds)")
+        true
       rescue
         failed_to_log("Unable to complete wait until (#{what} :#{how}=>#{value}) enabled. #{desc}: '#{$!}'")
       end
@@ -364,7 +356,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
               Watir::Wait.until { browser.text_field(how, what).visible? }
             else
               Watir::Wait.until { browser.element(how, what).visible? }
-    #          raise "#{__method__}: Element #{what} not supported."
+            #          raise "#{__method__}: Element #{what} not supported."
           end
         rescue => e
           if e.class.to_s =~ /TimeOutException/
@@ -377,10 +369,8 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         stop = Time.now.to_f
         #debug_to_log("#{__method__}: start:#{start} stop:#{stop}")
         #    sleep 1
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("Wait until (#{element} :#{how}=>#{what}) visible. #{desc} (#{stop - start} seconds)")
-          true
-        end
+        passed_to_log("Wait until (#{element} :#{how}=>#{what}) visible. #{desc} (#{stop - start} seconds)")
+        true
       rescue
         failed_to_log("Unable to complete wait until (#{element} :#{how}=>#{what}) visible. #{desc}: '#{$!}'")
       end

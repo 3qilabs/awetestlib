@@ -6,6 +6,7 @@ require 'awetestlib/regression/tables'
 require 'awetestlib/regression/page_data'
 require 'awetestlib/regression/drag_and_drop'
 require 'awetestlib/regression/utilities'
+require 'awetestlib/regression/legacy'
 require 'awetestlib/logging'
 require 'awetestlib/regression/validations'
 require 'awetestlib/html_report'
@@ -20,6 +21,7 @@ module Awetestlib
 
     # order matters here
       include Awetestlib::Logging
+      include Awetestlib::Regression::Utilities
       include Awetestlib::Regression::Browser
       include Awetestlib::Regression::Find
       include Awetestlib::Regression::UserInput
@@ -27,8 +29,8 @@ module Awetestlib
       include Awetestlib::Regression::Tables
       include Awetestlib::Regression::PageData
       include Awetestlib::Regression::DragAndDrop
-      include Awetestlib::Regression::Utilities
       include Awetestlib::Regression::Validations
+      include Awetestlib::Regression::Legacy
 
       ::DEBUG   = 0
       ::INFO    = 1
