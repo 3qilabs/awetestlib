@@ -6,7 +6,7 @@ module Logging
     # puts "RegressionSupport::Logging extended by #{mod}"
   end
 
-  # Format log message and write to STDOUT.  Write to phusical log if indicated.
+  # Format log message and write to STDOUT.  Write to physical log if indicated.
   # @private
   # @param [Fixnum] severity Severity level of message. Use constants DEBUG, INFO, WARN, ERROR, FATAL, or UNKNOWN
   # @param [String] message The message to be placed in the log.
@@ -218,7 +218,7 @@ tags: log, error, fail, reference, tag, report
     @my_failed_count += 1 if @my_failed_count
     parse_error_references(message, true)
     @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]","FAILED")
-    log_message(WARN, "#{message}" + " (#{lnbr})]", FAIL, lnbr)
+    log_message(WARN, "#{message}", FAIL, lnbr)
   end
 
   alias validate_failed_tolog failed_to_log

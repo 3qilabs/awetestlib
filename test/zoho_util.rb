@@ -66,7 +66,7 @@ module ZohoUtil
     validate_text(browser, 'Create Account')
     click_button_by_value(browser, 'Save')
     sleep(1)
-    close_popup('Message from webpage')
+    close_popup(browser, 'Message from webpage')
   end
 
   def export_accounts(browser)
@@ -78,7 +78,7 @@ module ZohoUtil
     select_option_by_name_and_option_value(browser, 'module', 'Accounts')
     if @use_sikuli
       run_sikuli_script("exportaccounts")
-      close_popup('File Download')
+      close_popup(browser, 'File Download')
     else
       #click_button_no_wait_by_value(browser, 'Export')
       # Make sure popups are allowed by browser
@@ -95,12 +95,12 @@ module ZohoUtil
 
       click_button_no_wait_by_value(browser, 'Export')
       sleep_for(5)
-      close_popup('Message from webpage', 'Are you sure?')
+      close_popup(browser, 'Message from webpage', 'Are you sure?')
       sleep_for(1)
 
       click_button_no_wait_by_value(browser, 'Export')
       sleep_for(3)
-      close_popup('Message from webpage', 'Are you sure?')
+      close_popup(browser, 'Message from webpage', 'Are you sure?')
       sleep_for(3)
 
       save_file1(filepath)
@@ -279,7 +279,7 @@ module ZohoUtil
     sleep(1)
     click_button_by_value(browser, 'Delete')
     sleep(1)
-    close_popup('Message from webpage')
+    close_popup(browser, 'Message from webpage')
   end
 
   def find_lead_reports(browser) ## Find Lead Reports by Source

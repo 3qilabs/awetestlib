@@ -118,7 +118,7 @@ module Awetestlib
       # @return [Watir::Browser] Internet Explorer
       def attach_browser(browser, how, what, desc = '')
         debug_to_log("Attaching browser window :#{how}=>'#{what}' #{desc}")
-        uri_decoded_pattern = URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
+        uri_decoded_pattern = ::URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
         case @browserAbbrev
           when 'IE'
             tmpbrowser      = Watir::IE.attach(how, what)
