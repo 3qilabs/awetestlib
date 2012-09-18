@@ -34,7 +34,7 @@ module Awetestlib
           when 'FF'
             @myBrowser = open_ff_for_version
           when 'S'
-            aBrowser = Watir::Safari.new
+            aBrowser = Watir::Browser.new :safari
             @myBrowser = aBrowser
           when 'C', 'GC'
             @myBrowser = open_chrome
@@ -402,7 +402,7 @@ module Awetestlib
              fatal_to_log("Kill browser called from line #{lnbr}")
            end
          end
-      end
+       end
 
       # @!endgroup Error Handling
 
@@ -936,7 +936,7 @@ module Awetestlib
           when 'FF'
             myClass =~ /Watir::Browser/i
           when 'S'
-            myClass =~ /Watir::Safari/i
+            myClass =~ /Watir::Browser/i
           when 'C'
             myClass =~ /Watir::Browser/i
         end

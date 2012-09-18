@@ -19,6 +19,9 @@ elsif cmd == "netbeans_setup"
 elsif cmd == 'cucumber_setup'
   require File.join(File.dirname(__FILE__),"awetestlib-cucumber-setup")
   awetestlib_cucumber_setup
+elsif cmd == 'mobile_app_setup'
+  require File.join(File.dirname(__FILE__),"awetestlib-mobile-app-setup")
+  awetestlib_mobile_app_setup
 else
 
 require 'optparse'

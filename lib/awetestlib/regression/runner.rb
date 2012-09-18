@@ -233,7 +233,7 @@ module Awetestlib
             end
 
           when 'S'
-            require 'safariwatir'
+            require 'watir-webdriver'
 
           when 'C', 'GC'
             require 'watir-webdriver'

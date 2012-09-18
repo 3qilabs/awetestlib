@@ -18,7 +18,10 @@ def print_usage
     awetestlib netbeans_setup <project_name>
       setup a netbeans project
 
-    awetestlib cucumber_setup
+    awetestlib mobile_app_setup <project_name>
+      setup a mobile app project
+
+    awetestlib cucumber_setup <project_name>
       setup cucumber regression and provide skeleton folder structure
 
     awetestlib <script_file> [parameters]
