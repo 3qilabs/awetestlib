@@ -33,7 +33,9 @@ Gem::Specification.new do |s|
   s.add_dependency('i18n')
   s.add_dependency('rb-appscript')
   s.add_dependency('json', '1.4.6') #for safari support
+  s.add_dependency('pry')
   s.add_dependency('cucumber')
+  s.add_dependency('calabash-cucumber')
   s.require_paths = ["lib"]   #,"ext"]
   s.files = `git ls-files`.split("\n")
   s.executables = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }

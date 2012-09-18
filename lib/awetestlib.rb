@@ -28,7 +28,7 @@ module Awetestlib
   require 'awetestlib/runner'
   require 'andand'
   require 'awetestlib/regression/runner'
-
+  require 'pry'
 
   if USING_OSX
     require 'appscript'

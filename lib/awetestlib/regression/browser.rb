@@ -39,7 +39,7 @@ _Example_
           when 'FF'
             @myBrowser = open_ff_for_version
           when 'S'
-            aBrowser = Watir::Safari.new
+            aBrowser = Watir::Browser.new :safari
             @myBrowser = aBrowser
           when 'C', 'GC'
             @myBrowser = open_chrome
@@ -255,7 +255,9 @@ _Parameters_::
             browser.window(how, /#{uri_decoded_pattern}/).use
             tmpbrowser = browser
           when 'S'
-            Watir::Safari.attach(how, what)
+            browser.driver.switch_to.window(browser.driver.window_handles[0])
+            sleep 1
+            browser.window(how, /#{uri_decoded_pattern}/).use
             tmpbrowser = browser
           when 'C'
             browser.window(how, /#{uri_decoded_pattern}/).use
@@ -868,7 +870,7 @@ category: Logon
           when 'FF'
             myClass =~ /Watir::Browser/i
           when 'S'
-            myClass =~ /Watir::Safari/i
+            myClass =~ /Watir::Browser/i
           when 'C'
             myClass =~ /Watir::Browser/i
         end
