@@ -68,7 +68,7 @@ module Awetestlib
 
       # @!group Click
 
-      # Click a button element identified by the value of its _id_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element identified by the value of its *:id* attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param [Watir::Browser, Watir::Container] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
@@ -77,7 +77,7 @@ module Awetestlib
         click(browser, :button, :id, what, desc)
       end
 
-      # Click a button element identified by the value of its index within the container referred to by <b>+browser+</b>.
+      # Click a button element identified by the value of its index within the container referred to by <b>*browser*</b>.
       # @param [Watir::Browser, Watir::Container] browser A reference to the browser window or container element to be tested.
       # @param [Fixnum] what An integer that indicates the index of the element within the container.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
@@ -86,7 +86,7 @@ module Awetestlib
         click(browser, :link, :index, what, desc)
       end
 
-      # Click a link element identified by the value of its _href_ attribute. Take care to escape characters in the url that are reserved by Regexp.
+      # Click a link element identified by the value of its *:href* attribute. Take care to escape characters in the url that are reserved by Regexp.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_link_by_href(browser, what, desc = '')
@@ -95,7 +95,7 @@ module Awetestlib
 
       alias click_href click_link_by_href
 
-      # Click a link element identified by the value of its _href_ attribute and do not wait for the browser to reach ready state.
+      # Click a link element identified by the value of its *:href* attribute and do not wait for the browser to reach ready state.
       # Take care to escape characters in the url that are reserved by Regexp.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -103,49 +103,49 @@ module Awetestlib
         click_no_wait(browser, :link, :href, what, desc)
       end
 
-      # Click a button element identified by the value of its index within the container referred to by <b>+browser+</b>.
+      # Click a button element identified by the value of its index within the container referred to by <b>*browser*</b>.
       # @param (see #click_link_by_index)
       # @return (see #click)
       def click_button_by_index(browser, what, desc = '')
         click(browser, :button, :index, what, desc)
       end
 
-      # Click a button element identified by the value of its _name_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element identified by the value of its *:name* attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_button_by_name(browser, what, desc = '')
         click(browser, :button, :name, what, desc)
       end
 
-      # Click a button element identified by the value of its _text_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element identified by the value of its *:text* attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_button_by_text(browser, what, desc = '')
         click(browser, :button, :text, what, desc)
       end
 
-      # Click a button element identified by the value of its _class_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element identified by the value of its *:class* attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_button_by_class(browser, what, desc = '')
         click(browser, :button, :class, what, desc)
       end
 
-      # Click a button element identified by the value of its _value_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element identified by the value of its *:value* attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_button_by_value(browser, what, desc = '')
         click(browser, :button, :value, what, desc)
       end
 
-      # Click a button element identified by the value of its _title_ attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
+      # Click a button element identified by the value of its *:title* attribute. A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_button_by_title(browser, what, desc = '')
         click(browser, :button, :title, what, desc)
       end
 
-      # Click a link element identified by the value of its _id_ attribute.
+      # Click a link element identified by the value of its *:id* attribute.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_link_by_id(browser, what, desc = '')
@@ -154,7 +154,7 @@ module Awetestlib
 
       alias click_id click_link_by_id
 
-      # Click a link element identified by the value of its _name_ attribute.
+      # Click a link element identified by the value of its *:name* attribute.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_link_by_name(browser, what, desc = '')
@@ -163,28 +163,28 @@ module Awetestlib
 
       alias click_name click_link_by_name
 
-      # Click a file_field element identified by the value of its _id_ attribute.
+      # Click a file_field element identified by the value of its *:id* attribute.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_file_field_by_id(browser, what, desc = '')
         click(browser, :file_field, :id, what, desc)
       end
 
-      # Click an image element identified by the value of its _id_ attribute.
+      # Click an image element identified by the value of its *:id* attribute.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_img_by_alt(browser, what, desc = '')
         click(browser, :image, :alt, what, desc)
       end
 
-      # Click an image element identified by the value of its _title_ attribute.
+      # Click an image element identified by the value of its *:title* attribute.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_img_by_title(browser, what, desc = '')
         click(browser, :image, :title, what, desc)
       end
 
-      # Click an image element identified by the value of its _src_ attribute.
+      # Click an image element identified by the value of its *:src* attribute.
       # Take care to escape characters in the source url that are reserved by Regexp.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -192,7 +192,7 @@ module Awetestlib
         click(browser, :image, :src, what, desc)
       end
 
-      # Click a link element identified by the value of its _value_ attribute.
+      # Click a link element identified by the value of its *:value* attribute.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_link_by_value(browser, what, desc = '')
@@ -210,7 +210,7 @@ module Awetestlib
       alias click_text click_link_by_text
       alias click_js_button click_link_by_text
 
-      # Click a link element identified by the value of its _class_ attribute.
+      # Click a link element identified by the value of its *:class* attribute.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_link_by_class(browser, what, desc = '')
@@ -228,7 +228,7 @@ module Awetestlib
 
       alias click_span_with_text click_span_by_text
 
-      # Click a link element identified by the value of its _title_ attribute.
+      # Click a link element identified by the value of its *:title* attribute.
       # @param (see #click_button_by_id)
       # @return (see #click)
       def click_link_by_title(browser, what, desc = '')
@@ -304,7 +304,7 @@ module Awetestlib
 
       # @!group Click No Wait
 
-      # Click a button element identified by the value of its _id_ attribute
+      # Click a button element identified by the value of its *:id* attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -314,7 +314,7 @@ module Awetestlib
 
       alias click_button_by_id_no_wait click_button_no_wait_by_id
 
-      # Click a button element identified by the value of its _name_ attribute
+      # Click a button element identified by the value of its *:name* attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -322,7 +322,7 @@ module Awetestlib
         click_no_wait(browser, :button, :name, what, desc)
       end
 
-      # Click a button element identified by the value of its _class_ attribute
+      # Click a button element identified by the value of its *:class* attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -332,7 +332,7 @@ module Awetestlib
 
       alias click_button_by_class_no_wait click_button_no_wait_by_class
 
-      # Click a link element identified by the value of its _id_ attribute
+      # Click a link element identified by the value of its *:id* attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -345,7 +345,7 @@ module Awetestlib
       alias click_id_no_wait click_link_no_wait_by_id
       alias click_no_wait_link_by_id click_link_no_wait_by_id
 
-      # Click an image element identified by the value of its _alt_ attribute
+      # Click an image element identified by the value of its *:alt* attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -363,7 +363,7 @@ module Awetestlib
         click_no_wait(browser, :button, :text, what, desc)
       end
 
-      # Click a button element identified by the value of its _value_ attribute
+      # Click a button element identified by the value of its *:value* attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -371,7 +371,7 @@ module Awetestlib
         click_no_wait(browser, :button, :value, what, desc)
       end
 
-      # Click a button element identified by the value of its _name_ attribute
+      # Click a button element identified by the value of its *:name* attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -393,7 +393,7 @@ module Awetestlib
       alias click_no_wait_text click_link_by_text_no_wait
       alias click_text_no_wait click_link_by_text_no_wait
 
-      # Click a link element identified by the value of its _title_ attribute
+      # Click a link element identified by the value of its *:title* attribute
       # and do not wait for the browser to reach ready state.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -405,7 +405,7 @@ module Awetestlib
 
       # @!group Xpath
 
-      # Click a button element identified by the value of its _id_ attribute using the xpath functionality in Watir.
+      # Click a button element identified by the value of its *:id* attribute using the xpath functionality in Watir.
       # A button is an HTML element with tag 'input' and type 'submit' or 'button'.
       # @note Normally used only when the element is not located by other methods.
       # @param (see #click_button_by_id)
@@ -416,7 +416,7 @@ module Awetestlib
 
       alias click_button_by_xpath click_button_by_xpath_and_id
 
-      # Click a link element identified by the value of its _id_ attribute using the xpath functionality in Watir.
+      # Click a link element identified by the value of its *:id* attribute using the xpath functionality in Watir.
       # @note Normally used only when the element is not located by other methods.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -426,7 +426,7 @@ module Awetestlib
 
       alias click_link_by_xpath click_link_by_xpath_and_id
 
-      # Click an image element identified by the value of its _name_ attribute using the xpath functionality in Watir.
+      # Click an image element identified by the value of its *:name* attribute using the xpath functionality in Watir.
       # @note Normally used only when the element is not located by other methods.
       # @param (see #click_button_by_id)
       # @return (see #click)
@@ -442,12 +442,12 @@ module Awetestlib
 
       # @!group Core
 
-      # Click an image element identified by the value of its _src_ attribute and its index
-      # within the array of image elements with src containing <b>+what+</b> and
-      # within the container referred to by <b>+browser+</b>.
+      # Click an image element identified by the value of its *:src* attribute and its index
+      # within the array of image elements with src containing <b>*what*</b> and
+      # within the container referred to by <b>*browser*</b>.
       # @param [Watir::Browser, Watir::Container] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
-      # @param [Fixnum] index An integer that indicates the index of the element within the array of image elements with src containing <b>+what+</b>.
+      # @param [Fixnum] index An integer that indicates the index of the element within the array of image elements with src containing <b>*what*</b>.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def click_img_by_src_and_index(browser, what, index, desc = '')
@@ -521,7 +521,7 @@ module Awetestlib
 
       # @!group Tables
 
-      # Click the first row which contains a particular string in a table identified by the value in its _id_ attribute.
+      # Click the first row which contains a particular string in a table identified by the value in its *:id* attribute.
       #
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
@@ -536,7 +536,7 @@ module Awetestlib
       end
 
       # Click the first row which contains a particular string in a table identified by its index
-      # in the array of tables contained in <b>+browser+</b>.
+      # in the array of tables contained in <b>*browser*</b>.
       # A specific column in the table can also be specified.
       #
       # @param (see #click_table_row_with_text_by_id)
@@ -546,7 +546,7 @@ module Awetestlib
         click_table_row_with_text(browser, :id, what, text, desc, column)
       end
 
-      # Double click the first row which contains a particular string in a table identified by the value in its _id_ attribute.
+      # Double click the first row which contains a particular string in a table identified by the value in its *:id* attribute.
       # A specific column in the table can also be specified.
       #
       # @param (see #click_table_row_with_text_by_id)
@@ -557,7 +557,7 @@ module Awetestlib
       end
 
       # Double click the first row which contains a particular string in a table identified by its index
-      # in the array of tables contained in <b>+browser+</b>.
+      # in the array of tables contained in <b>*browser*</b>.
       # A specific column in the table can also be specified.
       # @param (see #click_table_row_with_text_by_id)
       # @return (see #click)
@@ -603,7 +603,7 @@ module Awetestlib
         #    end
       end
 
-      # Select option from select list (dropdown) already identified and passed to the method.  Selection can be by :text or :value.
+      # Select option from select list (dropdown) already identified and passed to the method.  Selection can be by *:text* or *:value*.
       # @param [Watir::SelectList] list A reference to the specific select list object.
       # @param [Symbol] how Either :text or :value.
       # @param [String/Rexexp] what A string or regular expression that will uniquely identify the option to select.
@@ -643,7 +643,7 @@ module Awetestlib
         failed_to_log("Unable to #{msg} '#{$!}'")
       end
 
-      # Select option from select list identified by +how+ and +what+. Option is identified by +which+ and +value+
+      # Select option from select list identified by *how* and *what*. Option is identified by *which* and *value*
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] how The element attribute used to identify the specific element.
       #   Valid values depend on the kind of element.
@@ -664,7 +664,7 @@ module Awetestlib
 
       # @!group Select
 
-      # Select option from select list (dropdown) identified by the value in its :id attribute. Option is identified by +which+ and +value+
+      # Select option from select list (dropdown) identified by the value in its *:id* attribute. Option is identified by *which* and *value*
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
       # @param [String/Rexexp] option A string or regular expression that will uniquely identify the option to select.
@@ -678,7 +678,7 @@ module Awetestlib
       alias select_option_by_id select_option_by_id_and_option_text
       alias select_option_by_id_and_text select_option_by_id_and_option_text
 
-      # Select option from select list (dropdown) identified by the value in its :name attribute. Option is selected by its :text attribute.
+      # Select option from select list (dropdown) identified by the value in its *:name* attribute. Option is selected by its *:text* attribute.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
       # @param [String/Rexexp] option A string or regular expression that will uniquely identify the option to select.
@@ -690,35 +690,35 @@ module Awetestlib
 
       alias select_option_by_name select_option_by_name_and_option_text
 
-      # Select option from select list (dropdown) identified by the value in its :name attribute. Option is selected by its :text attribute.
+      # Select option from select list (dropdown) identified by the value in its *:name* attribute. Option is selected by its *:text* attribute.
       # @param (see #select_option_by_name_and_option_text)
       # @return (see #click)
       def select_option_by_title_and_option_text(browser, what, option, desc = '')
         select_option(browser, :title, what, :text, option, desc)
       end
 
-      # Select option from select list (dropdown) identified by the value in its :class attribute. Option is selected by its :text attribute.
+      # Select option from select list (dropdown) identified by the value in its *:class* attribute. Option is selected by its *:text* attribute.
       # @param (see #select_option_by_name_and_option_text)
       # @return (see #click)
       def select_option_by_class_and_option_text(browser, what, option, desc = '')
         select_option(browser, :class, what, :text, option, desc)
       end
 
-      # Select option from select list (dropdown) identified by the value in its :name attribute. Option is selected by its :value attribute.
+      # Select option from select list (dropdown) identified by the value in its *:name* attribute. Option is selected by its *:value* attribute.
       # @param (see #select_option_by_name_and_option_text)
       # @return (see #click)
       def select_option_by_name_and_option_value(browser, what, option, desc = '')
         select_option(browser, :name, what, :value, option, desc)
       end
 
-      # Select option from select list (dropdown) identified by the value in its :id attribute. Option is selected by its :value attribute.
+      # Select option from select list (dropdown) identified by the value in its *:id* attribute. Option is selected by its *:value* attribute.
       # @param (see #select_option_by_name_and_option_text)
       # @return (see #click)
       def select_option_by_id_and_option_value(browser, what, option, desc = '')
         select_option(browser, :id, what, :value, option, desc)
       end
 
-      # Select option from select list (dropdown) identified by the value in its :id attribute.
+      # Select option from select list (dropdown) identified by the value in its *:id* attribute.
       # Option is selected by its index withing the select list's array of options.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
@@ -729,14 +729,14 @@ module Awetestlib
         select_option(browser, :id, what, :index, index, desc)
       end
 
-      # Select option from select list (dropdown) identified by the value in its :name attribute. Option is selected by its :index attribute.
+      # Select option from select list (dropdown) identified by the value in its *:name* attribute. Option is selected by its *:index* attribute.
       # @param (see #select_option_by_id_and_index)
       # @return (see #click)
       def select_option_by_name_and_index(browser, what, option, desc = '')
         select_option(browser, :name, what, :index, option, desc)
       end
 
-      # Select option from select list (dropdown) identified by the xpath command supplied in +what+. Option is selected by its :index attribute.
+      # Select option from select list (dropdown) identified by the xpath command supplied in *what*. Option is selected by its *:index* attribute.
       # @param (see #select_option_by_id_and_index)
       # @return (see #click)
       def select_option_by_xpath_and_index(browser, what, option, desc = '')
@@ -754,7 +754,7 @@ module Awetestlib
       #   Valid values depend on the kind of element.
       #   Common values: :text, :id, :title, :name, :class, :href (:link only)
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
-      # @param [String, Regexp] value A string or a regular expression to be found in the :value attribute of the radio or checkbox.
+      # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute of the radio or checkbox.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def set(browser, element, how, what, value = nil, desc = '')
@@ -775,7 +775,7 @@ module Awetestlib
           failed_to_log("#{msg} '#{$!}'")
         end
 
-      # Set file field element, identified by +how+ and +what, to a specified file path and name.
+      # Set file field element, identified by *how* and +what, to a specified file path and name.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] how The element attribute used to identify the specific element.
       #   Valid values depend on the kind of element.
@@ -838,56 +838,56 @@ module Awetestlib
 
       # @!group Set
 
-      # Set checkbox as checked. Checkbox is identified by the attribute specified in +how+ with value +what+. It's :value attribute can also be used
-      # when needed by specifying +value+.
+      # Set checkbox as checked. Checkbox is identified by the attribute specified in *how* with value *what*. It's *:value* attribute can also be used
+      # when needed by specifying *value*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] how The element attribute used to identify the specific checkbox.
       #   Valid values depend on the kind of element.
       #   Common values: :text, :id, :title, :name, :class, :href (:link only)
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the checkbox.
-      # @param [String, Regexp] value A string or a regular expression to be found in the :value attribute of the checkbox.
+      # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute of the checkbox.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def set_checkbox(browser, how, what, value = nil, desc = '')
         set(browser, :checkbox, how, what, value, desc)
       end
 
-      # Set checkbox as checked identified by its :class attribute with the value in +what+. It's :value attribute can also be used
-      # when needed by specifying +value+.
+      # Set checkbox as checked identified by its *:class* attribute with the value in *what*. It's *:value* attribute can also be used
+      # when needed by specifying *value*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the checkbox.
-      # @param [String, Regexp] value A string or a regular expression to be found in the :value attribute of the checkbox.
+      # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute of the checkbox.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def set_checkbox_by_class(browser, what, value = nil, desc = '')
         set(browser, :checkbox, :class, what, value, desc)
       end
 
-      # Set checkbox as checked identified by its :class attribute with the value in +what+. It's :value attribute can also be used
-      # when needed by specifying +value+.
+      # Set checkbox as checked identified by its *:class* attribute with the value in *what*. It's *:value* attribute can also be used
+      # when needed by specifying *value*.
       # @param (see #set_checkbox_by_class)
       # @return (see #click)
       def set_checkbox_by_id(browser, what, value = nil, desc = '')
         set(browser, :checkbox, :id, what, value, desc)
       end
 
-      # Set checkbox as checked identified by its :name attribute with the value in +what+. It's :value attribute can also be used
-      # when needed by specifying +value+.
+      # Set checkbox as checked identified by its *:name* attribute with the value in *what*. It's *:value* attribute can also be used
+      # when needed by specifying *value*.
       # @param (see #set_checkbox_by_class)
       # @return (see #click)
       def set_checkbox_by_name(browser, what, value = nil, desc = '')
         set(browser, :checkbox, :name, what, value, desc)
       end
 
-      # Set checkbox as checked identified by its :title attribute with the value in +what+. It's :value attribute can also be used
-      # when needed by specifying +value+.
+      # Set checkbox as checked identified by its *:title* attribute with the value in *what*. It's *:value* attribute can also be used
+      # when needed by specifying *value*.
       # @param (see #set_checkbox_by_class)
       # @return (see #click)
       def set_checkbox_by_title(browser, what, value = nil, desc = '')
         set(browser, :checkbox, :title, what, value, desc)
       end
 
-      # Set checkbox as checked identified by its :value attribute with the value in +what+.
+      # Set checkbox as checked identified by its *:value* attribute with the value in *what*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the checkbox.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
@@ -896,65 +896,65 @@ module Awetestlib
         set(browser, :checkbox, :value, what, nil, desc)
       end
 
-      # Set radio button as set. Radio is identified by the attribute specified in +how+ with value +what+. It's :value attribute can also be used
-      # when needed by specifying +value+.
+      # Set radio button as set. Radio is identified by the attribute specified in *how* with value *what*. It's *:value* attribute can also be used
+      # when needed by specifying *value*.
       # @param (see #set_checkbox)
       # @return (see #click)
       def set_radio(browser, how, what, value = nil, desc = '')
         set(browser, :radio, how, what, value, desc)
       end
 
-      # Set radio button as set identified by its :class attribute with the value in +what+. It's :value attribute can also be used
-      # when needed by specifying +value+.
+      # Set radio button as set identified by its *:class* attribute with the value in *what*. It's *:value* attribute can also be used
+      # when needed by specifying *value*.
       # @param (see #set_checkbox_by_class)
       def set_radio_by_class(browser, what, value = nil, desc = '')
         set(browser, :radio, :class, what, value, desc)
       end
 
-      # Set radio button as set identified by its :id attribute with the value in +what+. It's :value attribute can also be used
-      # when needed by specifying +value+.
+      # Set radio button as set identified by its *:id* attribute with the value in *what*. It's *:value* attribute can also be used
+      # when needed by specifying *value*.
       # @param (see #set_checkbox_by_class)
       # @return (see #click)
       def set_radio_by_id(browser, what, value = nil, desc = '')
         set(browser, :radio, :id, what, value, desc)
         end
 
-      # Set radio button as set identified by its index within the array of radio buttons found in the container specified by +browser+.
+      # Set radio button as set identified by its index within the array of radio buttons found in the container specified by *browser*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      # @param [Fixnum] index An integer that indicates the index of the element within +browser+.
+      # @param [Fixnum] index An integer that indicates the index of the element within *browser*.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def set_radio_by_index(browser, index, desc = '')
         set(browser, :radio, :index, index, nil, desc)
       end
 
-      # Set radio button as set identified by its :name attribute with the value in +what+. It's :value attribute can also be used
-      # when needed by specifying +value+.
+      # Set radio button as set identified by its *:name* attribute with the value in *what*. It's *:value* attribute can also be used
+      # when needed by specifying *value*.
       # @param (see #set_checkbox_by_class)
       # @return (see #click)
       def set_radio_by_name(browser, what, value = nil, desc = '')
         set(browser, :radio, :name, what, value, desc)
       end
 
-      # Set radio button as set identified by its :title attribute with the value in +what+. It's :value attribute can also be used
-      # when needed by specifying +value+.
+      # Set radio button as set identified by its *:title* attribute with the value in *what*. It's *:value* attribute can also be used
+      # when needed by specifying *value*.
       # @param (see #set_checkbox_by_class)
       # @return (see #click)
       def set_radio_by_title(browser, what, value = nil, desc = '')
         set(browser, :radio, :title, what, value, desc)
       end
 
-      # Set radio button as set identified by its :value attribute with the value in +what+.
+      # Set radio button as set identified by its *:value* attribute with the value in *what*.
       # @param (see #set_checkbox_by_value)
       # @return (see #click)
       def set_radio_by_value(browser, what, desc = '')
         set(browser, :radio, :value, what, nil, desc)
       end
 
-      # Set radio button as set identified by its :name attribute with the value in +what+
+      # Set radio button as set identified by its *:name* attribute with the value in *what*
       # and its index within the array of radio buttons with that :name
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      # @param [String, Regexp] what A string or a regular expression to be found in the :name attribute that identifies the group of radio buttons.
+      # @param [String, Regexp] what A string or a regular expression to be found in the *:name* attribute that identifies the group of radio buttons.
       # @param [Fixnum] index An integer that indicates the index of the radio button to be set.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
@@ -962,21 +962,21 @@ module Awetestlib
         set_radio_two_attributes(browser, :name, what, :index, index, desc)
       end
 
-      # Set radio button as set identified by its :name attribute with the value in +what+
+      # Set radio button as set identified by its *:name* attribute with the value in *what*
       # and its index within the array of radio buttons with that :name
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      # @param [String, Regexp] what A string or a regular expression to be found in the :name attribute that identifies the group of radio buttons.
-      # @param [String, Regexp] text A string or a regular expression to be found in the :text attribute that uniquely identifies the the radio button to be set.
+      # @param [String, Regexp] what A string or a regular expression to be found in the *:name* attribute that identifies the group of radio buttons.
+      # @param [String, Regexp] text A string or a regular expression to be found in the *:text* attribute that uniquely identifies the the radio button to be set.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def set_radio_by_name_and_text(browser, what, text, desc = '')
         set_radio_two_attributes(browser, :name, what, :text, text, desc)
       end
 
-      # Set radio button as set identified by its :value attribute with the value in +what+
+      # Set radio button as set identified by its *:value* attribute with the value in *what*
       # and its index within the array of radio buttons with that :name
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      # @param [String, Regexp] value A string or a regular expression to be found in the :value attribute that identifies the group of radio buttons.
+      # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute that identifies the group of radio buttons.
       # @param [Fixnum] index An integer that indicates the index of the radio button to be set.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
@@ -984,18 +984,18 @@ module Awetestlib
         set_radio_two_attributes(browser, :value, value, :index, index, desc)
       end
 
-      # Set radio button as set identified by its :name attribute with the value in +what+
-      # and the :value attribute with the value in +value+.
+      # Set radio button as set identified by its *:name* attribute with the value in *what*
+      # and the *:value* attribute with the value in *value*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      # @param [String, Regexp] what A string or a regular expression to be found in the :name attribute that identifies the group of radio buttons.
-      # @param [String, Regexp] value A string or a regular expression to be found in the :value attribute that uniquely identifies the the radio button to be set.
+      # @param [String, Regexp] what A string or a regular expression to be found in the *:name* attribute that identifies the group of radio buttons.
+      # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute that uniquely identifies the the radio button to be set.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def set_radio_by_name_and_value(browser, what, value, desc = '')
         set_radio(browser, :name, what, value, desc)
       end
 
-      # Set file field element, identified by its :name attribute with the value in +what+.
+      # Set file field element, identified by its *:name* attribute with the value in *what*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
       # @param [String] filespec The full path and name of the target file.
@@ -1005,7 +1005,7 @@ module Awetestlib
         set_file_field(browser, :name, what, filespec, desc)
       end
 
-      # Set file field element, identified by its :id attribute with the value in +what+.
+      # Set file field element, identified by its *:id* attribute with the value in *what*.
       # @param (see #set_file_field_by_name)
       # @return (see #click)
       def set_file_field_by_id(browser, what, filespec, desc = '')
@@ -1016,15 +1016,15 @@ module Awetestlib
 
       # @!group Core
 
-      # Clear (unset) radio, checkbox or text field as identified by the attribute specified in +how+ with value +what+.
-      # It's :value attribute can also be used when needed by specifying +value+ (Ignored for text_field).
+      # Clear (unset) radio, checkbox or text field as identified by the attribute specified in *how* with value *what*.
+      # It's *:value* attribute can also be used when needed by specifying *value* (Ignored for text_field).
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] element The kind of element to clear. Must be :radio, :checkbox or :text_field.
       # @param [Symbol] how The element attribute used to identify the specific checkbox.
       #   Valid values depend on the kind of element.
       #   Common values: :text, :id, :title, :name, :class.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
-      # @param [String, Regexp] value A string or a regular expression to be found in the :value attribute of the element.
+      # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute of the element.
       # In the case of text_field this is the string to be entered in the field.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
@@ -1052,48 +1052,48 @@ module Awetestlib
 
       # @!group Clear
 
-      # Clear (uncheck) checkbox identified by the attribute specified in +how+ with value +what+.
-      # It's :value attribute can also be used when needed by specifying +value+.
+      # Clear (uncheck) checkbox identified by the attribute specified in *how* with value *what*.
+      # It's *:value* attribute can also be used when needed by specifying *value*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] how The element attribute used to identify the specific checkbox.
       #   Valid values depend on the kind of element.
       #   Common values: :text, :id, :title, :name, :class.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
-      # @param [String, Regexp] value A string or a regular expression to be found in the :value attribute of the element.
+      # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute of the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def clear_checkbox(browser, how, what, value = nil, desc = '')
         clear(browser, :checkbox, how, what, value, desc)
       end
 
-      # Clear (uncheck) checkbox identified by its :name attribute with value +what+.
-      # It's :value attribute can also be used when needed by specifying +value+.
+      # Clear (uncheck) checkbox identified by its *:name* attribute with value *what*.
+      # It's *:value* attribute can also be used when needed by specifying *value*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
-      # @param [String, Regexp] value A string or a regular expression to be found in the :value attribute of the element.
+      # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute of the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def clear_checkbox_by_name(browser, what, value = nil, desc = '')
         clear(browser, :checkbox, :name, what, value, desc)
       end
 
-      # Clear (uncheck) checkbox identified by its :id attribute with value +what+.
-      # It's :value attribute can also be used when needed by specifying +value+.
+      # Clear (uncheck) checkbox identified by its *:id* attribute with value *what*.
+      # It's *:value* attribute can also be used when needed by specifying *value*.
       # @param (see #set_file_field_by_name)
       # @return (see #click)
       def clear_checkbox_by_name(browser, what, value = nil, desc = '')
         clear(browser, :checkbox, :id, what, value, desc)
       end
 
-      # Clear (unset) radio button identified by the attribute specified in +how+ with value +what+.
-      # It's :value attribute can also be used when needed by specifying +value+.
+      # Clear (unset) radio button identified by the attribute specified in *how* with value *what*.
+      # It's *:value* attribute can also be used when needed by specifying *value*.
       # This clears the specified radio without setting any other radio buttons on.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] how The element attribute used to identify the specific checkbox.
       #   Valid values depend on the kind of element.
       #   Common values: :text, :id, :title, :name, :class.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
-      # @param [String, Regexp] value A string or a regular expression to be found in the :value attribute of the element.
+      # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute of the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def clear_radio(browser, how, what, value = nil, desc = '')
@@ -1104,9 +1104,9 @@ module Awetestlib
 
       # @!group Core
 
-      # Set text field as identified by the attribute specified in +how+ with value in +what+ to the string specified in +value+.
+      # Set text field as identified by the attribute specified in *how* with value in *what* to the string specified in *value*.
       # This method differs from set() in that it validates that the text field has been set to the specified value.
-      # The value verification can be turned off by setting +skip_value_check+ to true.
+      # The value verification can be turned off by setting *skip_value_check* to true.
       # This is useful when the text_field performs formatting on the entered string. See set_text_field_and_validate()
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] how The element attribute used to identify the specific checkbox.
@@ -1143,10 +1143,10 @@ module Awetestlib
 
       alias set_textfield set_text_field
 
-      # Clear text field as identified by the attribute specified in +how+ with value in +what+ to the string specified in +value+.
+      # Clear text field as identified by the attribute specified in *how* with value in *what* to the string specified in *value*.
       # This method differs from set() in that 1( it uses the Watir #clear method, 2( it validates that the text field has been
       # set to the specified value.
-      # The value verification can be turned off by setting +skip_value_check+ to true.
+      # The value verification can be turned off by setting *skip_value_check* to true.
       # This is useful when the text_field performs formatting on the entered string. See set_text_field_and_validate()
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] how The element attribute used to identify the specific checkbox.
@@ -1179,8 +1179,8 @@ module Awetestlib
       #After the entry the value in the text field is validated against the *valid_value*. Use when the application reformats
       #or performs edits on the input value.
 
-      # Set text field as identified by the attribute specified in +how+ with value in +what+ to the string specified in +value+.
-      # and verify that the text field is set to the string in +valid_value+.
+      # Set text field as identified by the attribute specified in *how* with value in *what* to the string specified in *value*.
+      # and verify that the text field is set to the string in *valid_value*.
       #
       # @example
       #  set_text_field_and_validate(browser, :id, 'text field id', '99999', 'Dollar format', '$99,999.00')
@@ -1234,41 +1234,41 @@ module Awetestlib
 
       # @!group Set
 
-      # Set text field as identified by its :name attribute with value in +what+ to the string specified in +value+.
+      # Set text field as identified by its *:name* attribute with value in *what* to the string specified in *value*.
       # This method validates that the text field has been set to the specified value.
-      # The value verification can be turned off by setting +skip_value_check+ to true.
+      # The value verification can be turned off by setting *skip_value_check* to true.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the specified attribute that uniquely identifies the element.
       # @param [String] value A string to enter into the text field.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output.
-      # Required if +skip_value_check+ is set to true.
+      # Required if *skip_value_check* is set to true.
       # @param [Boolean] skip_value_check Forces verification of value in text field to pass.
       # @return (see #click)
       def set_textfield_by_name(browser, what, value, desc = '', skip_value_check = false)
         set_text_field(browser, :name, what, value, desc, skip_value_check)
       end
 
-      # Set text field as identified by its :id attribute with value in +what+ to the string specified in +value+.
+      # Set text field as identified by its *:id* attribute with value in *what* to the string specified in *value*.
       # This method validates that the text field has been set to the specified value.
-      # The value verification can be turned off by setting +skip_value_check+ to true.
+      # The value verification can be turned off by setting *skip_value_check* to true.
       # @param (see #set_textfield_by_name)
       # @return (see #click)
       def set_textfield_by_id(browser, what, value, desc = '', skip_value_check = false)
         set_text_field(browser, :id, what, value, desc, skip_value_check)
       end
 
-      # Set text field as identified by its :class attribute with value in +what+ to the string specified in +value+.
+      # Set text field as identified by its *:class* attribute with value in *what* to the string specified in *value*.
       # This method validates that the text field has been set to the specified value.
-      # The value verification can be turned off by setting +skip_value_check+ to true.
+      # The value verification can be turned off by setting *skip_value_check* to true.
       # @param (see #set_textfield_by_name)
       # @return (see #click)
       def set_textfield_by_title(browser, what, value, desc = '', skip_value_check = false)
         set_text_field(browser, :title, what, value, desc, skip_value_check)
       end
 
-      # Set text field as identified by its :class attribute with value in +what+ to the string specified in +value+.
+      # Set text field as identified by its *:class* attribute with value in *what* to the string specified in *value*.
       # This method validates that the text field has been set to the specified value.
-      # The value verification can be turned off by setting +skip_value_check+ to true.
+      # The value verification can be turned off by setting *skip_value_check* to true.
       # @param (see #set_textfield_by_name)
       def set_textfield_by_class(browser, what, value, desc = '', skip_value_check = false)
         set_text_field(browser, :class, what, value, desc, skip_value_check)
@@ -1350,7 +1350,7 @@ module Awetestlib
       alias fire_event_text fire_event_on_link_by_text
       alias fire_event_by_text fire_event_on_link_by_text
 
-      # Fire an event on a link element identified by the value in its _id_ attribute.
+      # Fire an event on a link element identified by the value in its *:id* attribute.
       #
       # @example
       #  # html for a link element:
@@ -1368,7 +1368,7 @@ module Awetestlib
       alias fire_event_id fire_event_on_link_by_id
       alias fire_event_by_id fire_event_on_link_by_id
 
-      # Fire an event on a image element identified by the value in its _src_ attribute.
+      # Fire an event on a image element identified by the value in its *:src* attribute.
       # Take care to escape characters in the source url that are reserved by Regexp.
       # @param (see #fire_event_on_link_by_text)
       # @return (see #click)

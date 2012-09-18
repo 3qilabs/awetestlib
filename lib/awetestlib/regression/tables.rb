@@ -1,5 +1,7 @@
 module Awetestlib
   module Regression
+    # Methods for handling Tables, Rows, and Cells
+    # Rdoc work in progress
     module Tables
 
 
@@ -247,7 +249,7 @@ module Awetestlib
       # Return a hash containing a cross reference of the header names and indexes (columns) for the specified table.
       # @example
       #   (need example and usage)
-      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Watir::Table] table A reference to the table.
       # @param [Fixnum] header_index The index of the row containing the header names.
       # @return [Hash] Two level hash of hashes. Internal hashes are 'name' which allows look-up of a column index
       # by the header name, and 'index' which allows look-up of the name by the column index.

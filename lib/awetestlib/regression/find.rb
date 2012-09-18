@@ -1,12 +1,15 @@
 module Awetestlib
   module Regression
+    # Methods to fetch references to DOM elements for assigning to variables.  Includes collections of elements.
+    # Primary use is to limit the scope of other commands to the element passed in their *browser* parameter.
+    # (example here)
     module Find
 
       # @!group Core
 
-      # Return a reference to a DOM element specified by its type +element+, attribute *how*, and the
-      # contents of that attribute *what*.  Some elements may require use of the :value attribute in addition
-      # to the designated one.  The target contents for :value are supplied in +value+.
+      # Return a reference to a DOM element specified by its type *element*, attribute *how*, and the
+      # contents of that attribute *what*.  Some elements may require use of the *:value* attribute in addition
+      # to the designated one.  The target contents for *:value* are supplied in *value*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] element The kind of element to click. Must be one of the elements recognized by Watir.
       #   Some common values are :link, :button, :image, :div, :span.
@@ -14,7 +17,7 @@ module Awetestlib
       #   Valid values depend on the kind of element.
       #   Common values: :text, :id, :title, :name, :class, :href (:link only)
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
-      # @param [String, Regexp] value A string or a regular expression to be found in the :value attribute that uniquely identifies the element.
+      # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       def get_element(browser, element, how, what, value = nil, desc = '')
         msg    = build_message("Return #{element} with :#{how}=#{what}", value, desc)
@@ -77,9 +80,9 @@ module Awetestlib
       #   Common values: :text, :id, :title, :name, :class, :href (:link only)
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute
       # that uniquely identifies the element.
-      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @param [Boolean] dump If set to true, a dump of the contents of the options will go to the log.
       # See Utilities#dump_select_list_options
+      # @return [Array]
       def get_select_options(browser, how, what, dump = false)
         list = browser.select_list(how, what)
         dump_select_list_options(list) if dump
@@ -96,6 +99,7 @@ module Awetestlib
       #   Common values: :text, :id, :title, :name, :class, :href (:link only)
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute
       # that uniquely identifies the element.
+      # @return [Array]
       def get_selected_options(browser, how, what)
         begin
           list = browser.select_list(how, what)
@@ -230,6 +234,10 @@ module Awetestlib
 
       alias get_objects get_element_collection
 
+      # Return the ole object for the specified element.
+      # @note Usable only with classic Watir.
+      # @todo Detect $watir_script variable and disable if not set to true
+      # @param [Symbol] element A reference to the already identified element.
       def get_ole(element)
         ole = element.ole_object
         if ole
@@ -242,6 +250,10 @@ module Awetestlib
         failed_to_log("Unable to find ole_object for #{element}.  #{$!}")
       end
 
+      # Return a hash of all links in *browser* with *:href* attribute containing the exact url in *href*.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String] href The exact url to be located.
+      # @return [Hash] The hash is indexed by the order in which the links were located in *browser*.
       def find_all_links_with_exact_href(browser, href)
         links = browser.links
         hash  = Hash.new
@@ -258,6 +270,10 @@ module Awetestlib
         hash
       end
 
+      # Return a reference to the first link in *browser* with *:href* attribute containing the exact url in *href*.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String] href The exact url to be located.
+      # @return [Watir::Link]
       def find_link_with_exact_href(browser, href)
         links = browser.links
         link  = nil
@@ -275,11 +291,152 @@ module Awetestlib
         link
       end
 
-      def find_index_for_object(browser, obj, how, ord, strg)
-        obj_sym = (obj.to_s.pluralize).to_sym
+      # @!endgroup Core
+
+      # @!group Legacy (Backward compatible usages)
+
+      # Return the list of options in a select list identified by its *:id* attribute.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String, Regexp] what A string or a regular expression to be found in the designated attribute that uniquely identifies the element.
+      # @param [Boolean] dbg Triggers additional debug logging when set to true.
+      # @return [Array]
+      def get_select_options_by_id(browser, what, dbg = false)
+        get_select_options(browser, :id, what, dbg)
+      end
+
+      # Return the list of options in a select list identified by its *:name* attribute.
+      # @param (see #get_select_options_by_id)
+      # @return [Array]
+      def get_select_options_by_name(browser, what, dbg = false)
+        get_select_options(browser, :name, what, dbg)
+      end
+
+      # Return the list of _selected_ options in a select list identified by its *:id* attribute.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String, Regexp] what A string or a regular expression to be found in the designated attribute that uniquely identifies the element.
+      # @return [Array]
+      def get_selected_options_by_id(browser, what)
+        get_selected_options(browser, :id, what)
+      end
+
+      alias get_selected_option_by_id get_selected_options_by_id
+
+      # Return the list of _selected_ options in a select list identified by its *:name* attribute.
+      # @param (see #get_select_options_by_id)
+      # @return [Array]
+      def get_selected_options_by_name(browser, what)
+        get_selected_options(browser, :name, what)
+      end
+
+      alias get_selected_option_by_name get_selected_options_by_name
+
+      # Return a reference to a div element identified by its *:id* attribute.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String, Regexp] what A string or a regular expression to be found in the designated attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @param [Boolean] dbg Triggers additional debug logging when set to true.
+      # @return [Water::Div]
+      def get_div_by_id(browser, what, desc = '', dbg = false)
+        get_div(browser, :id, what, desc, dbg)
+      end
+
+      # Return a reference to a div element identified by its *:class* attribute.
+      # @param (see #get_div_by_id)
+      # @return [Water::Div]
+      def get_div_by_class(browser, what, desc = '', dbg = false)
+        get_div(browser, :class, what, desc, dbg)
+      end
+
+      # Return a reference to a div element identified by its *:text* attribute.
+      # @param (see #get_div_by_id)
+      # @return [Water::Div]
+      def get_div_by_text(browser, what, desc = '', dbg = false)
+        get_div(browser, :text, what, desc, dbg)
+      end
+
+      # Return a reference to a form element identified by its *:id* attribute.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String, Regexp] what A string or a regular expression to be found in the designated attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Water::Form]
+      def get_form_by_id(browser, what, desc = '')
+        get_form(browser, :id, what, desc)
+      end
+
+      # Return a reference to a frame element identified by its *:id* attribute.
+      # @param (see #get_form_by_id)
+      # @return [Water::Frame]
+      def get_frame_by_id(browser, what, desc = '')
+        get_frame(browser, :id, what, desc)
+      end
+
+      # Return a reference to a frame element identified by its *:index* within *browser*.
+      # @param (see #get_form_by_id)
+      # @return [Water::Frame]
+      def get_frame_by_index(browser, what, desc = '')
+        get_frame(browser, :index, what, desc)
+      end
+
+      # Return a reference to a frame element identified by its *:name* attribute.
+      # @param (see #get_form_by_id)
+      # @return [Water::Frame]
+      def get_frame_by_name(browser, what, desc = '')
+        get_frame(browser, :name, what, desc)
+      end
+
+      # Return a reference to a span element identified by its *:id* attribute.
+      # @param (see #get_form_by_id)
+      # @return [Water::Span]
+      def get_span_by_id(browser, what, desc = '')
+        get_span(browser, :id, what, desc)
+      end
+
+      # Return a reference to a table element identified by its attribute *how* containing *what*.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Watir::Table]
+      def get_table(browser, how, what, desc = '')
+        get_element(browser, :table, how, what, nil, desc)
+      end
+
+      # Return a reference to a table element identified by its *:id* attribute.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Watir::Table]
+      def get_table_by_id(browser, what, desc = '')
+        get_element(browser, :table, :id, what, nil, desc)
+      end
+
+      # Return a reference to a table element identified by its *:index* within *browser*.
+      # @param (see #get_table)
+      # @return [Watir::Table]
+      def get_table_by_index(browser, what, desc = '')
+        get_element(browser, :table, :index, what, nil, desc)
+      end
+
+      # Return a reference to a table element identified by its *:text* attribute.
+      # @param (see #get_table)
+      # @return [Watir::Table]
+      def get_table_by_text(browser, what)
+        get_element(browser, :table, :text, what, nil, desc)
+      end
+
+      # @!endgroup Legacy
+
+      # @!group Deprecated
+
+      # Find the index of an element within *browser* which has attribute *how* containing *what*
+      # @deprecated
+      def find_index_for_element(browser, element, how, ord, what)
+        element_sym = (element.to_s.pluralize).to_sym
         how_str = how.to_s
-        ptrn    = /#{how}:\s+#{strg}/i
-        list    = get_elements(browser, obj_sym, true)
+        ptrn    = /#{how}:\s+#{what}/i
+        list    = get_element_collection(browser, element_sym, true)
         cnt     = 0
         idx     = 0
         list.each do |nty|
@@ -296,79 +453,9 @@ module Awetestlib
         idx
       end
 
-      # @!endgroup Core
+      alias find_index_for_object find_index_for_element
 
-      # @!group Legacy (Backward compatible usages)
-
-      def get_select_options_by_id(browser, what, dump = false)
-        get_select_options(browser, :id, what, dump)
-      end
-
-      def get_select_options_by_name(browser, what, dump = false)
-        get_select_options(browser, :name, what, dump)
-      end
-
-      def get_selected_options_by_id(browser, what)
-        get_selected_options(browser, :id, what)
-      end
-
-      alias get_selected_option_by_id get_selected_options_by_id
-
-      def get_selected_options_by_name(browser, what)
-        get_selected_options(browser, :name, what)
-      end
-
-      alias get_selected_option_by_name get_selected_options_by_name
-
-      def get_div_by_id(browser, what, desc = '', dbg = false)
-        get_div(browser, :id, what, desc, dbg)
-      end
-
-      def get_div_by_class(browser, what, desc = '', dbg = false)
-        get_div(browser, :class, what, desc, dbg)
-      end
-
-      def get_div_by_text(browser, what, desc = '', dbg = false)
-        get_div(browser, :text, what, desc, dbg)
-      end
-
-      def get_form_by_id(browser, what)
-        get_form(browser, :id, what)
-      end
-
-      def get_frame_by_id(browser, what, desc = '')
-        get_frame(browser, :id, what, desc)
-      end
-
-      def get_frame_by_index(browser, what, desc = '')
-        get_frame(browser, :index, what, desc)
-      end
-
-      def get_frame_by_name(browser, what, desc = '')
-        get_frame(browser, :name, what, desc)
-      end
-
-      def get_span_by_id(browser, what, desc = '')
-        get_span(browser, :id, what, desc)
-      end
-
-      def get_table(browser, how, what, desc = '')
-        get_element(browser, :table, how, what, nil, desc)
-      end
-
-      def get_table_by_id(browser, what, desc = '')
-        get_element(browser, :table, :id, what, nil, desc)
-      end
-
-      def get_table_by_index(browser, what, desc = '')
-        get_element(browser, :table, :index, what, nil, desc)
-      end
-
-      def get_table_by_text(browser, what)
-        get_element(browser, :table, :text, what, nil, desc)
-      end
-
-      # @!endgroup Legacy
+      # @!endgroup Deprecated
 
     end
   end

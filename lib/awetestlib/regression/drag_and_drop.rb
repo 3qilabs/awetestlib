@@ -1,5 +1,10 @@
 module Awetestlib
   module Regression
+    # Methods for moving and resizing elements, manipulating the mouse, and checking for relative positioning of elements,
+    # including overlap, overlay, etc.
+    # @note Still experimental. Works with IE but not fully tested with Firefox or Chrome in Windows.
+    #   Not compatible with Mac
+    #   Rdoc is work in progress
     module DragAndDrop
 
       def verify_element_inside(inner_element, outer_element, desc = '')
@@ -372,6 +377,16 @@ module Awetestlib
 
       alias validate_move verify_resize
       alias validate_resize verify_resize
+
+      def validate_drag_drop(err, tol, exp, act)
+        ary = [false, "failed, expected: #{exp}, actual: #{act}, err: #{err}"]
+        if err == 0
+          ary = [true, 'succeeded ']
+        elsif err.abs <= tol
+          ary = [true, "within tolerance (+-#{tol}px) "]
+        end
+        ary
+      end
 
     end
   end

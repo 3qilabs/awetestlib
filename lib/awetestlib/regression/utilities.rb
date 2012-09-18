@@ -1,5 +1,8 @@
 module Awetestlib
   module Regression
+    # Miscellaneous helper methods.
+    # Includes file save/upload as well as debug methods.
+    # Rdoc work in progress.
     module Utilities
 
 
@@ -47,11 +50,12 @@ module Awetestlib
         @y_tolerance             = 4
       end
 
-      def build_message(strg1, desc = '', strg2 = '', strg3 = '')
+      def build_message(strg1, desc = '', strg2 = '', strg3 = '', strg4 = '')
         msg = "#{strg1}"
         msg << " #{desc}" if desc.length > 0
         msg << " #{strg2}" if strg2.length > 0
         msg << " #{strg3}" if strg3.length > 0
+        msg << " #{strg4}" if strg4.length > 0
         msg
       end
 
@@ -579,6 +583,7 @@ module Awetestlib
         text
       end
 
+      # @deprecated
       def flash_id(browser, strg, count)
         msg = "Flash link id='#{strg}' #{count} times."
         msg << " #{desc}" if desc.length > 0
@@ -882,6 +887,7 @@ module Awetestlib
         failed_to_log("Unable to #{msg} '#{$!}'")
       end
 
+      # @deprecated
       def flash_text(browser, strg, count, desc = '')
         msg = "Flash link text='#{strg}' #{count} times."
         msg << " #{desc}" if desc.length > 0

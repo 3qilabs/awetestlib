@@ -5,7 +5,7 @@ module Awetestlib
 
       # @!group Core
 
-      # Verify that element style attribute contains expected value in style +type+.
+      # Verify that element style attribute contains expected value in style *type*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] element The kind of element to click. Must be one of the elements recognized by Watir.
       #   Some common values are :link, :button, :image, :div, :span.
@@ -14,8 +14,8 @@ module Awetestlib
       #   Common values: :text, :id, :title, :name, :class, :href (:link only)
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
-      # @param [String] type The name of the style type (sub-attribute) where +expected+ is to be found.
-      # @param [String] expected The value in +type+ expected.
+      # @param [String] type The name of the style type (sub-attribute) where *expected* is to be found.
+      # @param [String] expected The value in *type* expected.
       # @return [Boolean] True if the style type contains the expected value
       #
       def validate_style_value(browser, element, how, what, type, expected, desc = '')
@@ -49,7 +49,7 @@ module Awetestlib
         failed_to_log("Unable to verify that #{msg} '#{$!}'")
       end
 
-      # @!todo Clarify and rename
+      # @todo Clarify and rename
       def arrays_match?(exp, act, dir, col, org = nil, desc = '')
         if exp == act
           passed_to_log("Click on #{dir} column '#{col}' produces expected sorted list. #{desc}")
@@ -325,8 +325,8 @@ module Awetestlib
       alias radio_not_checked? not_set?
       alias radio_not_selected? not_set?
 
-      # Verify that a radio button, identified by both the value (+what+) in attribute +how+
-      # and the +value+ in its value attribute, is set.
+      # Verify that a radio button, identified by both the value (*what*) in attribute *how*
+      # and the *value* in its value attribute, is set.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] how The element attribute used to identify the specific element.
       #   Valid values depend on the kind of element.
@@ -354,9 +354,18 @@ module Awetestlib
 
       alias radio_set_with_value? radio_with_value_set?
 
+      # Verify that a select list, identified by the value (*what*) in attribute *how*, contains an option with the
+      # value in *option*.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String, Regexp] option A string or a regular expression to be found in the value attribute of the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] Returns true if the option is found.
       def select_list_includes?(browser, how, what, option, desc = '')
-        msg = "Select list #{how}=>#{what} includes option '#{option}'."
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("Select list #{how}=>#{what} includes option '#{option}'.", desc)
         select_list = browser.select_list(how, what)
         options     = select_list.options
         if option
@@ -375,9 +384,12 @@ module Awetestlib
       alias validate_select_list_contains select_list_includes?
       alias select_list_contains? select_list_includes?
 
+      # Verify that a select list, identified by the value (*what*) in attribute *how*, contains an option with the
+      # value in *option*.
+      # @param (see #select_list_includes?)
+       # @return [Boolean] Returns true if the option is not found.
       def select_list_does_not_include?(browser, how, what, option, desc = '')
-        msg = "Select list #{how}=>#{what} does not include option '#{option}'."
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("Select list #{how}=>#{what} does not include option '#{option}'.", desc)
         select_list = browser.select_list(how, what)
         options     = select_list.options
         if option
@@ -393,9 +405,14 @@ module Awetestlib
         failed_to_log("Unable to verify #{msg}. '#{$!}'")
       end
 
-      def string_equals?(actual, target, desc = '')
-        msg = "Assert actual '#{actual}' equals expected '#{target}'. #{desc} "
-        if actual == target
+      # Compare strings for exact match and log results
+      # @param [String] actual The actual value as found in the application.
+      # @param [String] expected The value expected to be found.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] Returns true if actual exactly matches expected.
+      def string_equals?(actual, expected, desc = '')
+        msg = build_message("Actual string '#{actual}' equals expected '#{expected}'.", desc)
+        if expected == expected
           passed_to_log("#{msg}")
           true
         else
@@ -410,10 +427,12 @@ module Awetestlib
       alias text_equals string_equals?
       alias text_equals? string_equals?
 
-      def string_does_not_equal?(strg, target, desc = '')
-        msg = "String '#{strg}' does not equal '#{target}'."
-        msg << " '#{desc}' " if desc.length > 0
-        if strg == target
+      # Compare strings for no match and log results
+      # @param (see #string_equals?)
+      # @return [Boolean] Returns true if actual does not match expected.
+      def string_does_not_equal?(actual, expected, desc = '')
+        msg = build_message("Actual string '#{actual}' does not equal expected '#{expected}'.", desc)
+        if actual == expected
           failed_to_log("#{msg} (#{__LINE__})")
           true
         else
@@ -424,18 +443,22 @@ module Awetestlib
       alias validate_string_not_equal string_does_not_equal?
       alias validate_string_does_not_equal string_does_not_equal?
 
+      # Verify that date strings represent the same date, allowing for format differences.
+      # Compare strings for no match and log results
+      # @param (see #string_equals?)
+      # @param [Boolean] fail_on_format If set to true method will fail if the formats differ
+      # @return [Boolean] Returns true if actual does not match expected.
       def date_string_equals?(actual, expected, desc = '', fail_on_format = true)
         rtrn = false
-        msg  = build_message("Actual date '#{actual}' equals expected date '#{expected}'.", desc)
         if actual == expected
           rtrn = true
         elsif DateTime.parse(actual).to_s == DateTime.parse(expected).to_s
-          msg << " with different formatting. "
-          if not fail_on_format
+          msg2  "with different formatting. "
+          unless fail_on_format
             rtrn = true
           end
         end
-        msg << " #{desc}" if desc.length > 0
+        msg  = build_message("Actual date '#{actual}' equals expected date '#{expected}'.", msg2, desc)
         if rtrn
           passed_to_log("#{msg}")
         else
@@ -443,7 +466,7 @@ module Awetestlib
         end
         rtrn
       rescue
-        failed_to_log("Unable to #{msg}. #{$!}")
+        failed_to_log("Unable to verify that #{msg}. #{$!}")
       end
 
       # Verify that a DOM element is in read-only state.
@@ -619,7 +642,7 @@ module Awetestlib
 
       # @!group Legacy
 
-      # Verify that link identified by :text exists.
+      # Verify that link identified by *:text* exists.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
@@ -628,7 +651,7 @@ module Awetestlib
         exists?(browser, :link, :text, what, nil, desc)
       end
 
-      # Verify that link identified by :text does not exist.
+      # Verify that link identified by *:text* does not exist.
       # @param (see #validate_link_exist)
       # @return (see #does_not_exist?)
       def link_not_exist?(browser, what, desc = '')
@@ -637,21 +660,21 @@ module Awetestlib
 
       alias validate_link_not_exist link_not_exist?
 
-      # Verify that div identified by :id is visible.
+      # Verify that div identified by *:id* is visible.
       # @param (see #validate_link_exist)
       # @return [Boolean] True if the element is visible.
       def validate_div_visible_by_id(browser, what)
         visible?(browser, :div, :id, what)
       end
 
-      # Verify that div identified by :id is not visible.
+      # Verify that div identified by *:id* is not visible.
       # @param (see #validate_link_exist)
       # @return [Boolean] True if the element is not visible.
       def validate_div_not_visible_by_id(browser, what, desc = '')
         not_visible?(browser, :div, :id, what, desc)
       end
 
-      # Verify that div identified by :text is enabled.
+      # Verify that div identified by *:text* is enabled.
       # @param (see #validate_link_exist)
       # @return [Boolean] True if the element is enabled.
       def link_enabled?(browser, what, desc = '')
@@ -660,7 +683,7 @@ module Awetestlib
 
       alias validate_link_enabled link_enabled?
 
-      # Verify that div identified by :text is disabled.
+      # Verify that div identified by *:text* is disabled.
       # @param (see #validate_link_exist)
       # @return [Boolean] True if the element is disabled.
       def link_disabled?(browser, what, desc = '')
@@ -670,6 +693,7 @@ module Awetestlib
       alias validate_link_not_enabled link_disabled?
 
       # @!endgroup Legacy
+      # @!group Core
 
       def popup_exists?(popup, message=nil)
         if not message
@@ -693,16 +717,6 @@ module Awetestlib
       alias iepopup_exist? popup_exists?
       alias iepopup_exists popup_exists?
       alias iepopup_exists? popup_exists?
-
-      def validate_drag_drop(err, tol, exp, act)
-        ary = [false, "failed, expected: #{exp}, actual: #{act}, err: #{err}"]
-        if err == 0
-          ary = [true, 'succeeded ']
-        elsif err.abs <= tol
-          ary = [true, "within tolerance (+-#{tol}px) "]
-        end
-        ary
-      end
 
       #Validate select list contains text
       def validate_list_by_id(browser, what, option, desc = '', select_if_present = true)
@@ -841,6 +855,10 @@ module Awetestlib
       def validate_text_in_span_by_id(browser, id, strg = '', desc = '')
         element_contains_text?(browser, :span, :id, id, strg, desc)
       end
+
+      # @!endgroup Legacy
+
+      # @!group Core
 
       def validate_select_list(browser, how, what, opt_type, list = nil, multiple = false, ignore = ['Select One'], limit = 5)
         mark_testlevel("#{__method__.to_s.titleize} (#{how}=>#{what})", 2)
@@ -1007,6 +1025,10 @@ module Awetestlib
       end
 
       alias validate_textfield_not_value textfield_does_not_equal?
+
+      # @!endgroup Core
+
+      # @!group Legacy
 
       def validate_textfield_not_value_by_name(browser, name, value, desc = '')
         textfield_does_not_equal?(browser, :name, name, value, desc)

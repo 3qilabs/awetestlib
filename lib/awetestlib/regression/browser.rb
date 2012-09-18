@@ -112,7 +112,7 @@ module Awetestlib
       #  popup = attach_browser(mainwindow, :title, '[title of new window]')
       # @todo Update to work with webdriver for IE.
       # @param [Watir::Browser] browser A reference to the current browser window.
-      # @param [Symbol] how The element attribute used to identify the window: :title or :url.
+      # @param [Symbol] how The element attribute used to identify the window: *:title* or :url.
       # @param [String|Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return [Watir::Browser] Internet Explorer
@@ -154,7 +154,7 @@ module Awetestlib
       #  popup = attach_popup(mainwindow, :url, '[url of new window]') *or*
       #  popup = attach_popup(mainwindow, :title, '[title of new window]')
       # @param [Watir::Browser] browser A reference to the current browser window.
-      # @param [Symbol] how The element attribute used to identify the window: :title or :url.
+      # @param [Symbol] how The element attribute used to identify the window: *:title* or :url.
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return [Watir::Browser] The new browser window.
@@ -268,11 +268,11 @@ module Awetestlib
 
       end
 
-      # Provide an authorization token or passcode in a specified text field element identified by its :id attribute.
+      # Provide an authorization token or passcode in a specified text field element identified by its *:id* attribute.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String] role Usually a user role designation ('Administrator', 'User', etc.)
       # @param [String] token Authentification token required by logon process.
-      # @param [String/Regexp] id Value of the :id attribute of the text field that will receive the +token+.
+      # @param [String/Regexp] id Value of the *:id* attribute of the text field that will receive the *token*.
       def token_auth(browser, role, token, id = 'token_pass')
         set_textfield_by_id(browser, id, token)
         click_button_by_value(browser, 'Continue')
@@ -364,7 +364,7 @@ module Awetestlib
       end
 
       # Force browser instance to close, one way or the other.
-      # Instance is identified by +hwnd+, the Windows OS handle for the process.
+      # Instance is identified by *hwnd*, the Windows OS handle for the process.
       # @param [String] hwnd The value for the window handle for the browser process.
       # @param [Fixnum] lnbr Line number in calling script.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be closed.
@@ -548,7 +548,7 @@ module Awetestlib
         end
       end
 
-      # Close an HTML panel or division by clicking a link within it identified by the :text value of the link.
+      # Close an HTML panel or division by clicking a link within it identified by the *:text* value of the link.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Watir::Browser] panel Reference to the panel (usually a div element) to be closed
       def close_panel_by_text(browser, panel, what = 'Close')
@@ -646,9 +646,9 @@ module Awetestlib
       #  failed_to_log("Close popup title=#{title} failed: '#{$!}' (#{__LINE__})")
       #end
 
-      # Close an browser window (popup) by clicking a link within it identified by the :text value of the link.
+      # Close an browser window (popup) by clicking a link within it identified by the *:text* value of the link.
       # @param [Watir::Browser] popup A reference to the browser window or container element to be closed.
-      # @param [String] what Uniquely identify the :link element within the popup by the value in its :text attribute.
+      # @param [String] what Uniquely identify the *:link* element within the popup by the value in its *:text* attribute.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       def close_popup_by_text(popup, what = 'Close', desc = '')
         count = 0
@@ -926,7 +926,7 @@ module Awetestlib
         failed_to_log("Unable to find popup :#{how}=>'#{what}'. #{desc} '#{$!}' (#{__LINE__})")
       end
 
-      # Confirm that the object passed in +browser+ is actually a Browser object.
+      # Confirm that the object passed in *browser* is actually a Browser object.
       # @param [Watir::Browser] browser A reference to the window or container element to be tested.
       def is_browser?(browser)
         myClass = browser.class.to_s
@@ -944,7 +944,7 @@ module Awetestlib
 
       alias is_browser is_browser?
 
-      # Translate window title supplied in +title+ to a title appropriate for the targeted browser and version
+      # Translate window title supplied in *title* to a title appropriate for the targeted browser and version
       # actually being run.
       # Used primarily for handling of modal popups and dialogs.
       # This allows cross-browser compatibility for handling modal popups and other windows accessed by titlt.
@@ -1122,19 +1122,20 @@ module Awetestlib
       # Calls rescue_me() when trying to capture the text to filter out known false errors
       # and handle container elements that don't respond to the .text method.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      # @param [String] fileName The file name of the executing script.
+      # @param [String] file_name The file name of the executing script.
       # @param [Fixnum] lnbr Contains a message or description intended to appear in the log and/or report output
-      # @param [Boolean] dbg If true additional debug messages are written to the log.
+      # @param [Boolean] dbg If set to true additional debug messages are written to the log.
+      #
       # @return [Boolean] True if no error conditions have been encountered.
-      def validate(browser, fileName = '', lnbr = __LINE__, dbg = false)
+      def validate(browser, file_name = '', lnbr = "#{__LINE__}", dbg = false)
         debug_to_log("#{__method__} begin") if dbg
         msg  = ''
         myOK = true
         if not browser
-          msg  = "#{fileName}----browser is nil object. (#{lnbr})"
+          msg  = "#{file_name}----browser is nil object. (#{lnbr})"
           myOK = false
         elsif not is_browser?(browser)
-          msg = "#{fileName}----not a browser. (#{lnbr})"
+          msg = "#{file_name}----not a browser. (#{lnbr})"
           debug_to_log(browser.inspect)
           myOK = false
 
@@ -1170,94 +1171,94 @@ module Awetestlib
 
           if browser_text
             if browser_text.match(/unrecognized error condition has occurred/i)
-              msg  = "#{fileName}----Unrecognized Exception occurred. (#{lnbr})"
+              msg  = "#{file_name}----Unrecognized Exception occurred. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/cannot find server or dns error/i)
-              msg  = "#{fileName}----Cannot find server error or DNS error. (#{lnbr})"
+              msg  = "#{file_name}----Cannot find server error or DNS error. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/the rpc server is unavailable/i)
-              msg  = "#{fileName}----RPC server unavailable. (#{lnbr})"
+              msg  = "#{file_name}----RPC server unavailable. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/404 not found/i) or
                 browser_text.match(/the page you were looking for does\s*n[o']t exist/i)
-              msg  = "#{fileName}----RFC 2068 HTTP/1.1: 404 URI Not Found. (#{lnbr})"
+              msg  = "#{file_name}----RFC 2068 HTTP/1.1: 404 URI Not Found. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/we're sorry, but something went wrong/i) or
                 browser_text.match(/http status 500/i)
-              msg  = "#{fileName}----RFC 2068 HTTP/1.1: 500 Internal Server Error. (#{lnbr})"
+              msg  = "#{file_name}----RFC 2068 HTTP/1.1: 500 Internal Server Error. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/internet explorer cannot display the webpage/i)
-              msg  = "#{fileName}----Probably RFC 2068 HTTP/1.1: 500 Internal Server Error. (#{lnbr})"
+              msg  = "#{file_name}----Probably RFC 2068 HTTP/1.1: 500 Internal Server Error. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/503.*service unavailable/i)
-              msg  = "#{fileName}----RFC 2068 HTTP/1.1: 503 Service Unavailable. (#{lnbr})"
+              msg  = "#{file_name}----RFC 2068 HTTP/1.1: 503 Service Unavailable. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/java.lang.NullPointerException/i)
-              msg  = "#{fileName}----java.lang.NullPointerException. (#{lnbr})"
+              msg  = "#{file_name}----java.lang.NullPointerException. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/due to unscheduled maintenance/i)
-              msg  = "#{fileName}----Due to unscheduled maintenance. (#{lnbr})"
+              msg  = "#{file_name}----Due to unscheduled maintenance. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/network\s+error\s*(.+)$/i)
               $1.chomp!
-              msg  = "#{fileName}----Network Error #{$1}. (#{lnbr})"
+              msg  = "#{file_name}----Network Error #{$1}. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/warning: page has expired/i)
-              msg  = "#{fileName}----Page using information from form has expired. Not automatically resubmitted. (#{lnbr})"
+              msg  = "#{file_name}----Page using information from form has expired. Not automatically resubmitted. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/no backend server available/i)
-              msg  = "#{fileName}----Cannot Reach Server (#{lnbr})"
+              msg  = "#{file_name}----Cannot Reach Server (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/sign on\s+.+\s+unsuccessful/i)
-              msg  = "#{fileName}----Invalid Id or Password (#{lnbr})"
+              msg  = "#{file_name}----Invalid Id or Password (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/you are not authorized/i)
-              msg  = "#{fileName}----Not authorized to view this page. (#{lnbr})"
+              msg  = "#{file_name}----Not authorized to view this page. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/too many incorrect login attempts have been made/i)
-              msg  = "#{fileName}----Invalid Id or Password. Too many tries. (#{lnbr})"
+              msg  = "#{file_name}----Invalid Id or Password. Too many tries. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/system error\.\s+an error has occurred/i)
-              msg  = "#{fileName}----System Error. An error has occurred. Please try again or call the Help Line for assistance. (#{lnbr})"
+              msg  = "#{file_name}----System Error. An error has occurred. Please try again or call the Help Line for assistance. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/Internal Server failure,\s+NSAPI plugin/i)
-              msg  = "#{fileName}----Internal Server failure, NSAPI plugin. (#{lnbr})"
+              msg  = "#{file_name}----Internal Server failure, NSAPI plugin. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/Error Page/i)
-              msg  = "#{fileName}----Error Page. (#{lnbr})"
+              msg  = "#{file_name}----Error Page. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/The website cannot display the page/i)
-              msg  = "#{fileName}----HTTP 500. (#{lnbr})"
+              msg  = "#{file_name}----HTTP 500. (#{lnbr})"
               myOK = false
 
               #        elsif browser_text.match(/Insufficient Data/i)
-              #          msg  = "#{fileName}----Insufficient Data. (#{lnbr})"
+              #          msg  = "#{file_name}----Insufficient Data. (#{lnbr})"
               #          myOK = false
 
             elsif browser_text.match(/The timeout period elapsed/i)
-              msg  = "#{fileName}----Time out period elapsed or server not responding. (#{lnbr})"
+              msg  = "#{file_name}----Time out period elapsed or server not responding. (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/Unexpected\s+errors*\s+occur+ed\.\s+(?:-+)\s+(.+)/i)
-              msg = "#{fileName}----Unexpected errors occurred. #{$2.slice(0, 120)} (#{lnbr})"
+              msg = "#{file_name}----Unexpected errors occurred. #{$2.slice(0, 120)} (#{lnbr})"
               if not browser_text.match(/close the window and try again/i)
                 myOK = false
               else
@@ -1265,15 +1266,15 @@ module Awetestlib
               end
 
             elsif browser_text.match(/Server Error in (.+) Application\.\s+(?:-+)\s+(.+)/i)
-              msg  = "#{fileName}----Server Error in #{1} Application. #{$2.slice(0, 100)} (#{lnbr})"
+              msg  = "#{file_name}----Server Error in #{1} Application. #{$2.slice(0, 100)} (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/Server Error in (.+) Application\./i)
-              msg  = "#{fileName}----Server Error in #{1} Application. '#{browser_text.slice(0, 250)}...' (#{lnbr})"
+              msg  = "#{file_name}----Server Error in #{1} Application. '#{browser_text.slice(0, 250)}...' (#{lnbr})"
               myOK = false
 
             elsif browser_text.match(/An error has occur+ed\. Please contact support/i)
-              msg  = "#{fileName}----An error has occurred. Please contact support (#{lnbr})"
+              msg  = "#{file_name}----An error has occurred. Please contact support (#{lnbr})"
               myOK = false
 
             end
@@ -1308,7 +1309,7 @@ module Awetestlib
 
       # @!group Backward compatible usages
 
-      # Returns a reference to a browser window using the window's :url attribute. Calls attach_browser().
+      # Returns a reference to a browser window using the window's *:url* attribute. Calls attach_browser().
       # @example
       #  mainwindow = open_browser('www.google.com')
       #  click(mainwindow, :button, :id, 'an id string')  # click a button that opens another browser window
@@ -1323,14 +1324,14 @@ module Awetestlib
 
       alias attach_browser_with_url attach_browser_by_url
 
-      # Returns a reference to a new browser window identified by its :title attribute.  Used to attach a new browser window to a variable
+      # Returns a reference to a new browser window identified by its *:title* attribute.  Used to attach a new browser window to a variable
       # which can then be passed to methods that require a *browser* parameter. Calls attach_browser().
       # @param (see #attach_browser_by_url)
       def attach_popup_by_title(browser, what, desc = '')
         attach_popup(browser, :title, what, desc)
       end
 
-      # Returns a reference to a new browser window identified by its :url attribute.  Used to attach a new browser window to a variable
+      # Returns a reference to a new browser window identified by its *:url* attribute.  Used to attach a new browser window to a variable
       # which can then be passed to methods that require a *browser* parameter. Calls attach_browser().
       # @param (see #attach_browser_by_url)
       def attach_popup_by_url(browser, what, desc = '')
@@ -1341,8 +1342,14 @@ module Awetestlib
       alias attach_popup_with_url attach_popup_by_url
       alias attach_iepopup attach_popup_by_url
 
-      def close_popup_by_button_title(popup, strg, desc = '')
-        click(popup, :link, :title, strg, desc)
+      # Close a popup browser window (non-modal) by clicking on a link with :title *what*.
+      # This method does not check to make sure the popup is actually closed.
+      # @param [Watir::Browser] popup A reference to the current popup browser window.
+      # @param [String, Regexp] what The value in the targeted attribute that uniquely identifies the new window
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] True if the click is successful.
+      def close_popup_by_button_title(popup, what, desc = '')
+        click(popup, :link, :title, what, desc)
       end
 
       # @!endgroup Backward
