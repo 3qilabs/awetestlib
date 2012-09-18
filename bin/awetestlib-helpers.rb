@@ -21,7 +21,7 @@ def print_usage
     awetestlib mobile_app_setup <project_name>
       setup a mobile app project
 
-    awetestlib cucumber_setup
+    awetestlib cucumber_setup <project_name>
       setup cucumber regression and provide skeleton folder structure
 
     awetestlib <script_file> [parameters]
