@@ -1,3 +1,4 @@
+require 'open-uri'
 module Awetestlib
   class Runner
     def initialize(options = {})

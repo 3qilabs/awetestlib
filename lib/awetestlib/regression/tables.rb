@@ -1,6 +1,11 @@
 module Awetestlib
   module Regression
+    # Methods for handling Tables, Rows, and Cells
+    # Rdoc work in progress
     module Tables
+
+
+      # Groups: Columns, Rows, Sorting
 
       def get_index_for_column_head(panel, table_index, strg, desc = '')
         table = panel.tables[table_index]
@@ -239,6 +244,32 @@ module Awetestlib
           end
         end
         text
+      end
+
+      # Return a hash containing a cross reference of the header names and indexes (columns) for the specified table.
+      # @example
+      #   (need example and usage)
+      # @param [Watir::Table] table A reference to the table.
+      # @param [Fixnum] header_index The index of the row containing the header names.
+      # @return [Hash] Two level hash of hashes. Internal hashes are 'name' which allows look-up of a column index
+      # by the header name, and 'index' which allows look-up of the name by the column index.
+      def get_table_headers(table, header_index = 1)
+        headers          = Hash.new
+        headers['index'] = Hash.new
+        headers['name']  = Hash.new
+        count            = 1
+        table[header_index].each do |cell|
+          if cell.text.length > 0
+            name                    = cell.text.gsub(/\s+/, ' ')
+            headers['index'][count] = name
+            headers['name'][name]   = count
+          end
+          count += 1
+        end
+        #debug_to_log("#{__method__}: headers:\n#{headers.to_yaml}")
+        headers
+      rescue
+        failed_to_log("Unable to get content headers. '#{$!}'")
       end
 
       def count_rows_with_string(container, table_index, strg)
@@ -509,6 +540,32 @@ module Awetestlib
         end
         sleep_for(1)
       end
+
+      def text_in_table?(browser, how, what, expected, desc = '')
+        msg = build_message("Table :#{how}=>#{what} contains '#{expected}.", desc)
+        if browser.table(how, what).text =~ expected
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log(msg)
+        end
+      rescue
+        failed_to_log("Unable to verify that #{msg}': '#{$!}'")
+      end
+
+      def text_in_table_row_with_text?(table, text, target, desc = '')
+        #TODO This needs clarification, renaming
+        msg   = build_message("Table :id=>#{table.id} row with text '#{text} also contains '#{target}.", desc)
+        index = get_index_of_row_with_text(table, text)
+        if table[index].text =~ target
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log(msg)
+        end
+      end
+
+      alias verify_text_in_table_with_text text_in_table_row_with_text?
 
     end
   end

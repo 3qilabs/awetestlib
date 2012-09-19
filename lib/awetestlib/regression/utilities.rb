@@ -1,6 +1,13 @@
 module Awetestlib
   module Regression
+    # Miscellaneous helper methods.
+    # Includes file save/upload as well as debug methods.
+    # Rdoc work in progress.
     module Utilities
+
+
+      # Group by associated DOM object or scripting function?
+
 
       # Place holder to prevent method not found error in scripts
       def set_script_variables
@@ -41,6 +48,15 @@ module Awetestlib
         @settings_panel_index    = 0
         @x_tolerance             = 4
         @y_tolerance             = 4
+      end
+
+      def build_message(strg1, desc = '', strg2 = '', strg3 = '', strg4 = '')
+        msg = "#{strg1}"
+        msg << " #{desc}" if desc.length > 0
+        msg << " #{strg2}" if strg2.length > 0
+        msg << " #{strg3}" if strg3.length > 0
+        msg << " #{strg4}" if strg4.length > 0
+        msg
       end
 
       def get_trace(lnbr)
@@ -318,7 +334,7 @@ module Awetestlib
       end
 
       def get_caller_line
-        last_caller = get_callers[0]
+        last_caller = get_call_list[0]
         line        = last_caller.split(':', 3)[1]
         line
       end
@@ -442,7 +458,7 @@ module Awetestlib
         rtrn
       end
 
-      def dump_select_list_options(element)
+      def dump_select_list_options(element, report = false)
         msg     = "#{element.inspect}"
         options = element.options
         cnt     = 1
@@ -450,7 +466,11 @@ module Awetestlib
           msg << "\n\t#{cnt}:\t'#{o}"
           cnt += 1
         end
-        debug_to_log(msg)
+        if report
+          debug_to_report(msg)
+        else
+          debug_to_log(msg)
+        end
       end
 
       def dump_all_tables(browser, to_report = false)
@@ -563,14 +583,13 @@ module Awetestlib
         text
       end
 
+      # @deprecated
       def flash_id(browser, strg, count)
         msg = "Flash link id='#{strg}' #{count} times."
         msg << " #{desc}" if desc.length > 0
         browser.link(:id, strg).flash(count)
-        if validate(browser, @myName, __LINE__)
-          passed_to_log(msg)
-          true
-        end
+        passed_to_log(msg)
+        true
       rescue
         failed_to_log("Unable to #{msg} '#{$!}'")
       end
@@ -861,32 +880,36 @@ module Awetestlib
         msg = "Set focus on textfield name='#{strg}' "
         msg << " #{desc}" if desc.length > 0
         tf = browser.text_field(:id, strg)
-        if validate(browser, @myName, __LINE__)
-          tf.focus
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(msg)
-            true
-          end
-        end
+        tf.focus
+        passed_to_log(msg)
+        true
       rescue
         failed_to_log("Unable to #{msg} '#{$!}'")
       end
 
+      # @deprecated
       def flash_text(browser, strg, count, desc = '')
         msg = "Flash link text='#{strg}' #{count} times."
         msg << " #{desc}" if desc.length > 0
         strgCnt = string_count_in_string(browser.text, strg)
         if strgCnt > 0
           browser.link(:text, strg).flash(count)
-          if validate(browser, @myName, __LINE__)
-            passed_to_log(msg)
-            true
-          end
+          passed_to_log(msg)
+          true
         else
           failed_to_log("#{msg} Link not found.")
         end
       rescue
         failed_to_log("Unable to #{msg} '#{$!}'")
+      end
+
+      def do_taskkill(severity, pid)
+        if pid and pid > 0 and pid < 538976288
+          info_to_log("Executing taskkill for pid #{pid}")
+          log_message(severity, %x[taskkill /t /f /pid #{pid}])
+        end
+      rescue
+        error_to_log("#{$!}  (#{__LINE__})")
       end
 
 

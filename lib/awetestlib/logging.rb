@@ -1,10 +1,20 @@
 module Awetestlib
 module Logging
 
+  # @deprecated
   def self.included(mod)
     # puts "RegressionSupport::Logging extended by #{mod}"
   end
 
+  # Format log message and write to STDOUT.  Write to physical log if indicated.
+  # @private
+  # @param [Fixnum] severity Severity level of message. Use constants DEBUG, INFO, WARN, ERROR, FATAL, or UNKNOWN
+  # @param [String] message The message to be placed in the log.
+  # @param [String, Fixnum] tag Indicates the type of message. Valid string values are 'FAIL' and 'PASS'.
+  # Valid number values are 0 to 9.
+  # @param [Fixnum] lnbr the line number in the calling script
+  # @param [Fixnum] addts Obsolete, no longer used.
+  # @param [String] exception Obsolete, no longer used.
   def log_message(severity, message, tag = '', lnbr = nil, addts = 1, exception=nil)
     # caller = get_caller(lnbr, exception)
 
@@ -50,6 +60,10 @@ module Logging
 
   #private log_message
 
+  # Translates tag value to corresponding value for +pass+ column in database.
+  # @private
+  # @param [String, Fixnum] tag
+  # @return [String] Single character
   def pass_code_for(tag)
     case
       when tag =~ /PASS/
@@ -204,7 +218,7 @@ tags: log, error, fail, reference, tag, report
     @my_failed_count += 1 if @my_failed_count
     parse_error_references(message, true)
     @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]","FAILED")
-    log_message(WARN, "#{message}" + " (#{lnbr})]", FAIL, lnbr)
+    log_message(WARN, "#{message}", FAIL, lnbr)
   end
 
   alias validate_failed_tolog failed_to_log
@@ -302,7 +316,7 @@ tags: log, caller, trace, report
       end
     end
     logger               = ActiveSupport::BufferedLogger.new(logFile)
-    logger.level         = Logger::DEBUG
+    logger.level         = ActiveSupport::BufferedLogger::DEBUG
     logger.auto_flushing = (true)
     logger.add(INFO, "#{logFile}\n#{ENV["OS"]}")
     logger

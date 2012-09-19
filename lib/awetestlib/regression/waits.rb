@@ -1,83 +1,86 @@
 module Awetestlib
   module Regression
+    # Methods for waiting until something has happened in the browser or DOM.
+    # sleep_for() is the basic technique. Its disadvantage is that it needs to be set for the longest likely wait time.
+    # The wait methods take advantage of the Watir and Watir Webdriver wait functionality to pause only as long as necessary for
+    # the element in question to be in the state needed.
     module Waits
 
+      # Sleep for +seconds+ seconds before continuing execution of the script.
+      # A message is logged (but not reported) which, by default, includes a trace showing where in the script the sleep was invoked.
+      # @param [Fixnum] seconds The number of seconds to wait.
+      # @param [Boolean] dbg If true, includes a trace in the message
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output.
       def sleep_for(seconds, dbg = true, desc = '')
-        msg = "Sleeping for #{seconds} seconds."
-        msg << " #{desc}" if desc.length > 0
+        trace = "\n#{get_debug_list}" if dbg
+        msg = build_message("Sleeping for #{seconds} seconds.", desc, trace)
         info_to_log(msg)
         sleep(seconds)
       end
 
-    # howLong is integer, whatFor is a browser object
-=begin rdoc
-:tags:wait
-howLong is the number of seconds, text is a string to be found, threshold is the number of seconds
-after which a fail message is generated even though the text was detected within the howLong limit.
-Use this in place of wait_until_by_text when the wait time needs to be longer than the test automation default.
-=end
-      def hold_for_text(browser, howLong, text, desc = '', threshold = 20, interval = 0.25)
-        countdown = howLong
+      # Wait for a specific text to appear in the +browser+.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String, Regexp] text A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @param [Fixnum] threshold The number of seconds after which a warning is added to the report message.
+      # @param [Fixnum] interval The time between checks that the text exists.
+      # @return [Boolean] Returns true if the text appears before +how_long+ has expired.
+      def hold_for_text(browser, how_long, text, desc = '', threshold = 20, interval = 0.25)
+        countdown = how_long
         while ((not browser.contains_text(text)) and countdown > 0)
           sleep(interval)
           countdown = countdown - interval
         end
-        if countdown < howLong
-          waittime = howLong - countdown
-          passed_tolog("#{__method__}  '#{text}' found after #{waittime} second(s) #{desc}")
+        if countdown < how_long
+          waittime = how_long - countdown
+          passed_to_log("#{__method__}  '#{text}' found after #{waittime} second(s) #{desc}")
           if waittime > threshold
-            failed_tolog("#{__method__}  '#{text}' took #{waittime} second(s). (threshold: #{threshold} seconds) #{desc}")
+            failed_to_log("#{__method__}  '#{text}' took #{waittime} second(s). (threshold: #{threshold} seconds) #{desc}")
           end
           true
         else
-          failed_tolog("#{__method__}  '#{text}' not found after #{howLong} second(s) #{desc}")
+          failed_to_log("#{__method__}  '#{text}' not found after #{how_long} second(s) #{desc}")
           false
         end
       rescue
-        failed_tolog("Unable to #{__method__} '#{text}'. '#{$!}' #{desc}")
+        failed_to_log("Unable to #{__method__} '#{text}'. '#{$!}' #{desc}")
       end
 
       alias wait_for_text hold_for_text
 
-      # howLong is integer, whatFor is a browser object
-      def wait_for_text(browser, howLong, text)
-        countdown = howLong
-        while ((not browser.contains_text(text)) and countdown > 0)
-          sleep(1)
-          countdown = countdown - 1
-        end
-        if countdown
-          passed_tolog("wait_for_text '#{text}' found after #{howLong} second(s)")
-        else
-          failed_tolog("wait_for_text '#{text}' not foundafter #{howLong} second(s)")
-        end
-        countdown
-      end
-
+      # Wait while an element identified by attribute +how+ with value +what+ 1) exists, disappears, and exists again.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @param [Fixnum] timeout
+      # @return [Boolean] Returns true if disappears and reappears, each within the +timeout+ limit
       def wait_for_element_to_reappear(browser, how, what, desc = '', timeout = 20)
         msg = "Element #{how}=#{what} exists. #{desc}"
         wait_while(browser, "While: #{msg}", timeout) { browser.element(how, what).exists? }
         wait_until(browser, "Until: #{msg}", timeout) { browser.element(how, what).exists? }
       end
 
-      # howLong is integer, whatFor is a browser object
-      def wait_for_exists(howLong, whatFor)
-        wait_for(howLong, whatFor)
+      # how_long is integer, what_for is a browser object
+      def wait_for_exists(how_long, what_for)
+        wait_for(how_long, what_for)
       end
 
-      def wait_for(howLong, whatFor)
-        countdown = howLong
-        while ((not whatFor.exists?) and countdown > 0)
+      def wait_for(how_long, what_for)
+        countdown = how_long
+        while ((not what_for.exists?) and countdown > 0)
           sleep(1)
-          puts whatFor.inspect+':'+countdown.to_s
+          puts what_for.inspect+':'+countdown.to_s
           countdown = countdown - 1
         end
         if countdown
-          puts 'found '+whatFor.inspect
-          passed_tolog("wait_for (#{howLong} found "+whatFor.inspect)
+          puts 'found '+what_for.inspect
+          passed_tolog("wait_for (#{how_long} found "+what_for.inspect)
         else
-          puts 'Did not find '+whatFor.inspect
-          failed_tolog("wait_for (#{howLong} did not find "+whatFor.inspect)
+          puts 'Did not find '+what_for.inspect
+          failed_tolog("wait_for (#{how_long} did not find "+what_for.inspect)
         end
         countdown
       end
@@ -151,10 +154,8 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         stop = Time.now.to_f
         #debug_to_log("#{__method__}: start:#{start} stop:#{stop}")
         #    sleep 1
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("#{msg} (#{stop - start} seconds)")
-          true
-        end
+        passed_to_log("#{msg} (#{stop - start} seconds)")
+        true
       rescue
         failed_to_log("Unable to complete #{msg}: '#{$!}'")
       end
@@ -178,11 +179,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         end
         stop = Time.now.to_f
         #debug_to_log("#{__method__}: start:#{start} stop:#{stop} block: #{block.to_s}")
-        #    sleep 1
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") #  {#{block.to_s}}")
-          true
-        end
+                                                                     #    sleep 1
+        passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") #  {#{block.to_s}}")
+        true
       rescue
         failed_to_log("Unable to complete #{msg}. '#{$!}'")
       end
@@ -205,11 +204,9 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         end
         stop = Time.now.to_f
         #debug_to_log("#{__method__}: start:#{start} stop:#{stop} block: #{block.to_s}")
-        #    sleep 1
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") unless skip_pass #  {#{block.to_s}}")
-          true
-        end
+                                                                                      #    sleep 1
+        passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") unless skip_pass #  {#{block.to_s}}")
+        true
       rescue
         failed_to_log("Unable to complete #{msg}  '#{$!}'")
       end
@@ -335,10 +332,8 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         stop = Time.now.to_f
         #debug_to_log("#{__method__}: start:#{start} stop:#{stop}")
         #    sleep 1
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("Wait until (#{what} :#{how}=>#{value}) enabled. #{desc} (#{stop - start} seconds)")
-          true
-        end
+        passed_to_log("Wait until (#{what} :#{how}=>#{value}) enabled. #{desc} (#{stop - start} seconds)")
+        true
       rescue
         failed_to_log("Unable to complete wait until (#{what} :#{how}=>#{value}) enabled. #{desc}: '#{$!}'")
       end
@@ -364,7 +359,7 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
               Watir::Wait.until { browser.text_field(how, what).visible? }
             else
               Watir::Wait.until { browser.element(how, what).visible? }
-    #          raise "#{__method__}: Element #{what} not supported."
+            #          raise "#{__method__}: Element #{what} not supported."
           end
         rescue => e
           if e.class.to_s =~ /TimeOutException/
@@ -377,10 +372,8 @@ Use this in place of wait_until_by_text when the wait time needs to be longer th
         stop = Time.now.to_f
         #debug_to_log("#{__method__}: start:#{start} stop:#{stop}")
         #    sleep 1
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("Wait until (#{element} :#{how}=>#{what}) visible. #{desc} (#{stop - start} seconds)")
-          true
-        end
+        passed_to_log("Wait until (#{element} :#{how}=>#{what}) visible. #{desc} (#{stop - start} seconds)")
+        true
       rescue
         failed_to_log("Unable to complete wait until (#{element} :#{how}=>#{what}) visible. #{desc}: '#{$!}'")
       end

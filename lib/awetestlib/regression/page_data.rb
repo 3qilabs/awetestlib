@@ -1,6 +1,10 @@
 module Awetestlib
   module Regression
+    # Methods for capture and manipulation of data contained in
+    # text, values, and/or states of spans, text fields, radios, checkboxes, and select_lists.
     module PageData
+
+      # @!group Core
 
 =begin rdoc
 :category: Page Data
@@ -36,7 +40,7 @@ No positive validations are reported but failure is rescued and reported.
       end
 
       def compare_page_data(before, after, how, desc = '')
-        [:text, :textarea, :select_list, :span, :checkbox, :radio].each do |type|
+        [:text, :textarea, :select_list, :span, :hidden, :checkbox, :radio].each do |type|
           before[how][type].each_key do |what|
             msg = "#{desc} #{type} #{how}=#{what}: Expected '#{before[how][type][what]}'."
             if after[how][type][what] == before[how][type][what]
@@ -144,22 +148,32 @@ No positive validations are reported but failure is rescued and reported.
       end
 
       def get_textfield_value(browser, how, what, desc = '')
-        msg = "Return value in textfield #{how}='#{what}'"
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("Return value in textfield #{how}='#{what}'", desc)
         tf = browser.text_field(how, what)
-        if validate(browser, @myName, __LINE__)
-          if tf
-            debug_to_log("#{tf.inspect}")
-            vlu = tf.value
-            passed_to_log("#{msg} Value='#{vlu}'")
-            vlu
-          else
-            failed_to_log("#{msg}")
-          end
+        if tf
+          debug_to_log("#{tf.inspect}")
+          vlu = tf.value
+          passed_to_log("#{msg} Value='#{vlu}'")
+          vlu
+        else
+          failed_to_log("#{msg}")
         end
       rescue
         failed_to_log("Unable to #{msg}: '#{$!}'")
       end
+
+      def get_element_text(browser, element, how, what, desc = '')
+        msg = build_message("Return text in #{element} #{how}='#{what}'", desc)
+        text = browser.element(how, what).text
+        passed_to_log("#{msg} text='#{text}'")
+        text
+      rescue
+        failed_to_log("Unable to #{msg}: '#{$!}'")
+      end
+
+      # @!endgroup Core
+
+      # @!group Legacy (Backward compatible usage)
 
       def get_textfield_value_by_name(browser, strg, desc = '')
         get_textfield_value(browser, :name, strg, desc)
@@ -169,20 +183,7 @@ No positive validations are reported but failure is rescued and reported.
         get_textfield_value(browser, :id, strg)
       end
 
-      def get_element_text(browser, element, how, what, desc = '')
-        msg = "Return text in #{element} #{how}='#{what}'"
-        msg << " #{desc}" if desc.length > 0
-        text = browser.element(how, what).text
-        if validate(browser, @myName, __LINE__)
-          passed_to_log("#{msg} text='#{text}'")
-          text
-        end
-      rescue
-        failed_to_log("Unable to #{msg}: '#{$!}'")
-      end
-
-
-
+      # @!endgroup Legacy
 
     end
   end

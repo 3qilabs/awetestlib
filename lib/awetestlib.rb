@@ -20,7 +20,7 @@ module Awetestlib
 
   if USING_WINDOWS
     #require 'win32ole' <-- We'll load this later in Shamisen::AwetestLegacy::Runner. It has to be loaded after watir, see https://www.pivotaltracker.com/story/show/19249981
-    require 'win32/screenshot'
+    require 'win32/screenshot'  # triggering segmentation fault 10sep2012 pmn
   end
   #require 'active_support/inflector'
   #require 'active_support/core_ext/object'
