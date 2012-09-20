@@ -614,7 +614,7 @@ module Awetestlib
         msg = build_message("Select :#{how}=>'#{what}", desc)
         ok  = true
         if list
-          case which
+          case how
             when :text
               list.select(what) #TODO: regex?
             when :value
