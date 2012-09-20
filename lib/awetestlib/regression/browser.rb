@@ -512,7 +512,7 @@ module Awetestlib
                 close_modal_s # to close any leftover modal dialogs
                 browser.close
               end
-            when 'C'
+            when 'C', 'GC'
               if is_browser?(browser)
                 url   = browser.url
                 title = browser.title
