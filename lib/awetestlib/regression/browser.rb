@@ -137,7 +137,7 @@ module Awetestlib
           when 'S'
             Watir::Safari.attach(how, what)
             tmpbrowser = browser
-          when 'C'
+          when 'C', 'GC'
             browser.window(how, /#{uri_decoded_pattern}/).use
             tmpbrowser = browser
         end
