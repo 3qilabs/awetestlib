@@ -5,18 +5,14 @@ module Awetestlib
     module Tables
 
 
-      # Groups: Columns, Rows, Sorting
-
       def get_index_for_column_head(panel, table_index, strg, desc = '')
         table = panel.tables[table_index]
         get_column_index(table, strg, desc, true)
       end
 
       def get_column_index(table, strg, desc = '', header = false)
-        msg = "Get index of "
-        msg << " header" if header
-        msg << " column containing #{strg}. "
-        msg << " #{desc}" if desc.length > 0
+        msg1 = " header" if header
+        msg = build_message("Get index of ", msg1, " column containing #{strg}. ", desc)
         rgx = Regexp.new(strg)
         row_idx = 0
         index   = -1
@@ -47,6 +43,13 @@ module Awetestlib
         failed_to_log("Unable to #{msg} '#{$!}'")
       end
 
+      # Return the index of the last row of the specified table.
+      # @param [Watir::Table] table A reference to the table in question.
+      # @param [Fixnum] pad The number of zeroes to prefix the index to allow correct sorting.
+      # @param [Fixnum] every A number indicating which rows in the table actually carry data if
+      #   the table is padded with empty rows.  1 = every row, 2 = every other row, 3 = every third
+      #   row, and etc.
+      # @return [Fixnum]
       def get_index_of_last_row(table, pad = 2, every = 1)
         index = calc_index(table.row_count, every)
         index = index.to_s.rjust(pad, '0')
@@ -56,12 +59,17 @@ module Awetestlib
 
       alias get_index_for_last_row get_index_of_last_row
 
+      # Return the index of the last row of the specified table containing *strg*
+      # @param [Watir::Table] table A reference to the table in question.
+      # @param [String, Regexp] strg A string or regular expression to search for in the table..
+      # @param [Fixnum] column_index A number indicating which rows the column to focus the search in.
+      # When not supplied, the entire row is searched for *strg*.
+      # @return [Fixnum]
       def get_index_of_last_row_with_text(table, strg, column_index = nil)
         debug_to_log("#{__method__}: #{get_callers(5)}")
-        msg = "Find last row in table :id=#{table.id} with text '#{strg}'"
-        msg << " in column #{column_index}" if column_index
-        dbg = "#{__method__}: #{table.id} text by row "
-        dbg << "in column #{column_index}" if column_index
+        msg1 = " in column #{column_index}" if column_index
+        msg = build_message("Find last row in table :id=#{table.id} with text '#{strg}'", msg1)
+        dbg = build_message("#{__method__}: #{table.id} text by row", msg1)
         index    = 0
         found    = false
         at_index = 0
@@ -98,6 +106,13 @@ module Awetestlib
 
       alias get_index_for_last_row_with_text get_index_of_last_row_with_text
 
+      # Return the index of the _first_ row of the specified table containing *strg*
+      # @param [Watir::Table] table A reference to the table in question.
+      # @param [String, Regexp] strg A string or regular expression to search for in the table..
+      # @param [Fixnum] column_index A number indicating which rows the column to focus the search in.
+      # When not supplied, the entire row is searched for *strg*.
+      # @param [Boolean] If true log failure if *strg* _is_ found.
+      # @return [Fixnum] the index of the row containing *strg*
       def get_index_of_row_with_text(table, strg, column_index = nil, fail_if_found = false)
         debug_to_log("#{__method__}: #{get_callers(5)}")
         if fail_if_found
@@ -149,6 +164,18 @@ module Awetestlib
         failed_to_log("Unable to #{msg}. '#{$!}'")
       end
 
+      # Return the index of the _first_ row of the specified table containing *strg* in a text field
+      # identified by *how* and *what*.
+      # @param [Watir::Table] table A reference to the table in question.
+      # @param [String, Regexp] strg A string or regular expression to search for in the table..
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [Fixnum] column_index A number indicating which rows the column to focus the search in.
+      # When not supplied, the entire row is searched for *strg*.
+      # @param [Boolean] If true log failure if *strg* _is_ found.
+      # @return [Fixnum] the index of the row containing *strg*
       def get_index_of_row_with_textfield_value(table, strg, how, what, column_index = nil)
         msg = "Find row in table :id=#{table.id} with value '#{strg}' in text_field #{how}=>'#{what} "
         msg << " in column #{column_index}" if column_index
@@ -186,6 +213,12 @@ module Awetestlib
         failed_to_log("Unable to #{msg}. '#{$!}'")
       end
 
+      # Return the index of a table in *browser* containing *strg*.  *ordinal* indicates
+      # whether it is the first, second, third, etc. table found with the matching text in *strg*
+      # @param [Watir::Table] table A reference to the table in question.
+      # @param [String, Regexp] strg A string or regular expression to search for in the table..
+      # @param [Fixnum] ordinal A number indicating which matching table will have its index returned.
+      # @return [Fixnum] the index of the table containing *strg*
       def get_index_for_table_containing_text(browser, strg, ordinal = 1)
         msg   = "Get index for table containing text '#{strg}'"
         index = 0
@@ -210,6 +243,12 @@ module Awetestlib
         failed_to_log("Unable to find index of table containing text '#{strg}' '#{$!}' ")
       end
 
+      # Return a reference to a table in *browser* containing *strg*.  *ordinal* indicates
+      # whether it is the first, second, third, etc. table found with the matching text in *strg*
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String, Regexp] strg A string or regular expression to search for in the table..
+      # @param [Fixnum] ordinal A number indicating which matching table will have its index returned.
+      # @return [Watir::Table] the table containing *strg*
       def get_table_containing_text(browser, strg, ordinal = 1)
         msg   = "Get table #{ordinal} containing text '#{strg}'"
         index = get_index_for_table_containing_text(browser, strg, ordinal)
@@ -272,9 +311,10 @@ module Awetestlib
         failed_to_log("Unable to get content headers. '#{$!}'")
       end
 
-      def count_rows_with_string(container, table_index, strg)
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      def count_rows_with_string(browser, table_index, strg)
         hit = 0
-        container.tables[table_index].each do |row|
+        browser.tables[table_index].each do |row|
           if get_cell_count(row) >= 1
             #        debug_to_log("#{__method__}: #{row.text}")
             #TODO this assumes column 1 is a number column
@@ -438,7 +478,8 @@ module Awetestlib
         failed_to_log("Unable to verify sort on column '#{strg}'. #{$!}")
       end
 
-      #TODO unstub
+      # @todo unstub
+      # @private
       def verify_column_hidden(browser, panel, table_index, column_name)
         passed_to_log("TEST STUBBED: Column '#{column_name}' is hidden.")
         return true
@@ -469,7 +510,8 @@ module Awetestlib
         #    failed_to_log("Unable to verify column '#{column_name}' is hidden: '#{$!}' (#{__LINE__})")
       end
 
-      #TODO unstub
+      # @todo unstub
+      # @private
       def verify_column_hidden_temp_ff(browser, data_index, row_index, column_name)
         passed_to_log("TEST STUBBED: Column '#{column_name}' is hidden.")
         return true
@@ -486,7 +528,8 @@ module Awetestlib
         end
       end
 
-      #TODO unstub
+      # @todo unstub
+      # @private
       def verify_column_visible_temp_ff(browser, data_index, row_index, column_name)
         passed_to_log("TEST STUBBED: Column '#{column_name}' is visible.")
         return true
@@ -502,7 +545,8 @@ module Awetestlib
         end
       end
 
-      #TODO unstub
+      # @todo unstub
+      # @private
       def verify_column_visible(browser, panel, table_index, column_name)
 
         passed_to_log("TEST STUBBED: Column '#{column_name}' is visible.")
@@ -528,9 +572,12 @@ module Awetestlib
         failed_to_log("Unable to verify column '#{column_name} is visible': '#{$!}' (#{__LINE__})")
       end
 
-      def verify_column_order(browser, table_index, row_index, exp_ary)
-        mark_testlevel("Verify Column Order", 2)
-        row     = browser.tables[table_index][row_index]
+      # Verify that a table's columns are in the expected order by header names. The table is identified by its *index*
+      # within the container *browser*.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      def verify_column_order(browser, table_index, header_index, exp_ary)
+        mark_testlevel("Begin #{__method__.to_s.titleize}", 0)
+        row     = browser.tables[table_index][header_index]
         act_ary = get_row_cells_text_as_array(row)
 
         if exp_ary == act_ary
@@ -538,7 +585,7 @@ module Awetestlib
         else
           failed_to_log("Column order [#{act_ary.join(', ')}] not as expected [#{exp_ary.join(', ')}].")
         end
-        sleep_for(1)
+        mark_testlevel("End #{__method__.to_s.titleize}", 0)
       end
 
       def text_in_table?(browser, how, what, expected, desc = '')

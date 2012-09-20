@@ -28,7 +28,7 @@ module CreateZohoAccount1
   def create_account(browser)
     mark_testlevel('Create New Account', 1)
     sleep_for(3)
-    click_text(browser, 'New Account')
+    click(browser, :link, :text, 'New Account')
     wait_until_ready(browser, :name, /Account Name/)
     set_textfield_by_name(browser, /Account Name/, "Test Account #1")
     set_textfield_by_name(browser, /Phone/, "415-333-2311")

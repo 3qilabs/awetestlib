@@ -1,6 +1,9 @@
 module Awetestlib
+  # Report generator for Awetestlib.
   class HtmlReport
+
     # Initialize the report class
+    # @private
     def initialize(report_name)
       @reportname = report_name
       @reportContent1 = ''
@@ -8,6 +11,7 @@ module Awetestlib
     end
 
     # Create a report
+    # @private
     def create_report(reportName)
       # Get current time
       t = Time.now
@@ -135,6 +139,8 @@ module Awetestlib
       return strTotalReport
     end
 
+    # Add a row to the report
+    # @private
     def add_to_report(step, result)
       # Format the body of the HTML report
       if (result == 'PASSED')
@@ -150,6 +156,8 @@ module Awetestlib
 
     end
 
+    # Close the report HTML
+    # @private
     def finish_report(reportName)
       # Open the HTML report
       strFile = File.open(reportName, 'a')

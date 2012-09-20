@@ -526,6 +526,15 @@ module Awetestlib
         failed_to_log("Unable to determine if #{msg}. '#{$!}' [#{get_callers(1)}]")
       end
 
+      # Verify that a text field (also text area), identified by *how* and *what*, contains only the exact string specified in *expected*.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] expected A string which the value attribute of the text field must equal.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] Returns true if the *expected* and the value in the text field are identical.
       def textfield_equals?(browser, how, what, expected, desc = '')
         msg    = build_message("Expected value to equal '#{expected}' in textfield #{how}=>'#{what}'.", desc)
         actual = browser.text_field(how, what).value
@@ -557,10 +566,19 @@ module Awetestlib
       alias validate_textfield_value textfield_equals?
       alias text_field_equals? textfield_equals?
 
-      def textfield_contains?(browser, how, what, value, desc = '')
-        msg = build_message("Text field #{how}=>#{what} contains '#{value}'.", desc)
+      # Verify that a text field (also text area), identified by *how* and *what*, contains the string specified in *expected*.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String, Regexp] expected A string or regular expression which must be matched in the value of the text field
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] Returns true if the *expected* is matched in the value of the text field.
+      def textfield_contains?(browser, how, what, expected, desc = '')
+        msg = build_message("Text field #{how}=>#{what} contains '#{expected}'.", desc)
         contents = browser.text_field(how, what).value
-        if contents =~ /#{value}/
+        if contents =~ /#{expected}/
           passed_to_log(msg)
           true
         else
@@ -570,6 +588,14 @@ module Awetestlib
         failed_to_log("Unable to verify that #{msg}  '#{$!}'")
       end
 
+      # Verify that a text field (also text area), identified by *how* and *what*, is empty.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] Returns true if the text field is empty.
       def textfield_empty?(browser, how, what, desc = '')
         msg = "Text field #{how}=>#{what} is empty."
         msg << desc if desc.length > 0
@@ -587,27 +613,43 @@ module Awetestlib
       alias validate_textfield_empty textfield_empty?
       alias text_field_empty? textfield_empty?
 
+      # Verify that a text field (also text area), identified by *how* and *what*, contains the string specified in *expected*.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [Symbol] how The element attribute used to identify the specific element.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] expected A string in dollar formatting
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] Returns true if the *expected* is matched in the value of the text field.
       def validate_textfield_dollar_value(browser, how, what, expected, with_cents = true, desc = '')
+        target = expected.dup
         desc << " Dollar formatting"
         if with_cents
-          expected << '.00' if not expected =~ /\.00$/
-          desc << ' without cents.'
+          target << '.00' if not expected =~ /\.00$/
+          desc << " without cents. orig:(#{expected})"
         else
-          expected.gsub!(/\.00$/, '')
-          desc << ' with cents.'
+          target.gsub!(/\.00$/, '')
+          desc << " with cents. orig:(#{expected})"
         end
-        textfield_equals?(browser, how, what, expected, desc)
+        textfield_equals?(browser, how, what, target, desc)
       end
 
-      def validate_url(browser, url, message = '')
+      # Verify that *browser* is set to a url that is matched by the string or rexexp in *url*.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String, Regexp] url A string or a regular expression to match to the url of the browser..
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] Returns true if the *expected* is matched in the value of the text field.
+      def validate_url(browser, url, desc = '')
+        msg = build_message("Current URL matches #{url}.", desc)
         if browser.url.to_s.match(url)
-          passed_to_log('Found "'+url.to_s+'" ' + message)
+          passed_to_log(msg)
           true
         else
-          failed_to_log('Did not find "'+url.to_s+'" ' + message + " (#{__LINE__})")
+          failed_to_log("#{msg} Actual: #{browser.url}")
         end
       rescue
-        failed_to_log("Unable to validate that current url is '#{url}': '#{$!}'. (#{__LINE__})")
+        failed_to_log("Unable to validate that #{msg} '#{$!}'")
       end
 
       # @!endgroup Core
@@ -640,85 +682,31 @@ module Awetestlib
 
       # @!endgroup AutoIT
 
-      # @!group Legacy
-
-      # Verify that link identified by *:text* exists.
-      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
-      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
-      # @return (see #exists?)
-      def validate_link_exist(browser, what, desc = '')
-        exists?(browser, :link, :text, what, nil, desc)
-      end
-
-      # Verify that link identified by *:text* does not exist.
-      # @param (see #validate_link_exist)
-      # @return (see #does_not_exist?)
-      def link_not_exist?(browser, what, desc = '')
-        does_not_exist?(browser, :link, :text, what, nil, desc)
-      end
-
-      alias validate_link_not_exist link_not_exist?
-
-      # Verify that div identified by *:id* is visible.
-      # @param (see #validate_link_exist)
-      # @return [Boolean] True if the element is visible.
-      def validate_div_visible_by_id(browser, what)
-        visible?(browser, :div, :id, what)
-      end
-
-      # Verify that div identified by *:id* is not visible.
-      # @param (see #validate_link_exist)
-      # @return [Boolean] True if the element is not visible.
-      def validate_div_not_visible_by_id(browser, what, desc = '')
-        not_visible?(browser, :div, :id, what, desc)
-      end
-
-      # Verify that div identified by *:text* is enabled.
-      # @param (see #validate_link_exist)
-      # @return [Boolean] True if the element is enabled.
-      def link_enabled?(browser, what, desc = '')
-        enabled?(browser, :link, :text, what, desc)
-      end
-
-      alias validate_link_enabled link_enabled?
-
-      # Verify that div identified by *:text* is disabled.
-      # @param (see #validate_link_exist)
-      # @return [Boolean] True if the element is disabled.
-      def link_disabled?(browser, what, desc = '')
-        disabled?(browser, :link, :text, what, desc)
-      end
-
-      alias validate_link_not_enabled link_disabled?
-
-      # @!endgroup Legacy
       # @!group Core
 
-      def popup_exists?(popup, message=nil)
-        if not message
-          message = "Popup: #{popup.title}"
-        end
+      def popup_is_browser?(popup, desc = '')
+        msg = build_message("Popup: #{popup.title} is a browser window.", desc)
         if is_browser?(popup)
-          passed_to_log("#{message}: found.")
+          passed_to_log(msg)
           debug_to_log("\n"+popup.text+"\n")
           true
         else
-          failed_to_log("#{message}: not found." + " (#{__LINE__})")
+          failed_to_log(msg)
         end
       rescue
-        failed_to_log("Unable to validate existence of popup: '#{$!}'. (#{__LINE__})")
+        failed_to_log("Unable to verify that #{msg}: '#{$!}'. (#{__LINE__})")
       end
 
-      alias popup_exist popup_exists?
-      alias popup_exists popup_exists?
-      alias popup_exist? popup_exists?
-      alias iepopup_exist popup_exists?
-      alias iepopup_exist? popup_exists?
-      alias iepopup_exists popup_exists?
-      alias iepopup_exists? popup_exists?
+      alias popup_exist popup_is_browser?
+      alias popup_exists popup_is_browser?
+      alias popup_exist? popup_is_browser?
+      alias popup_exists? popup_is_browser?
+      alias iepopup_exist popup_is_browser?
+      alias iepopup_exist? popup_is_browser?
+      alias iepopup_exists popup_is_browser?
+      alias iepopup_exists? popup_is_browser?
 
-      #Validate select list contains text
+      # Verify that select list contains text and select it if present
       def validate_list_by_id(browser, what, option, desc = '', select_if_present = true)
         if select_list_includes?(browser, :id, what, option, desc)
           if select_if_present
@@ -730,7 +718,7 @@ module Awetestlib
         end
       end
 
-      #Validate select list contains text
+      # Verify that select list contains text
       def validate_list_by_name(browser, what, option, desc = '', select_if_present = true)
         if select_list_includes?(browser, :name, what, option, desc)
           if select_if_present
@@ -776,11 +764,8 @@ module Awetestlib
 
       alias validate_link validate_text
 
-      # @!group Core
-
       def text_in_element_equals?(browser, element, how, what, expected, desc = '')
-        msg = "Expected exact text '#{expected}' in #{element} :#{how}=>#{what}."
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("Expected exact text '#{expected}' in #{element} :#{how}=>#{what}.", desc)
         text = ''
         who  = browser.element(how, what)
         if who
@@ -799,8 +784,7 @@ module Awetestlib
       end
 
       def element_contains_text?(browser, element, how, what, expected, desc = '')
-        msg = "Element #{element} :{how}=>#{what} contains text '#{expected}'."
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("Element #{element} :{how}=>#{what} contains text '#{expected}'.", desc)
         who = browser.element(how, what)
         if who
           text = who.text
@@ -829,39 +813,8 @@ module Awetestlib
         failed_to_log("Unable to verify #{msg} '#{$!}'")
       end
 
-      # @!endgroup Core
-
-      # @!group Legacy
-
-      def validate_list(browser, listId, text, message)
-        validate_list_by_id(browser, listId, text, message)
-      end
-
-      #Validate select list does not contain text
-      def validate_no_list(browser, id, text, desc = '')
-        select_list_does_not_include?(browser, :id, id, text, desc)
-      end
-
-      def text_in_span_equals?(browser, how, what, expected, desc = '')
-        text_in_element_equals?(browser, :span, how, what, expected, desc)
-      end
-
-      def span_contains_text?(browser, how, what, expected, desc = '')
-        element_contains_text?(browser, :span, how, what, expected, desc)
-      end
-
-      alias valid_text_in_span span_contains_text?
-
-      def validate_text_in_span_by_id(browser, id, strg = '', desc = '')
-        element_contains_text?(browser, :span, :id, id, strg, desc)
-      end
-
-      # @!endgroup Legacy
-
-      # @!group Core
-
       def validate_select_list(browser, how, what, opt_type, list = nil, multiple = false, ignore = ['Select One'], limit = 5)
-        mark_testlevel("#{__method__.to_s.titleize} (#{how}=>#{what})", 2)
+        mark_testlevel("#{__method__.to_s.titleize} (#{how}=>#{what})", 0)
         ok          = true
         select_list = browser.select_list(how, what)
         options     = select_list.options
@@ -961,8 +914,7 @@ module Awetestlib
       alias validate_select_list_selections validate_selected_options
 
       def string_contains?(strg, target, desc = '')
-        msg = "String '#{strg}' contains '#{target}'."
-        msg << " '#{desc}' " if desc.length > 0
+        msg = build_message("String '#{strg}' contains '#{target}'.", desc)
         if strg.match(target)
           passed_to_log("#{msg} (#{__LINE__})")
           true
@@ -975,8 +927,7 @@ module Awetestlib
       alias validate_string_contains string_contains?
 
       def string_does_not_contain?(strg, target, desc = '')
-        msg = "String '#{strg}' does not contain '#{target}'."
-        msg << " '#{desc}' " if desc.length > 0
+        msg = build_message("String '#{strg}' does not contain '#{target}'.", desc)
         if strg.match(target)
           failed_to_log("#{msg} (#{__LINE__})")
           true
@@ -1012,8 +963,7 @@ module Awetestlib
       end
 
       def textfield_does_not_equal?(browser, how, what, expected, desc = '')
-        msg = "Text field #{how}=>#{what} does not equal '#{expected}'"
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("Text field #{how}=>#{what} does not equal '#{expected}'", desc)
         if not browser.text_field(how, what).value == expected
           passed_to_log(msg)
           true
@@ -1027,116 +977,6 @@ module Awetestlib
       alias validate_textfield_not_value textfield_does_not_equal?
 
       # @!endgroup Core
-
-      # @!group Legacy
-
-      def validate_textfield_not_value_by_name(browser, name, value, desc = '')
-        textfield_does_not_equal?(browser, :name, name, value, desc)
-      end
-
-      alias validate_textfield_no_value_by_name validate_textfield_not_value_by_name
-
-      def validate_textfield_not_value_by_id(browser, id, value, desc = '')
-        textfield_does_not_equal?(browser, :id, id, value, desc)
-      end
-
-      alias validate_textfield_no_value_by_id validate_textfield_not_value_by_id
-
-      def validate_textfield_empty_by_name(browser, name, message = '')
-        validate_textfield_empty(browser, :name, name, message)
-      end
-
-      def validate_textfield_empty_by_id(browser, id, message = '')
-        validate_textfield_empty(browser, :id, id, message)
-      end
-
-      def validate_textfield_empty_by_title(browser, title, message = '')
-        validate_textfield_empty(browser, :title, title, message)
-      end
-
-      def validate_textfield_value_by_name(browser, name, expected, desc = '')
-        textfield_equals?(browser, :name, name, expected, desc)
-      end
-
-      def validate_textfield_value_by_id(browser, id, expected, desc = '')
-        textfield_equals?(browser, :id, id, expected, desc)
-      end
-
-      def validate_textfield_visible_by_name(browser, strg, desc = '')
-        visible?(browser, :text_field, :name, strg, desc)
-      end
-
-      alias visible_textfield_by_name validate_textfield_visible_by_name
-
-      def validate_textfield_disabled_by_name(browser, strg, desc = '')
-        disabled?(browser, :text_field, :name, strg, desc)
-      end
-
-      alias disabled_textfield_by_name validate_textfield_disabled_by_name
-
-      def validate_textfield_enabled_by_name(browser, strg, desc = '')
-        enabled?(browser, :text_field, :name, strg, desc)
-      end
-
-      alias enabled_textfield_by_name validate_textfield_enabled_by_name
-
-      def validate_textfield_not_visible_by_name(browser, strg, desc = '')
-        not_visible?(browser, :text_field, :name, strg, desc)
-      end
-
-      alias visible_no_textfield_by_name validate_textfield_not_visible_by_name
-
-      def validate_radio_not_set(browser, what, desc = '')
-        not_set?(browser, :id, what, desc)
-      end
-
-      alias validate_not_radioset validate_radio_not_set
-
-      def radio_is_set?(browser, what, desc = '')
-        set?(browser, :id, what, desc)
-      end
-
-      alias validate_radioset radio_is_set?
-      alias validate_radio_set radio_is_set?
-
-      def validate_radioset_by_name(browser, what, desc = '')
-        set?(browser, :name, what, desc)
-      end
-
-      def checked_by_id?(browser, strg, desc = '')
-        checked?(browser, :id, strg, desc)
-      end
-
-      alias validate_check checked_by_id?
-      alias checkbox_is_checked? checked_by_id?
-
-      def checkbox_is_enabled?(browser, strg, desc = '')
-        enabled?(browser, :checkbox, :id, strg, desc)
-      end
-
-      alias validate_check_enabled checkbox_is_enabled?
-
-      def checkbox_is_disabled?(browser, strg, desc = '')
-        disabled?(browser, :checkbox, :id, strg, desc)
-      end
-
-      alias validate_check_disabled checkbox_is_disabled?
-
-      def validate_check_by_class(browser, strg, desc)
-        checked?(browser, :class, strg, desc)
-      end
-
-      def checkbox_not_checked?(browser, strg, desc)
-        not_checked?(browser, :id, strg, desc)
-      end
-
-      alias validate_not_check checkbox_not_checked?
-
-      def validate_image(browser, source, desc = '', nofail = false)
-        exists?(browser, :image, :src, desc)
-      end
-
-      # @!endgroup Legacy
 
       # @!group Deprecated
       # @deprecated

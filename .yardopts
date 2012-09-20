@@ -1,0 +1,7 @@
+--hide-void-return
+--verbose
+--exclude version.rb
+--exclude html_report.rb
+--no-private
+--title "Awetest DSL"
+lib/**/*.rb

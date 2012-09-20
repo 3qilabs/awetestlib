@@ -17,9 +17,11 @@ require 'active_support/inflector'
 
 module Awetestlib
   module Regression
+    # Collects all the components needed to run the script and executes it.
     class Runner < Awetestlib::Runner
 
     # order matters here
+      include ActiveSupport::Inflector
       include Awetestlib::Logging
       include Awetestlib::Regression::Utilities
       include Awetestlib::Regression::Browser
