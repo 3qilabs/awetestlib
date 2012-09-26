@@ -974,13 +974,18 @@ module Awetestlib
 
       alias validate_link_not_enabled link_disabled?
 
-      def validate_list(browser, what, text, desc = '')
-        validate_list_by_id(browser, what, text, desc)
+      # Verify that select list, identified by :id and *what* contains *text* and select it if present
+      # @param (see #clear_checkbox_by_name)
+      # @return (see #validate_textfield_not_value_by_name)
+      def validate_list(browser, what, expected, desc = '')
+        validate_list_by_id(browser, what, expected, desc)
       end
 
       # Verify select list, identified by *:id*, does not contain *text*
-      def validate_no_list(browser, id, text, desc = '')
-        select_list_does_not_include?(browser, :id, id, text, desc)
+      # @param (see #clear_checkbox_by_name)
+      # @return (see #validate_textfield_not_value_by_name)
+      def validate_no_list(browser, what, expected, desc = '')
+        select_list_does_not_include?(browser, :id, what, expected, desc)
       end
 
       # @param (see #clear_checkbox_by_name)
@@ -997,6 +1002,8 @@ module Awetestlib
 
       alias valid_text_in_span span_contains_text?
 
+     # @param (see #clear_checkbox_by_name)
+      # @return (see #validate_textfield_not_value_by_name)
       def validate_text_in_span_by_id(browser, what, expected, desc = '')
         element_contains_text?(browser, :span, :id, what, expected, desc)
       end

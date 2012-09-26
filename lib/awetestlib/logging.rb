@@ -314,25 +314,23 @@ module Awetestlib
       @start_timestamp = Time.now unless ts
       utc_ts = @start_timestamp.getutc
       loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
-      debug_to_log(">> Starting #{@myName.titleize}")
+      debug_to_log(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
     end
 
     alias start_to_log start_run
 
     # @private
+    # Tally and report duration, validation and failure counts, and end time for the script.
+    # @param [DateTime] ts Time stamp indicating the time the script completed.
     def finish_run(ts = nil)
-      timestamp = Time.now unless ts
-
-      mark_testlevel(">> Duration: #{sec2hms(timestamp - @start_timestamp)}", 0)
-
-      mark_testlevel(">> Validations: #{@my_passed_count + @my_failed_count} | "+
-                         "Fails: #{@my_failed_count}", 0) if @my_passed_count and @my_failed_count
-
       tally_error_references
-
+      timestamp = Time.now unless ts
+      mark_testlevel(">> Duration: #{sec2hms(timestamp - @start_timestamp)}", 0)
+      mark_testlevel(">> Validations: #{@my_passed_count + @my_failed_count} | "+
+                     "Fails: #{@my_failed_count}", 0) if @my_passed_count and @my_failed_count
       utc_ts = timestamp.getutc
       loc_tm = "#{timestamp.strftime("%H:%M:%S")} #{timestamp.zone}"
-      debug_to_log(">> End #{@myName.titleize}")
+      debug_to_log(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm})")
 
     end
 

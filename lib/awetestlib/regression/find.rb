@@ -67,7 +67,7 @@ module Awetestlib
           nil
         end
       rescue => e
-        if not rescue_me(e, __method__, "browser.#{element}(#{how}, '#{what}')", "#{browser.class}", target)
+        unless rescue_me(e, __method__, rescue_me_command(target, how, what), "#{browser.class}", target)
           raise e
         end
       end
@@ -104,7 +104,7 @@ module Awetestlib
         begin
           list = browser.select_list(how, what)
         rescue => e
-          if not rescue_me(e, __method__, "browser.select_list(#{how}, '#{what}')", "#{browser.class}")
+          unless rescue_me(e, __method__, rescue_me_command(:select_list, how, what), "#{browser.class}")
             raise e
           end
         end
@@ -151,14 +151,14 @@ module Awetestlib
         begin
           Watir::Wait.until { browser.span(how, what).exists? }
         rescue => e
-          if not rescue_me(e, __method__, "browser.span(#{how}, '#{what}').exists?", "#{browser.class}")
+          unless rescue_me(e, __method__, rescue_me_command(:span, how, what, :exists?), "#{browser.class}")
             raise e
           end
         end
         begin
           span = browser.span(how, what)
         rescue => e
-          if not rescue_me(e, __method__, "browser.span(#{how}, '#{what}').exists?", "#{browser.class}")
+          unless rescue_me(e, __method__, rescue_me_command(:span, how, what, :exists?), "#{browser.class}")
             raise e
           end
         end

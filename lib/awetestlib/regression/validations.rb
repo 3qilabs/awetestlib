@@ -706,7 +706,7 @@ module Awetestlib
       alias iepopup_exists popup_is_browser?
       alias iepopup_exists? popup_is_browser?
 
-      # Verify that select list contains text and select it if present
+      # Verify that select list, identified by the value *what* in the attribute :id, contains text and select it if present.
       def validate_list_by_id(browser, what, option, desc = '', select_if_present = true)
         if select_list_includes?(browser, :id, what, option, desc)
           if select_if_present

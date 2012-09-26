@@ -559,7 +559,7 @@ module Awetestlib
             begin
               panel.link(:text, what).click
             rescue => e
-              if not rescue_me(e, __method__, "link(:text,'#{what}').click", "#{panel.class}")
+              unless rescue_me(e, __method__, rescue_me_command(:link, :id, what, :click), "#{panel.class}")
                 raise e
               end
             end
@@ -659,7 +659,7 @@ module Awetestlib
             begin
               popup.link(:text, what).click
             rescue => e
-              if not rescue_me(e, __method__, "link(:text,'#{what}')", "#{popup.class}")
+              unless rescue_me(e, __method__, rescue_me_command(:link, :text, what, :click), "#{popup.class}")
                 raise e
               end
             end
@@ -1160,7 +1160,7 @@ module Awetestlib
           begin
             browser_text = browser.text.downcase
           rescue => e
-            if not rescue_me(e, __method__, "browser.text.downcase", "#{browser.class}", browser)
+            unless rescue_me(e, __method__, "browser.text.downcase", "#{browser.class}", browser)
               debug_to_log("browser.text.downcase in #{__method__} #{browser.class}")
               debug_to_log("#{get_callers}")
               raise e

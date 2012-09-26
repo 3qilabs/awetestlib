@@ -5,6 +5,7 @@ module Awetestlib
   ::USING_WINDOWS = !!((RUBY_PLATFORM =~ /(win|w)(32|64)$/) || (RUBY_PLATFORM=~ /mswin|mingw/))
   ::USING_OSX     = RUBY_PLATFORM =~ /darwin/
 
+  # @private
   BROWSER_MAP = {
       'FF' => 'Firefox',
       'IE' => 'Internet Explorer',
@@ -13,6 +14,7 @@ module Awetestlib
       'C'  => 'Chrome'
   }
 
+  # @private
   BROWSER_ALTERNATES = {
       'OSX'     => { 'IE' => 'S' },
       'Windows' => { 'S' => 'IE' }

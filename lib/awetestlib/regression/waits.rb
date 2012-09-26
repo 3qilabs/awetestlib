@@ -1,12 +1,12 @@
 module Awetestlib
   module Regression
-    # Methods for waiting until something has happened in the browser or DOM.
+    # Methods for waiting until something has happened, or waiting while a condition exists, in the browser or DOM.
     # sleep_for() is the basic technique. Its disadvantage is that it needs to be set for the longest likely wait time.
     # The wait methods take advantage of the Watir and Watir Webdriver wait functionality to pause only as long as necessary for
     # the element in question to be in the state needed.
     module Waits
 
-      # Sleep for +seconds+ seconds before continuing execution of the script.
+      # Sleep for *seconds* seconds before continuing execution of the script.
       # A message is logged (but not reported) which, by default, includes a trace showing where in the script the sleep was invoked.
       # @param [Fixnum] seconds The number of seconds to wait.
       # @param [Boolean] dbg If true, includes a trace in the message
@@ -18,13 +18,13 @@ module Awetestlib
         sleep(seconds)
       end
 
-      # Wait for a specific text to appear in the +browser+.
+      # Wait for a specific text to appear in the *browser*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] text A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @param [Fixnum] threshold The number of seconds after which a warning is added to the report message.
       # @param [Fixnum] interval The time between checks that the text exists.
-      # @return [Boolean] Returns true if the text appears before +how_long+ has expired.
+      # @return [Boolean] Returns true if the text appears before *how_long* has expired.
       def hold_for_text(browser, how_long, text, desc = '', threshold = 20, interval = 0.25)
         countdown = how_long
         while ((not browser.contains_text(text)) and countdown > 0)
@@ -48,7 +48,7 @@ module Awetestlib
 
       alias wait_for_text hold_for_text
 
-      # Wait while an element identified by attribute +how+ with value +what+ 1) exists, disappears, and exists again.
+      # Wait while an element identified by attribute *how* with value *what* 1) exists, disappears, and exists again.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] how The element attribute used to identify the specific element.
       #   Valid values depend on the kind of element.
@@ -56,7 +56,7 @@ module Awetestlib
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @param [Fixnum] timeout
-      # @return [Boolean] Returns true if disappears and reappears, each within the +timeout+ limit
+      # @return [Boolean] Returns true if disappears and reappears, each within the *timeout* limit
       def wait_for_element_to_reappear(browser, how, what, desc = '', timeout = 20)
         msg = "Element #{how}=#{what} exists. #{desc}"
         wait_while(browser, "While: #{msg}", timeout) { browser.element(how, what).exists? }
@@ -147,7 +147,7 @@ module Awetestlib
           if e.class.to_s =~ /TimeOutException/
             failed_to_log("#{msg}: '#{$!}'")
             return false
-          elsif not rescue_me(e, __method__, "#{block.to_s}", "#{browser.class}")
+          elsif not rescue_me(e, __method__, rescue_me_command(element, how, what, :exists?), "#{browser.class}")
             raise e
           end
         end
@@ -365,7 +365,7 @@ module Awetestlib
           if e.class.to_s =~ /TimeOutException/
             failed_to_log("Wait until (#{what} :#{how}=>#{what}) visible. #{desc}: '#{$!}' #{desc}")
             return false
-          elsif not rescue_me(e, __method__, '', "#{browser.class}")
+          elsif not rescue_me(e, __method__, rescue_me_command(element, how, what, :visible?), "#{browser.class}")
             raise e
           end
         end

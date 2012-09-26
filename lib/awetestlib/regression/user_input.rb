@@ -4,7 +4,7 @@ module Awetestlib
     # Methods covering user interactions with the browser.
     module UserInput
 
-      # Click a specific DOM element identified by one of its attributes and that attribute's value.
+      # Click a specific DOM element identified by one of its attributes (*how*) and that attribute's value (*what*).
       #
       # @example
       #  # html for a link element:
@@ -25,40 +25,39 @@ module Awetestlib
       def click(browser, element, how, what, desc = '')
         #debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
         msg = build_message("#{__method__.to_s.humanize} :#{element} :#{how}=>'#{what}'", desc)
-        begin
-          case element
-            when :link
-              browser.link(how, what).click
-            when :button
-              browser.button(how, what).click
-            when :image
-              browser.image(how, what).click
-            when :radio
-              case how
-                when :index
-                  set_radio_by_index(browser, what, desc)
-                else
-                  browser.radio(how, what).set
-              end
-            when :span
-              browser.span(how, what).click
-            when :div
-              browser.div(how, what).click
-            when :cell
-              browser.cell(how, what).click
-            else
-              browser.element(how, what).click
-          end
+        case element
+          when :link
+            browser.link(how, what).click
+          when :button
+            browser.button(how, what).click
+          when :image
+            browser.image(how, what).click
+          when :radio
+            case how
+              when :index
+                set_radio_by_index(browser, what, desc)
+              else
+                browser.radio(how, what).set
+            end
+          when :span
+            browser.span(how, what).click
+          when :div
+            browser.div(how, what).click
+          when :cell
+            browser.cell(how, what).click
+          else
+            browser.element(how, what).click
         end
-          passed_to_log(msg)
-          true
+        passed_to_log(msg)
+        true
       rescue
         failed_to_log("Unable to #{msg}. '#{$!}'")
       end
 
-      # Click a specific DOM element by one of its attributes and that attribute's value and
+      # Click a specific DOM element by one of its attributes (*how) and that attribute's value (*what) and
       # do not wait for the browser to finish reloading.  Used when a modal popup or alert is expected. Allows the script
       # to keep running so the popup can be handled.
+      # @todo handle using Watir Webdriver which does not need no_wait.
       #
       # @example
       #  # html for a link element:
@@ -73,8 +72,7 @@ module Awetestlib
       #
       def click_no_wait(browser, element, how, what, desc = '')
         debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
-        msg = build_message("Click no wait #{element} :#{how}=>'#{what}'", desc)
-        msg1 = "#{element}(#{how}, '#{what}'"
+        msg = build_message("#{__method__.to_s.humanize} :#{element} :#{how}=>'#{what}'", desc)
         begin
           case element
             when :link
@@ -102,7 +100,7 @@ module Awetestlib
               browser.element(how, what).click_no_wait
           end
         rescue => e
-          if not rescue_me(e, __method__, "browser(#{msg1}').click_no_wait", "#{browser.class}")
+          unless rescue_me(e, __method__, rescue_me_command(element, how, what, :click_no_wait), "#{browser.class}")
             raise e
           end
         end
@@ -274,7 +272,7 @@ module Awetestlib
       # @return (see #click)
       def select_option(browser, how, what, which, option, desc = '', nofail = false)
         list = browser.select_list(how, what)
-        msg = build_message(" from list with :#{how}=>'#{what}", desc)
+        msg = build_message("#{__method__.to_s.humanize} from list with :#{how}=>'#{what}", desc)
         select_option_from_list(list, which, option, msg, nofail)
       end
 
@@ -316,7 +314,7 @@ module Awetestlib
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       def set_file_field(browser, how, what, filespec, desc = '')
-        msg = build_message("Set file field #{how}=>#{what} to '#{filespec}.", desc)
+        msg = build_message("#{__method__.to_s.humanize} #{how}=>#{what} to '#{filespec}.", desc)
         ff = browser.file_field(how, what)
         if ff
           ff.set filespec
@@ -343,8 +341,8 @@ module Awetestlib
       def set_radio_two_attributes(browser, how1, what1, how2, what2, desc = '')
         msg = build_message("Set radio #{how1}='#{what1}', #{how2}= #{what2}", desc)
         browser.radio(how1 => what1, how2 => what2).set
-          passed_to_log(msg)
-          true
+        passed_to_log(msg)
+        true
       rescue
         failed_to_log("#{msg} '#{$!}'")
       end
@@ -391,8 +389,8 @@ module Awetestlib
           else
             failed_to_log("#{__method__}: #{element} not supported")
         end
-          passed_to_log(msg)
-          true
+        passed_to_log(msg)
+        true
       rescue
         failed_to_log("#{msg} '#{$!}'")
       end
@@ -412,7 +410,7 @@ module Awetestlib
       # @return (see #click)
       def set_text_field(browser, how, what, value, desc = '', skip_value_check = false)
         #TODO: fix this to handle Safari password field
-        msg = build_message("Set textfield #{how}='#{what}' to '#{value}'", desc)
+        msg = build_message("#{__method__.to_s.humanize} #{how}='#{what}' to '#{value}'", desc)
         msg << " (Skip value check)" if skip_value_check
         if browser.text_field(how, what).exists?
           tf = browser.text_field(how, what)
@@ -449,23 +447,25 @@ module Awetestlib
       # @param [Boolean] skip_value_check Forces verification of value in text field to pass.
       # @return (see #click)
       def clear_textfield(browser, how, what, skip_value_check = false)
+        msg1 = "Skip value check." if skip_value_check
+        msg = build_message("#{__method__.to_s.humanize}  #{how}='#{what}'.", msg1)
         if browser.text_field(how, what).exists?
           tf = browser.text_field(how, what)
             tf.clear
               if tf.value == ''
-                passed_to_log("Textfield #{how}='#{what}' cleared.")
+                passed_to_log(msg)
                 true
               elsif skip_value_check
-                passed_to_log("Textfield  #{how}='#{what}' cleared. (skip value check)")
+                passed_to_log(msg)
                 true
               else
-                failed_to_log("Textfield  #{how}='#{what}' not cleared: Found:'#{tf.value}'. (#{__LINE__})")
+                failed_to_log("#{msg} Found:'#{tf.value}'.")
               end
         else
-          failed_to_log("Textfield id='#{id}' to clear. (#{__LINE__})")
+          failed_to_log("#{msg} Textfield not found.")
         end
       rescue
-        failed_to_log("Textfield id='#{id}' could not be cleared: '#{$!}'. (#{__LINE__})")
+        failed_to_log("Unable to #{msg} '#{$!}'.")
       end
 
       #Enter a string into a text field element identified by an attribute type and a value.
@@ -543,8 +543,7 @@ module Awetestlib
       # @return (see #click)
       #
       def fire_event(browser, element, how, what, event, desc = '')
-        msg  = "#{element.to_s.titlecase}: #{how}=>'#{what}' event:'#{event}'"
-        msg1 = "#{element.to_s.titlecase}(#{how}, '#{what}')"
+        msg  = build_message("#{element.to_s.titlecase}: #{how}=>'#{what}' event:'#{event}'", desc)
         begin
           case element
             when :link
@@ -561,7 +560,7 @@ module Awetestlib
               browser.element(how, what).fire_event(event)
           end
         rescue => e
-          if not rescue_me(e, __method__, "browser(#{msg1}).fire_event('#{event}')", "#{browser.class}")
+          unless rescue_me(e, __method__, rescue_me_command(element, how, what, __method__.to_s, event), "#{browser.class}")
             raise e
           end
         end

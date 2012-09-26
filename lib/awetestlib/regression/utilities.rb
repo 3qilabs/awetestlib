@@ -912,6 +912,12 @@ module Awetestlib
         error_to_log("#{$!}  (#{__LINE__})")
       end
 
+      def rescue_me_command(element, how, what, command = nil, param = nil, container = :browser)
+        loc = "#{container}.#{element}(#{how}, #{what})"
+        loc << ".#{command}" if command
+        loc << "(#{param})" if param
+        loc
+      end
 
     end
   end

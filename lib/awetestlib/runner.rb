@@ -1,5 +1,6 @@
 require 'open-uri'
 module Awetestlib
+  # Parent class. Each script type will have a Runner that inherits from this class.
   class Runner
     def initialize(options = {})
       build_class = "Awetestlib::#{check_script_type(options[:script_type])}::Runner".constantize

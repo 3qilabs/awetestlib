@@ -111,7 +111,7 @@ module Awetestlib
       # @param [String, Regexp] strg A string or regular expression to search for in the table..
       # @param [Fixnum] column_index A number indicating which rows the column to focus the search in.
       # When not supplied, the entire row is searched for *strg*.
-      # @param [Boolean] If true log failure if *strg* _is_ found.
+      # @param [Boolean] fail_if_found If true log a failure if *strg* _is_ found.
       # @return [Fixnum] the index of the row containing *strg*
       def get_index_of_row_with_text(table, strg, column_index = nil, fail_if_found = false)
         debug_to_log("#{__method__}: #{get_callers(5)}")
@@ -174,7 +174,6 @@ module Awetestlib
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [Fixnum] column_index A number indicating which rows the column to focus the search in.
       # When not supplied, the entire row is searched for *strg*.
-      # @param [Boolean] If true log failure if *strg* _is_ found.
       # @return [Fixnum] the index of the row containing *strg*
       def get_index_of_row_with_textfield_value(table, strg, how, what, column_index = nil)
         msg = "Find row in table :id=#{table.id} with value '#{strg}' in text_field #{how}=>'#{what} "
@@ -215,7 +214,7 @@ module Awetestlib
 
       # Return the index of a table in *browser* containing *strg*.  *ordinal* indicates
       # whether it is the first, second, third, etc. table found with the matching text in *strg*
-      # @param [Watir::Table] table A reference to the table in question.
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String, Regexp] strg A string or regular expression to search for in the table..
       # @param [Fixnum] ordinal A number indicating which matching table will have its index returned.
       # @return [Fixnum] the index of the table containing *strg*

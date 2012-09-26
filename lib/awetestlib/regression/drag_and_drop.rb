@@ -7,10 +7,14 @@ module Awetestlib
     #   Rdoc is work in progress
     module DragAndDrop
 
+      # Verify that specified *inner_element* is fully enclosed by *outer_element*.
+      # @param [Watir::Element] inner_element A reference to a DOM element
+      # @param [Watir::Element] outer_element A reference to a DOM element
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       def verify_element_inside(inner_element, outer_element, desc = '')
         mark_testlevel("#{__method__.to_s.titleize}", 3)
-        msg = "#{inner_element.class.to_s} (:id=#{inner_element.id}) is fully enclosed by #{outer_element.class.to_s} (:id=#{outer_element.id})."
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("#{inner_element.class.to_s} (:id=#{inner_element.id}) is fully enclosed by "+
+                            "#{outer_element.class.to_s} (:id=#{outer_element.id}).", desc)
         if overlay?(inner_element, outer_element, :inside)
           failed_to_log(msg)
         else
@@ -21,11 +25,21 @@ module Awetestlib
         failed_to_log("Unable to verify that #{msg} '#{$!}'")
       end
 
+      # Verify that two elements, identified by specified attribute and value, do not overlap on a given *side*.
+      # @param [Symbol] above_element The element type for the first element, e.g. :div, :span, etc.
+      # @param [Symbol] above_how The element attribute used to identify the *above_element*.
+      #   Valid values depend on the kind of element.
+      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
+      # @param [String, Regexp] above_what A string or a regular expression to be found in the *above_how* attribute that uniquely identifies the element.
+      # @param [Symbol] below_element The element type for the second element, e.g. :div, :span, etc.
+      # @param [Symbol] below_how The element attribute used to identify the *below_element*.
+      # @param [String, Regexp] below_what A string or a regular expression to be found in the *below_how* attribute that uniquely identifies the element.
+      # @param [Symbol] side :top, :bottom, :left, :right, :inside, or :outside
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       def verify_no_element_overlap(browser, above_element, above_how, above_what, below_element, below_how, below_what, side, desc = '')
         mark_testlevel("#{__method__.to_s.titleize}", 3)
-        msg = "#{above_element.to_s.titleize} #{above_how}=>#{above_what} does not overlap "+
-            "#{below_element.to_s.titleize} #{below_how}=>#{below_what} at the #{side}."
-        msg << " #{desc}" if desc.length > 0
+        msg = build_message("#{above_element.to_s.titleize} #{above_how}=>#{above_what} does not overlap "+
+                            "#{below_element.to_s.titleize} #{below_how}=>#{below_what} at the #{side}.", desc)
         above = browser.element(above_how, above_what)
         below = browser.element(below_how, below_what)
         if overlay?(above, below, side)
