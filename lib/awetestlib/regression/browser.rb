@@ -103,6 +103,17 @@ module Awetestlib
         fatal_to_log("Unable to navigate to '#{@myURL}': '#{$!}'")
       end
 
+      def go_to_wd_url(browser, url)
+        Watir::Browser.class_eval do
+          def goto(uri)
+            uri = "http://#{uri}" unless uri =~ URI.regexp
+            @driver.navigate.to uri
+            run_checkers
+          end
+        end
+        browser.goto(url)
+      end
+
       # Return a reference to a browser window.  Used to attach a browser window to a variable
       # which can then be passed to methods that require a *browser* parameter.
       # @example
