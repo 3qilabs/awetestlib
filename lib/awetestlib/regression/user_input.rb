@@ -763,9 +763,9 @@ module Awetestlib
         msg << " '#{desc}' " if desc.length > 0
         case element
           when :radio
-            browser.radio(how, what, value).set
+            browser.radio(how, what).set
           when :checkbox
-            browser.checkbox(how, what, value).set
+            browser.checkbox(how, what).set
           else
             failed_to_log("#{__method__}: #{element} not supported")
         end
@@ -1034,9 +1034,9 @@ module Awetestlib
         msg << " '#{desc}' " if desc.length > 0
         case element
           when :radio
-            browser.radio(how, what, value).clear
+            browser.radio(how, what).clear
           when :checkbox
-            browser.checkbox(how, what, value).clear
+            browser.checkbox(how, what).clear
           when :text_field
             browser.text_field(how, what).set('')
           else
