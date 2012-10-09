@@ -123,6 +123,17 @@ module Awetestlib
         fatal_to_log("Unable to navigate to '#{@myURL}': '#{$!}'")
       end
 
+      def go_to_wd_url(browser, url)
+        Watir::Browser.class_eval do
+          def goto(uri)
+            uri = "http://#{uri}" unless uri =~ URI.regexp
+            @driver.navigate.to uri
+            run_checkers
+          end
+        end
+        browser.goto(url)
+      end
+
       # Return a reference to a browser window.  Used to attach a browser window to a variable
       # which can then be passed to methods that require a *browser* parameter.
       # @example
@@ -139,28 +150,46 @@ module Awetestlib
       def attach_browser(browser, how, what, desc = '')
         debug_to_log("Attaching browser window :#{how}=>'#{what}' #{desc}")
         uri_decoded_pattern = ::URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
-        case @browserAbbrev
-          when 'IE'
-            tmpbrowser      = Watir::IE.attach(how, what)
-            browser.visible = true
-            if tmpbrowser
-              tmpbrowser.visible = true
-              tmpbrowser.speed   = :fast
-            else
-              raise "Browser window :#{how}=>'#{what}' has at least one doc not in completed ready state."
-            end
-          when 'FF'
-            #TODO: This may be dependent on Firefox version if webdriver doesn't support 3.6.17 and below
-            browser.driver.switch_to.window(browser.driver.window_handles[0])
-            browser.window(how, /#{uri_decoded_pattern}/).use
-            tmpbrowser = browser
-          when 'S'
-            Watir::Safari.attach(how, what)
-            tmpbrowser = browser
-          when 'C', 'GC'
-            browser.window(how, /#{uri_decoded_pattern}/).use
-            tmpbrowser = browser
+
+        if $watir_script
+          tmpbrowser = Watir::IE.attach(how, what)
+          browser.visible = true
+          if tmpbrowser
+            tmpbrowser.visible = true
+            tmpbrowser.speed   = :fast
+          else
+            raise "Browser window :#{how}=>'#{what}' has at least one doc not in completed ready state."
+          end
+        else
+          browser.driver.switch_to.window(browser.driver.window_handles[0])
+          browser.window(how, /#{uri_decoded_pattern}/).use
+          tmpbrowser = browser
         end
+
+        # case @browserAbbrev
+        #   when 'IE'
+        #     tmpbrowser      = Watir::IE.attach(how, what)
+        #     browser.visible = true
+        #     if tmpbrowser
+        #       tmpbrowser.visible = true
+        #       tmpbrowser.speed   = :fast
+        #     else
+        #       raise "Browser window :#{how}=>'#{what}' has at least one doc not in completed ready state."
+        #     end
+        #   when 'FF'
+        #     #TODO: This may be dependent on Firefox version if webdriver doesn't support 3.6.17 and below
+        #     browser.driver.switch_to.window(browser.driver.window_handles[0])
+        #     browser.window(how, /#{uri_decoded_pattern}/).use
+        #     tmpbrowser = browser
+        #   when 'S'
+        #     Watir::Safari.attach(how, what)
+        #     tmpbrowser = browser
+        #   when 'C', 'GC'
+        #     browser.window(how, /#{uri_decoded_pattern}/).use
+        #     tmpbrowser = browser
+        # end
+
+
         debug_to_log("#{__method__}: tmpbrowser:#{tmpbrowser.inspect}")
         tmpbrowser
       end
