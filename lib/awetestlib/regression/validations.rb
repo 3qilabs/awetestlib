@@ -36,7 +36,7 @@ module Awetestlib
             if browser.element(how => what).responds_to?("style")
               actual = browser.element(how => what).style type
             else
-              failed_to_log("#{msg}: Element #{element} does not reponds to style command.")
+              failed_to_log("#{msg}: Element #{element} does not repond to style command.")
             end
         end
         if expected == actual
@@ -48,6 +48,68 @@ module Awetestlib
       rescue
         failed_to_log("Unable to verify that #{msg} '#{$!}'")
       end
+
+      def validate_style_greater_than_value(browser, element, how, what, type, value, desc = '')
+        case element
+          when :link
+            actual_value = browser.link(how => what).style type
+          when :button
+            actual_value = browser.button(how => what).style type
+          when :image
+            actual_value = browser.image(how => what).style type
+          when :span
+            actual_value = browser.span(how => what).style type
+          when :div
+            actual_value = browser.div(how => what).style type
+          else
+            actual_value = browser.element(how => what).style type
+        end
+        msg = build_message("The CSS value for style #{type} in #{element} :#{how}=>#{what}: '#{actual_value}' is greater than #{value}.", desc)
+
+        if actual_value.to_i > value.to_i
+          passed_to_log(msg)
+        elsif actual_value.to_i >~ value.to_i
+          passed_to_log(msg)
+        else
+          failed_to_log(msg)
+        end
+      rescue
+        fail_to_log("Unable to verify #{msg}  '#{$!}'")
+        # sleep_for(1)
+      end
+
+      alias validate_style_greaterthan_value validate_style_greater_than_value
+
+      def validate_style_less_than_value(browser, element, how, what, type, value, desc = '')
+        case element
+          when :link
+            actual_value = browser.link(how => what).style type
+          when :button
+            actual_value = browser.button(how => what).style type
+          when :image
+            actual_value = browser.image(how => what).style type
+          when :span
+            actual_value = browser.span(how => what).style type
+          when :div
+            actual_value = browser.div(how => what).style type
+          else
+            actual_value = browser.element(how => what).style type
+        end
+        msg = build_message("The CSS value for style #{type} in #{element} :#{how}=>#{what}: '#{actual_value}' is greater than #{value}.", desc)
+
+        if actual_value.to_i < value.to_i
+          passed_to_log(msg)
+        elsif actual_value.to_i <~ value.to_i
+          passed_to_log(msg)
+        else
+          failed_to_log(msg)
+        end
+      rescue
+        fail_to_log("Unable to verify #{msg}  '#{$!}'")
+        # sleep_for(1)
+      end
+
+      alias validate_style_lessthan_value validate_style_less_than_value
 
       # @todo Clarify and rename
       def arrays_match?(exp, act, dir, col, org = nil, desc = '')
@@ -248,8 +310,7 @@ module Awetestlib
       def exists?(browser, element, how, what, value = nil, desc = '')
         msg2 = "and value=>'#{value}' " if value
         msg = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'exists.', desc)
-        e   = get_element(browser, element, how, what, value)
-        if e
+        if browser.element(how, what).exists?
           passed_to_log("#{msg}? #{desc}")
           true
         else
@@ -365,7 +426,7 @@ module Awetestlib
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return [Boolean] Returns true if the option is found.
       def select_list_includes?(browser, how, what, option, desc = '')
-        msg = build_message("Select list #{how}=>#{what} includes option '#{option}'.", desc)
+        msg         = build_message("Select list #{how}=>#{what} includes option '#{option}'.", desc)
         select_list = browser.select_list(how, what)
         options     = select_list.options
         if option
@@ -374,7 +435,6 @@ module Awetestlib
             true
           else
             failed_to_log(msg)
-            nil
           end
         end
       rescue
@@ -387,9 +447,9 @@ module Awetestlib
       # Verify that a select list, identified by the value (*what*) in attribute *how*, contains an option with the
       # value in *option*.
       # @param (see #select_list_includes?)
-       # @return [Boolean] Returns true if the option is not found.
+      # @return [Boolean] Returns true if the option is not found.
       def select_list_does_not_include?(browser, how, what, option, desc = '')
-        msg = build_message("Select list #{how}=>#{what} does not include option '#{option}'.", desc)
+        msg         = build_message("Select list #{how}=>#{what} does not include option '#{option}'.", desc)
         select_list = browser.select_list(how, what)
         options     = select_list.options
         if option
@@ -453,12 +513,12 @@ module Awetestlib
         if actual == expected
           rtrn = true
         elsif DateTime.parse(actual).to_s == DateTime.parse(expected).to_s
-          msg2  "with different formatting. "
+          msg2 "with different formatting. "
           unless fail_on_format
             rtrn = true
           end
         end
-        msg  = build_message("Actual date '#{actual}' equals expected date '#{expected}'.", msg2, desc)
+        msg = build_message("Actual date '#{actual}' equals expected date '#{expected}'.", msg2, desc)
         if rtrn
           passed_to_log("#{msg}")
         else
@@ -515,7 +575,7 @@ module Awetestlib
       def ready?(browser, element, how, what, value = '', desc = '')
         msg2 = "and value=>'#{value}' " if value
         msg = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'exists and is enabled.', desc)
-        e = get_element(browser, element, how, what, value)
+        e   = get_element(browser, element, how, what, value)
         if e and e.enabled?
           passed_to_log(msg)
           true
@@ -576,7 +636,7 @@ module Awetestlib
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return [Boolean] Returns true if the *expected* is matched in the value of the text field.
       def textfield_contains?(browser, how, what, expected, desc = '')
-        msg = build_message("Text field #{how}=>#{what} contains '#{expected}'.", desc)
+        msg      = build_message("Text field #{how}=>#{what} contains '#{expected}'.", desc)
         contents = browser.text_field(how, what).value
         if contents =~ /#{expected}/
           passed_to_log(msg)
@@ -765,7 +825,7 @@ module Awetestlib
       alias validate_link validate_text
 
       def text_in_element_equals?(browser, element, how, what, expected, desc = '')
-        msg = build_message("Expected exact text '#{expected}' in #{element} :#{how}=>#{what}.", desc)
+        msg  = build_message("Expected exact text '#{expected}' in #{element} :#{how}=>#{what}.", desc)
         text = ''
         who  = browser.element(how, what)
         if who

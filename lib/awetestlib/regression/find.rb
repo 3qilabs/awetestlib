@@ -72,6 +72,23 @@ module Awetestlib
         end
       end
 
+      def get_attribute_value(browser, element, how, what, attribute, desc = '')
+        msg = build_message("Value of #{attribute} in #{element} #{how}=>#{what}.", desc)
+        case element
+          when :link
+            value = browser.link(how => what).attribute_value attribute
+          when :button
+            value = browser.button(how => what).attribute_value attribute
+          else
+            if browser.element(how => what).responds_to('attribute_value')
+              value = browser.element(how => what).attribute_value attribute
+            end
+        end
+        value
+      rescue
+        failed_to_log(" Unable to #{msg}: '#{$!}'")
+      end
+
       # Return an array containing the options available for selection in a select_list identifified by
       # its attribute *how*, and the contents of that attribute *what*.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.

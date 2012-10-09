@@ -154,8 +154,8 @@ module Awetestlib
       strg = ''
       strg << message
       strg << " [#{desc}]" if desc.length > 0
-      strg << " \n#{get_debug_list}" if dbg or @debug_calls
-      @report_class.add_to_report(message, "&nbsp")
+      strg << " #{get_debug_list}" if dbg or @debug_calls
+      @report_class.add_to_report(strg, "&nbsp", lvl)
       log_message(INFO, strg, lvl, 1)
     rescue
       failed_to_log("#{__method__}: #{$!}")
@@ -176,7 +176,7 @@ module Awetestlib
     # @param [String] message The text to place in the log and report
     # @return [void]
     def debug_to_log(message, lnbr = __LINE__, dbg = false)
-      message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
+      message << "\n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
       log_message(DEBUG, "#{message}", nil, lnbr)
     end
 
@@ -244,7 +244,7 @@ module Awetestlib
     # @param [String] message The text to place in the log and report
     # @return [void]
     def debug_to_report(message, dbg = false)
-      mark_testlevel("(DEBUG):  \n", 0, "#{message}", dbg)
+      mark_testlevel("(DEBUG): ", 0, "#{message}", dbg)
     end
 
     # @private
@@ -314,7 +314,7 @@ module Awetestlib
       @start_timestamp = Time.now unless ts
       utc_ts = @start_timestamp.getutc
       loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
-      debug_to_log(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
+      mark_testlevel(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})", 0)
     end
 
     alias start_to_log start_run

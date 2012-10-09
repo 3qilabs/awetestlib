@@ -52,10 +52,10 @@ module Awetestlib
 
       def build_message(strg1, desc = '', strg2 = '', strg3 = '', strg4 = '')
         msg = "#{strg1}"
-        msg << " #{desc}" if desc.length > 0
-        msg << " #{strg2}" if strg2.length > 0
-        msg << " #{strg3}" if strg3.length > 0
-        msg << " #{strg4}" if strg4.length > 0
+        msg << " #{desc}" if desc and desc.length > 0
+        msg << " #{strg2}" if strg2 and strg2.length > 0
+        msg << " #{strg3}" if strg3 and strg3.length > 0
+        msg << " #{strg4}" if strg4 and strg4.length > 0
         msg
       end
 
@@ -106,6 +106,7 @@ module Awetestlib
       end
 
       def get_variables(file, login = :role, dbg = true)
+        #TODO refactor this
         debug_to_log("#{__method__}: file = #{file}")
         debug_to_log("#{__method__}: role = #{login}")
 
@@ -195,8 +196,10 @@ module Awetestlib
           end if dbg
         end
 
+        true
+
       rescue
-        fatal_to_log("#{__method__}: '#{$!}'")
+        failed_to_log("#{__method__}: '#{$!}'")
       end
 
       def translate_var_list(key)
@@ -917,6 +920,14 @@ module Awetestlib
         loc << ".#{command}" if command
         loc << "(#{param})" if param
         loc
+      end
+
+      def method_to_title(method, no_sub = false)
+        title = method.to_s.titleize
+        title.gsub!(/And/, '&') unless no_sub
+        title
+      rescue
+        debug_to_log("#{__method__}: #{method} #{$!}")
       end
 
     end

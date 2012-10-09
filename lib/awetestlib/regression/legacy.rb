@@ -121,6 +121,10 @@ module Awetestlib
         click(browser, :image, :src, what, desc)
       end
 
+      def click_js(browser, element, how, what, desc = '')
+        click(browser, element, how, what, desc)
+      end
+
       # Click a link element identified by the value of its *:value* attribute.
       # @param (see #click_button_by_id)
       # @return (see #click_button_by_id)
@@ -168,7 +172,7 @@ module Awetestlib
 
       # @!endgroup Click
 
-      # @!group "Click No Wait"  (UserInput)
+      # @!group Click No Wait (UserInput)
 
       # Click a button element identified by the value of its *:id* attribute
       # and do not wait for the browser to reach ready state.
@@ -277,7 +281,7 @@ module Awetestlib
 
       alias click_href_no_wait click_link_no_wait_by_href
 
-      # @!endgroup "Click No Wait"
+      # @!endgroup Click No Wait
 
       # @!group Xpath (UserInput)
 
@@ -718,7 +722,7 @@ module Awetestlib
 
       # @!endgroup Clear
 
-      # @!group "Fire Event" (UserInput)
+      # @!group Fire Event (UserInput)
 
       # Fire an event on a link element identified by the value in its text (innerHTML)
       #
@@ -771,7 +775,7 @@ module Awetestlib
       alias fire_event_src fire_event_on_image_by_src
       alias fire_event_image_by_src fire_event_on_image_by_src
 
-      # @!endgroup "Fire Event"
+      # @!endgroup Fire Event
 
       # @!group Validations
 
@@ -964,6 +968,7 @@ module Awetestlib
       end
 
       alias validate_link_enabled link_enabled?
+      alias check_link_enabled link_enabled?
 
       # Verify that div identified by *:text* is disabled.
       # @param (see #click_button_by_id)
@@ -973,6 +978,10 @@ module Awetestlib
       end
 
       alias validate_link_not_enabled link_disabled?
+
+      def check_element_is_disabled(browser, element, how, what, desc = '')
+        disabled?(browser, element, how, what, desc)
+      end
 
       # Verify that select list, identified by :id and *what* contains *text* and select it if present
       # @param (see #clear_checkbox_by_name)
@@ -1141,6 +1150,36 @@ module Awetestlib
 
       # @!endgroup Find
 
+      # @!group Wait
+
+      # Wait until radio button, identified by attribute :value with value *what* exists on the page.
+      # Timeout is the default used by watir (60 seconds)
+      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
+      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @return [Boolean] True if radio exists within timeout limit
+      def wait_until_by_radio_value(browser, what, desc = '')
+        wait_until_exists(browser, :radio, :value, what, desc)
+      end
+
+      # Wait up to *how_long* seconds for DOM element *what_for* to exist in the page.
+      # @note This is a last resort method when other wait or wait until avenues have
+      # been exhausted.
+      # @param [Fixnum] how_long Timeout limit
+      # @param [Watir::Element] what_for A reference to a Dom element to wait for.
+      def wait_for_exists(how_long, what_for)
+        wait_for(how_long, what_for)
+      end
+
+      # Wait until link, identified by attribute :text with value *what* exists on the page.
+      # Timeout is the default used by watir (60 seconds)
+      # @param (see #wait_until_by_radio_value)
+      # @return [Boolean] True if link exists within timeout limit
+      def wait_until_by_link_text(browser, what, desc = '')
+        wait_until_exists(browser, :link, :text, what, desc)
+      end
+
+      # @!endgroup Wait
 
     end
   end
