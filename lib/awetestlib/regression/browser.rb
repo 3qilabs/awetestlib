@@ -1280,7 +1280,7 @@ module Awetestlib
 
       rescue
         errmsg = $!
-        if errmsg.match(msg)
+        if errmsg and errmsg.match(msg)
           errmsg = ''
         end
         bail_out(browser, lnbr, "#{msg} #{errmsg}")
