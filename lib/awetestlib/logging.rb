@@ -42,16 +42,7 @@ module Awetestlib
       #myMsg << "#{get_call_list[-1]}#{get_call_list[-2]} "
       myMsg << get_call_list_new.to_s
       myMsg << ' '+message
-      #    myMsg << " {#{lnbr}} " if lnbr
-
-      # # TODO This is broken: @myBrowser is not necessarily populated
-      # if @screenCaptureOn and is_browser?(@myBrowser)
-      #   if severity >= @options['screenshot'] andand
-      #           tag.match(/PASS|FAIL/)
-      #   then
-      #     capture_screen(@myBrowser, t)
-      #   end
-                                            # end
+      myMsg << " [#{lnbr}] " if lnbr
 
       @myLog.add(severity, myMsg) if @myLog # add persistent logging for awetestlib. pmn 05jun2012
       puts myMsg+"\n"
@@ -165,7 +156,7 @@ module Awetestlib
 
     # @param [String] message The text to place in the log
     # @return [void]
-    def info_to_log(message, lnbr = __LINE__)
+    def info_to_log(message, lnbr = nil)
       log_message(INFO, message, nil, lnbr)
     end
 
@@ -175,7 +166,7 @@ module Awetestlib
 
     # @param [String] message The text to place in the log and report
     # @return [void]
-    def debug_to_log(message, lnbr = __LINE__, dbg = false)
+    def debug_to_log(message, lnbr = nil, dbg = false)
       message << "\n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
       log_message(DEBUG, "#{message}", nil, lnbr)
     end
@@ -185,7 +176,7 @@ module Awetestlib
     # @note Do not use for failed validations. Use only for serious error conditions.
     # @return [void]
     # @param [String] message The text to place in the log and report
-    def error_to_log(message, lnbr = __LINE__)
+    def error_to_log(message, lnbr = nil)
       log_message(ERROR, message, nil, lnbr)
     end
 
@@ -193,7 +184,7 @@ module Awetestlib
 
     # @param [String] message The text to place in the log and report
     # @return [void]
-    def passed_to_log(message, lnbr = __LINE__, dbg = false)
+    def passed_to_log(message, lnbr = nil, dbg = false)
       message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
       @my_passed_count += 1 if @my_passed_count
       parse_error_references(message)
@@ -209,7 +200,7 @@ module Awetestlib
 
     # @param [String] message The text to place in the log and report
     # @return [void]
-    def failed_to_log(message, lnbr = __LINE__, dbg = false)
+    def failed_to_log(message, lnbr = nil, dbg = false)
       message << " \n#{get_debug_list}" if dbg or @debug_calls or @debug_calls_fail_only
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
@@ -225,10 +216,11 @@ module Awetestlib
 
     # @param [String] message The text to place in the log and report
     # @return [void]
-    def fatal_to_log(message, lnbr = __LINE__, dbg = false)
+    def fatal_to_log(message, lnbr = nil, dbg = false)
       message << " \n#{get_debug_list}" if dbg or (@debug_calls and not @debug_calls_fail_only)
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
+      @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]", "FAILED")
       debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
       log_message(FATAL, "#{message} (#{lnbr})", FAIL, lnbr)
     end
@@ -341,7 +333,7 @@ module Awetestlib
       tags_tested = 0
       tags_hit    = 0
       if @my_error_hits and @my_error_hits.length > 0
-        mark_testlevel("Tagged Error Hits:", 0)
+        mark_testlevel(">> Tagged Error Hits:", 0)
         tags_hit = @my_error_hits.length
         @my_error_hits.each_key do |ref|
           mark_testlevel("#{ref} - #{@my_error_hits[ref]}", 0)
@@ -349,14 +341,14 @@ module Awetestlib
       end
       if list_tags
         if @my_error_references and @my_error_references.length > 0
-          mark_testlevel("Error and Test Case Tags:", 0)
+          mark_testlevel(">> Error and Test Case Tags:", 0)
           tags_tested = @my_error_references.length
           @my_error_references.each_key do |ref|
             mark_testlevel("#{ref} - #{@my_error_references[ref]}", 0)
           end
-          mark_testlevel("Fails were hit on #{tags_hit} of #{tags_tested} error/test case references", 0)
+          mark_testlevel(">> Fails were hit on #{tags_hit} of #{tags_tested} error/test case references", 0)
         else
-          mark_testlevel("No Error or Test Case References found.", 0)
+          mark_testlevel(">> No Error or Test Case References found.", 0)
         end
       end
     end

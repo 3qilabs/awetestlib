@@ -227,7 +227,7 @@ module Awetestlib
       # @param [Boolean] nofail If true do not log a failed message if the option is not found in the select list.
       # @return (see #click)
       def select_option_from_list(list, how, what, desc = '', nofail = false)
-        msg = build_message("Select :#{how}=>'#{what}", desc)
+        msg = build_message("Select :#{how}=>'#{what}'", desc)
         ok  = true
         if list
           case how
@@ -272,7 +272,7 @@ module Awetestlib
       # @return (see #click)
       def select_option(browser, how, what, which, option, desc = '', nofail = false)
         list = browser.select_list(how, what)
-        msg  = build_message("#{__method__.to_s.humanize} from list with :#{how}=>'#{what}", desc)
+        msg  = build_message("from list with :#{how}=>'#{what}", desc)
         select_option_from_list(list, which, option, msg, nofail)
       end
 

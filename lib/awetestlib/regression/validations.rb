@@ -472,7 +472,7 @@ module Awetestlib
       # @return [Boolean] Returns true if actual exactly matches expected.
       def string_equals?(actual, expected, desc = '')
         msg = build_message("Actual string '#{actual}' equals expected '#{expected}'.", desc)
-        if expected == expected
+        if actual == expected
           passed_to_log("#{msg}")
           true
         else

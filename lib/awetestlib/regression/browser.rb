@@ -344,7 +344,7 @@ module Awetestlib
         ts  = Time.new
         msg = "Bailing out at util line #{lnbr} #{ts} " + desc
         puts "#{msg}"
-        fatal_to_log(msg, nil, 1, lnbr)
+        fatal_to_log(msg, lnbr)
         debug_to_log(dump_caller(lnbr))
         if is_browser?(browser)
           if @browserAbbrev == 'IE'

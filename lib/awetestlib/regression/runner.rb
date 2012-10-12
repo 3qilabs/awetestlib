@@ -282,7 +282,6 @@ module Awetestlib
         finish_run
         @report_class.finish_report(@html_report_file)
         open_report_file
-        #finish_run
         @myLog.close if @myLog
       end
 
