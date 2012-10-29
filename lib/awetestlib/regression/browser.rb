@@ -407,7 +407,7 @@ module Awetestlib
       # @param [String] hwnd The value for the window handle for the browser process.
       # @param [Fixnum] lnbr Line number in calling script.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be closed.
-      def kill_browser(hwnd, lnbr, browser = nil)
+      def kill_browser(hwnd, lnbr, browser = nil, doflag = false)
         # TODO Firefox
         logit = false
         if @browserAbbrev == 'FF'
