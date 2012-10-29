@@ -845,7 +845,12 @@ module Awetestlib
 
       def element_contains_text?(browser, element, how, what, expected, desc = '')
         msg = build_message("Element #{element} :{how}=>#{what} contains text '#{expected}'.", desc)
-        who = browser.element(how, what)
+        case how
+          when :href
+            who = browser.element(how, what)
+          else
+            who = browser.link(how, what)
+        end
         if who
           text = who.text
           if expected and expected.length > 0

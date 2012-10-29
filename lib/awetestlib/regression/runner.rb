@@ -99,12 +99,15 @@ module Awetestlib
         @myName         = File.basename(options[:script_file]).sub(/\.rb$/, '')
 
         if options[:output_to_log]
-          log_path = "#{@myRoot}/"
-          log_path << "#{options[:log_path_subdir]}/" if options[:log_path_subdir]
-          log_spec = File.join log_path, "#{@myName}_#{Time.now.strftime("%Y%m%d%H%M%S")}.log"
+          log_name = "#{@myName}_#{Time.now.strftime("%Y%m%d%H%M%S")}.log"
+          if options[:log_path_subdir]
+            FileUtils.mkdir options[:log_path_subdir] unless File.directory? options[:log_path_subdir]
+            log_path = options[:log_path_subdir]
+            log_spec = file.join(log_path, log_name)
+          else
+            log_spec = log_name
+          end
           @myLog = init_logger(log_spec, @myName)
-          #@start_timestamp   = Time.now
-          #start_to_log(@start_timestamp)
         end
 
         if options[:xls_path]

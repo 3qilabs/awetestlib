@@ -384,11 +384,11 @@ module Awetestlib
       end
 
       def get_cell_count(row)
-        #    if @browserAbbrev == 'IE' or $use_firewatir
-        row.cells.length
-        #    else
-        #      row.cell_count
-        #    end
+        if $watir_script
+          row.column_count
+        else
+          row.cells.length
+        end
       end
 
       def exercise_sorting(browser, columnList, desc = '')

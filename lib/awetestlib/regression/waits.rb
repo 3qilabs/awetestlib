@@ -47,10 +47,11 @@ module Awetestlib
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return [Boolean] True if element exists within timeout limit
       def wait_until_exists(browser, element, how, what, desc = '')
-        msg = build_message("Wait until (#{element} :#{how}=>#{what}) exists.", desc)
+        msg = build_message("Wait until (:#{element} :#{how}=>'#{what}') exists.", desc)
         start = Time.now.to_f
         # TODO: try Watir::Wait.until { browser.element(how, what).exists? } instead of this (cumbersome) case statement
         # TODO: above fails on frame
+        Watir::Wait.until { browser.exists? }
         begin
           case element
             when :link
@@ -112,6 +113,7 @@ module Awetestlib
         #TODO: Would like to be able to see the block code in the log message instead of the identification
         msg   = "Wait while #{desc}:"
         start = Time.now.to_f
+        Watir::Wait.until { browser.exists? }
         begin
           #Watir::Wait.until(timeout) { block.call(nil) }
           if block.call(nil)
@@ -146,6 +148,7 @@ module Awetestlib
         #TODO: Would like to be able to see the block code in the log message instead of the identification
         msg   = "Wait until #{desc}"
         start = Time.now.to_f
+        Watir::Wait.until { browser.exists? }
         begin
           Watir::Wait.until(timeout) { block.call(nil) }
         rescue => e
@@ -202,6 +205,7 @@ module Awetestlib
           end
         else
           start = Time.now.to_f
+          Watir::Wait.until { browser.exists? }
           if Watir::Wait.until(timeout) { proc_exists.call(nil) }
             if Watir::Wait.until(timeout) { proc_enabled.call(nil) }
               stop = Time.now.to_f
@@ -241,6 +245,8 @@ module Awetestlib
             proc_enabled = Proc.new { browser.link(how, what).enabled? }
         end
         start = Time.now.to_f
+        Watir::Wait.until { browser.exists? }
+        sleep_for(1)
         if Watir::Wait.until(timeout) { proc_exists.call(nil) }
           if Watir::Wait.until(timeout) { proc_enabled.call(nil) }
             stop = Time.now.to_f
@@ -269,6 +275,8 @@ module Awetestlib
       def wait_until_enabled(browser, what, how, value, desc = '')
         # TODO: This can be simplified
         start = Time.now.to_f
+        Watir::Wait.until { browser.exists? }
+        sleep_for(1)
         begin
           case what
             when :link
@@ -309,6 +317,8 @@ module Awetestlib
 
       def wait_until_visible(browser, element, how, what, desc = '')
         start = Time.now.to_f
+        Watir::Wait.until { browser.exists? }
+        sleep_for(1)
         Watir::Wait.until(20) { browser.element(how, what).exists? }
         begin
           case element
@@ -361,6 +371,8 @@ module Awetestlib
       # @return [Boolean] Returns true if the text appears before *how_long* has expired.
       def hold_for_text(browser, how_long, text, desc = '', threshold = 20, interval = 0.25)
         countdown = how_long
+        Watir::Wait.until { browser.exists? }
+        sleep_for(1)
         while ((not browser.contains_text(text)) and countdown > 0)
           sleep(interval)
           countdown = countdown - interval
@@ -428,6 +440,8 @@ module Awetestlib
         tally = 0
         ok    = (1 / interval).to_i + 1
         debug_to_log("#{__method__}: wait: #{wait} secs; interval: #{interval} secs; count; #{count}; thresh: #{ok}")
+        Watir::Wait.until { browser.exists? }
+        sleep_for(1)
         (1..count).each do |x|
           begin
             if browser.element(how, what).exists?

@@ -18,12 +18,11 @@ module Awetestlib
       # @!group Browser
 
       # @note webdriver specific - still work in progress
-      def goto_wd_url(browser, url)
+      def go_to_wd_url(browser, url)
 
         Watir::Browser.class_eval do
           def goto(uri)
             uri = "http://#{uri}" unless uri =~ URI.regexp
-
             @driver.navigate.to uri
             run_checkers
           end
@@ -37,6 +36,8 @@ module Awetestlib
 
       end
 
+      alias goto_wd_url go_to_wd_url
+
       # Open a browser based on the command line parameters that identify the browser and
       # version to use for the test.
       # @example
@@ -44,7 +45,7 @@ module Awetestlib
       # @param [String, Regexp] url When provided, the browser will go to this url.
       # @return [Watir::Browser]
       def open_browser(url = nil)
-        debug_to_log("Opening browser: #{@targetBrowser.name}")
+        message_to_report("Opening browser: #{@targetBrowser.name}")
         case @targetBrowser.abbrev
           when 'IE'
             @myBrowser = open_ie
@@ -116,22 +117,11 @@ module Awetestlib
         if url
           @myURL = url
         end
-        message_tolog("URL: #{@myURL}")
+        message_to_report("URL: #{@myURL}")
         browser.goto(@myURL)
         true
       rescue
         fatal_to_log("Unable to navigate to '#{@myURL}': '#{$!}'")
-      end
-
-      def go_to_wd_url(browser, url)
-        Watir::Browser.class_eval do
-          def goto(uri)
-            uri = "http://#{uri}" unless uri =~ URI.regexp
-            @driver.navigate.to uri
-            run_checkers
-          end
-        end
-        browser.goto(url)
       end
 
       # Return a reference to a browser window.  Used to attach a browser window to a variable
@@ -1146,8 +1136,8 @@ module Awetestlib
         if not browser
           msg  = "#{file_name}----browser is nil object. (#{lnbr})"
           myOK = false
-        elsif not is_browser?(browser)
-          msg = "#{file_name}----not a browser. (#{lnbr})"
+        elsif not browser.class.to_a =~ /Watir/
+          msg = "#{file_name}----not a Watir object. (#{lnbr})"
           debug_to_log(browser.inspect)
           myOK = false
 

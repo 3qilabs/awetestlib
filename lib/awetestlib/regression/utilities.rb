@@ -105,10 +105,13 @@ module Awetestlib
         (index / every) + (every - 1)
       end
 
-      def get_variables(file, login = :role, dbg = true)
+      def get_variables(file, key_type = :role, dbg = true)
         #TODO refactor this
         debug_to_log("#{__method__}: file = #{file}")
-        debug_to_log("#{__method__}: role = #{login}")
+        debug_to_log("#{__method__}: key  = #{key_type}")
+
+        script_found_in_login = false
+        script_found_in_data  = false
 
         @var                   = Hash.new
         workbook               = Excel.new(file)
@@ -120,6 +123,7 @@ module Awetestlib
           scriptName = workbook.cell(1, col)
           if scriptName == @myName
             var_col = col
+            script_found_in_data = true
             break
           end
         end
@@ -141,15 +145,16 @@ module Awetestlib
         password_col = 0
         url_col      = 0
         name_col     = 0
-        role_index   = find_sheet_with_name(workbook, 'Login')
-        if role_index >= 0
-          workbook.default_sheet = workbook.sheets[role_index]
+        login_index   = find_sheet_with_name(workbook, 'Login')
+        if login_index and login_index >= 0
+          workbook.default_sheet = workbook.sheets[login_index]
 
           1.upto(workbook.last_column) do |col|
             a_cell = workbook.cell(1, col)
             case a_cell
               when @myName
                 login_col = col
+                script_found_in_login = true
                 break
               when 'role'
                 role_col = col
@@ -172,13 +177,13 @@ module Awetestlib
             username = workbook.cell(line, name_col)
             enabled  = workbook.cell(line, login_col).to_s
 
-            case login
-              when :id
+            case key_type
+              when :id, :userid
                 key = userid
               when :role
                 key = role
               else
-                key = role
+                key = userid
             end
 
             @login[key]             = Hash.new
@@ -192,12 +197,15 @@ module Awetestlib
           end
 
           @login.keys.sort.each do |key|
-            message_tolog("@login (by #{login}): #{key}=>'#{@login[key].to_yaml}'")
+            message_tolog("@login (by #{key_type}): #{key}=>'#{@login[key].to_yaml}'")
           end if dbg
         end
 
-        true
-
+        if script_found_in_login and script_found_in_data
+          true
+        else
+          failed_to_log("Script found: in Login = #{script_found_in_login}; in Data = #{script_found_in_data}")
+        end
       rescue
         failed_to_log("#{__method__}: '#{$!}'")
       end
@@ -348,9 +356,9 @@ module Awetestlib
         puts call_list if dbg
         call_list.each_index do |x|
           myCaller = call_list[x].to_s
-          break if x > depth or myCaller =~ /:in .run.$/
           myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
           myList << "[#{$1.gsub(/eval/, @myName)}] "
+          break if x > depth or myCaller =~ /:in .run.$/
         end
         myList
       end
@@ -363,23 +371,23 @@ module Awetestlib
         puts call_list if dbg
         call_list.each_index do |x|
           myCaller = call_list[x].to_s
-          break if x > depth or myCaller =~ /:in .run.$/
           if myCaller.include? @myName
             myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
             myList << "[#{$1.gsub(/eval/, @myName)}] "
             break
           end
+          break if x > depth or myCaller =~ /:in .run.$/
         end
         if @projName
           call_list.each_index do |x|
             myCaller = call_list[x].to_s
-            break if x > depth or myCaller =~ /:in .run.$/
             if myCaller.include? @projName
               myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
               myList << "[#{$1.gsub(/eval/, @projName)}] "
               break
             end
           end
+          break if x > depth or myCaller =~ /:in .run.$/
         end
         myList
       end
@@ -389,9 +397,9 @@ module Awetestlib
         call_list = Kernel.caller
         call_list.each_index do |x|
           myCaller = call_list[x].to_s
-          break if x > depth or myCaller =~ /:in .run.$/
           myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
           arr << $1.gsub(/eval/, @myName)
+          break if x > depth or myCaller =~ /:in .run.$/
         end
         arr
       end
