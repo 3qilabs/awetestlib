@@ -17,6 +17,27 @@ module Awetestlib
 
       # @!group Browser
 
+      # @note webdriver specific - still work in progress
+      def go_to_wd_url(browser, url)
+
+        Watir::Browser.class_eval do
+          def goto(uri)
+            uri = "http://#{uri}" unless uri =~ URI.regexp
+            @driver.navigate.to uri
+            run_checkers
+          end
+        end
+        browser.goto(url)
+
+        #in basic_auth1 edit:
+        #a = Thread.new {
+        #    goto_wd_url(browser, @myURL)
+        #  }
+
+      end
+
+      alias goto_wd_url go_to_wd_url
+
       # Open a browser based on the command line parameters that identify the browser and
       # version to use for the test.
       # @example
@@ -24,7 +45,7 @@ module Awetestlib
       # @param [String, Regexp] url When provided, the browser will go to this url.
       # @return [Watir::Browser]
       def open_browser(url = nil)
-        debug_to_log("Opening browser: #{@targetBrowser.name}")
+        message_to_report("Opening browser: #{@targetBrowser.name}")
         case @targetBrowser.abbrev
           when 'IE'
             @myBrowser = open_ie
@@ -96,22 +117,11 @@ module Awetestlib
         if url
           @myURL = url
         end
-        message_tolog("URL: #{@myURL}")
+        message_to_report("URL: #{@myURL}")
         browser.goto(@myURL)
         true
       rescue
         fatal_to_log("Unable to navigate to '#{@myURL}': '#{$!}'")
-      end
-
-      def go_to_wd_url(browser, url)
-        Watir::Browser.class_eval do
-          def goto(uri)
-            uri = "http://#{uri}" unless uri =~ URI.regexp
-            @driver.navigate.to uri
-            run_checkers
-          end
-        end
-        browser.goto(url)
       end
 
       # Return a reference to a browser window.  Used to attach a browser window to a variable
@@ -324,7 +334,7 @@ module Awetestlib
         ts  = Time.new
         msg = "Bailing out at util line #{lnbr} #{ts} " + desc
         puts "#{msg}"
-        fatal_to_log(msg, nil, 1, lnbr)
+        fatal_to_log(msg, lnbr)
         debug_to_log(dump_caller(lnbr))
         if is_browser?(browser)
           if @browserAbbrev == 'IE'
@@ -803,10 +813,27 @@ module Awetestlib
         failed_to_log("Close popup title=#{title} failed: '#{$!}' (#{__LINE__})")
       end
 
-      alias close_popup_validate_text close_modal_ie
-      alias close_popup close_modal_ie
+      #alias close_popup_validate_text close_modal_ie
+      #alias close_popup close_modal_ie
 
       #  private :close_modal_ie
+
+      # Close an IE modal popup by its title. Calls close_modal_ie.
+      # @deprecated Use close_modal.
+      # @param [String] title The title of the window to be closed.  Matched from beginning of string.
+      # @param [String] button The display name of the button to be clicked.
+      # @param [String] text The text of the window to be closed.  Matched from beginning of string.
+      # @param [String] side A string identifying which mouse button to click.
+      # @param [Fixnum] wait Number of seconds to wait for the popup to be seen.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @param [Boolean] quiet If true, fewer messages and pass/fail validations are logged.
+      def close_popup(title = '', button = 'OK', text = '', side = 'primary',
+                      wait = WAIT, desc = '', quiet = false)
+        debug_to_log("#{__method__} begin")
+        close_modal_ie(@myBrowser, title, button, text, side, wait, desc, quiet)
+      end
+
+      alias close_popup_validate_text close_popup
 
       # Close a Firefox modal popup by its title.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
@@ -1052,71 +1079,34 @@ module Awetestlib
           when 'IE'
             @browserAbbrev  = 'IE'
             @browserName    = 'Internet Explorer'
-            @browserAppInfo = browser.document.invoke('parentWindow').navigator.appVersion
+            if $watir_script
+              @browserAppInfo = browser.document.invoke('parentWindow').navigator.appVersion
+            else
+              @browserAppInfo = browser.execute_script("return navigator.userAgent;")
+            end
             @browserAppInfo =~ /MSIE\s(.*?);/
             @browserVersion = $1
           when 'FF'
-            #@browserAbbrev = 'FF'
-            #@browserName   = 'Firefox'
-            #js_stuff       = <<-end_js_stuff
-            #var info = Components.classes["@mozilla.org/xre/app-info;1"]
-            #.getService(Components.interfaces.nsIXULAppInfo);
-            #[info, info.name, info.version];
-            #end_js_stuff
-            #js_stuff.gsub!("\n", " ")
-            #info = browser.execute_script(js_stuff)
-            #info, aName, @browserVersion = info.split(',')
-            #debug_to_log("FF info: [#{info}]")
-            #debug_to_log("FF name: [#{aName}]")
-            #debug_to_log("FF vrsn: [#{@browserVersion}]")
             @browserAbbrev  = 'FF'
             @browserName    = 'Firefox'
             @browserVersion = '6.01' #TODO: get actual version from browser
-            debug_to_log("Firefox, in get_browser_version (#{@browserVersion})")
+            @browserAppInfo = browser.execute_script("return navigator.userAgent;")
+            debug_to_log("#{@browserName}, @browserAppInfo: (#{@browserAppInfo})")
           when 'S'
             @browserAbbrev  = 'S'
             @browserName    = 'Safari'
             @browserVersion = '5.0.4' #TODO: get actual version from browser itself
-            debug_to_log("Safari, in get_browser_version (#{@browserVersion})")
+            @browserAppInfo = browser.execute_script("return navigator.userAgent;")
+            debug_to_log("#{@browserName}, @browserAppInfo: (#{@browserAppInfo})")
           when 'C'
             @browserAbbrev  = 'C'
             @browserName    = 'Chrome'
             @browserVersion = '11.0' #TODO: get actual version from browser
-            debug_to_log("Chrome, in get_browser_version (#{@browserVersion})")
+            @browserAppInfo = browser.execute_script("return navigator.userAgent;")
+            debug_to_log("#{@browserName}, @browserAppInfo: (#{@browserAppInfo})")
         end
-          # if [notify_queue, notify_class, notify_id].all?
-          #  Resque::Job.create(notify_queue, notify_class, :id => notify_id, :browser_used => "#{@browserName} #{@browserVersion}")
-          #end
       rescue
         debug_to_log("Unable to determine #{@browserAbbrev} browser version: '#{$!}' (#{__LINE__})")
-
-          # TODO: can we get rid of this?
-          # js for getting firefox version information
-          #      function getAppID() {
-          #        var id;
-          #        if("@mozilla.org/xre/app-info;1" in Components.classes) {
-          #          // running under Mozilla 1.8 or later
-          #          id = Components.classes["@mozilla.org/xre/app-info;1"]
-          #                         .getService(Components.interfaces.nsIXULAppInfo).ID;
-          #        } else {
-          #          try {
-          #            id = Components.classes["@mozilla.org/preferences-service;1"]
-          #                           .getService(Components.interfaces.nsIPrefBranch)
-          #                           .getCharPref("app.id");
-          #          } catch(e) {
-          #            // very old version
-          #            dump(e);
-          #          }
-          #        }
-          #        return id;
-          #      }
-          #      alert(getAppID());
-          # another snippet that shows getting attributes from object
-          #      var info = Components.classes["@mozilla.org/xre/app-info;1"]
-          #                 .getService(Components.interfaces.nsIXULAppInfo);
-          #      // Get the name of the application running us
-          #      info.name; // Returns "Firefox" for Firefox
-          #      info.version; // Returns "2.0.0.1" for Firefox version 2.0.0.1
       ensure
         message_to_log("Browser: [#{@browserAbbrev} #{@browserVersion}]")
       end
@@ -1156,15 +1146,15 @@ module Awetestlib
       # @param [Boolean] dbg If set to true additional debug messages are written to the log.
       #
       # @return [Boolean] True if no error conditions have been encountered.
-      def validate(browser, file_name = '', lnbr = "#{__LINE__}", dbg = false)
+      def validate(browser, file_name = @myName, lnbr = "#{__LINE__}", dbg = false)
         debug_to_log("#{__method__} begin") if dbg
         msg  = ''
         myOK = true
         if not browser
           msg  = "#{file_name}----browser is nil object. (#{lnbr})"
           myOK = false
-        elsif not is_browser?(browser)
-          msg = "#{file_name}----not a browser. (#{lnbr})"
+        elsif not browser.class.to_s =~ /Watir/
+          msg = "#{file_name}----not a Watir object. (#{lnbr})"
           debug_to_log(browser.inspect)
           myOK = false
 
@@ -1326,7 +1316,7 @@ module Awetestlib
 
       rescue
         errmsg = $!
-        if errmsg.match(msg)
+        if errmsg and errmsg.match(msg)
           errmsg = ''
         end
         bail_out(browser, lnbr, "#{msg} #{errmsg}")

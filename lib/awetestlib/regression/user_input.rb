@@ -71,7 +71,6 @@ module Awetestlib
       # @return (see #click)
       #
       def click_no_wait(browser, element, how, what, desc = '')
-        debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
         msg = build_message("#{__method__.to_s.humanize} :#{element} :#{how}=>'#{what}'", desc)
         begin
           case element
@@ -104,8 +103,8 @@ module Awetestlib
             raise e
           end
         end
-          passed_to_log(msg)
-          true
+        passed_to_log(msg)
+        true
       rescue
         failed_to_log("Unable to #{msg}  '#{$!}'")
         sleep_for(1)
@@ -123,8 +122,8 @@ module Awetestlib
         msg = "Click image by src='#{what}' and index=#{index}"
         msg << " #{desc}" if desc.length > 0
         browser.image(:src => what, :index => index).click
-          passed_to_log(msg)
-          true
+        passed_to_log(msg)
+        true
       rescue
         failed_to_log("Unable to #{msg} '#{$!}'")
       end
@@ -143,14 +142,14 @@ module Awetestlib
       # @return (see #click)
       #
       def click_table_row_with_text(browser, how, what, text, desc = '', column = nil)
-        msg = build_message("Click row with text #{text} in table :#{how}=>'#{what}.", desc)
+        msg   = build_message("Click row with text #{text} in table :#{how}=>'#{what}.", desc)
         table = get_table(browser, how, what, desc)
         if table
           index = get_index_of_row_with_text(table, text, column)
           if index
             table[index].click
-              passed_to_log(msg)
-              index
+            passed_to_log(msg)
+            index
           else
             failed_to_log("#{msg} Row not found.")
           end
@@ -168,14 +167,14 @@ module Awetestlib
       # @return (see #click)
       #
       def double_click_table_row_with_text(browser, how, what, text, desc = '', column = nil)
-        msg = build_message("Double click row with text #{text} in table :#{how}=>'#{what}.", desc)
+        msg   = build_message("Double click row with text #{text} in table :#{how}=>'#{what}.", desc)
         table = get_table(browser, how, what, desc)
         if table
           index = get_index_of_row_with_text(table, text, column)
           if index
             table[index].fire_event('ondblclick')
-              passed_to_log(msg)
-              index
+            passed_to_log(msg)
+            index
           else
             failed_to_log("#{msg} Row not found.")
           end
@@ -227,7 +226,7 @@ module Awetestlib
       # @param [Boolean] nofail If true do not log a failed message if the option is not found in the select list.
       # @return (see #click)
       def select_option_from_list(list, how, what, desc = '', nofail = false)
-        msg = build_message("Select :#{how}=>'#{what}", desc)
+        msg = build_message("Select :#{how}=>'#{what}'", desc)
         ok  = true
         if list
           case how
@@ -272,7 +271,7 @@ module Awetestlib
       # @return (see #click)
       def select_option(browser, how, what, which, option, desc = '', nofail = false)
         list = browser.select_list(how, what)
-        msg = build_message("#{__method__.to_s.humanize} from list with :#{how}=>'#{what}", desc)
+        msg  = build_message("from list with :#{how}=>'#{what}", desc)
         select_option_from_list(list, which, option, msg, nofail)
       end
 
@@ -298,11 +297,11 @@ module Awetestlib
           else
             failed_to_log("#{__method__}: #{element} not supported")
         end
-          passed_to_log(msg)
-          true
+        passed_to_log(msg)
+        true
       rescue
-          failed_to_log("#{msg} '#{$!}'")
-        end
+        failed_to_log("#{msg} '#{$!}'")
+      end
 
       # Set file field element, identified by *how* and *what*, to a specified file path and name.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
@@ -315,12 +314,12 @@ module Awetestlib
       # @return (see #click)
       def set_file_field(browser, how, what, filespec, desc = '')
         msg = build_message("#{__method__.to_s.humanize} #{how}=>#{what} to '#{filespec}.", desc)
-        ff = browser.file_field(how, what)
+        ff  = browser.file_field(how, what)
         if ff
           ff.set filespec
           sleep_for(8)
-            passed_to_log(msg)
-            true
+          passed_to_log(msg)
+          true
         else
           failed_to_log("#{msg} File field not found.")
         end
@@ -414,19 +413,20 @@ module Awetestlib
         msg << " (Skip value check)" if skip_value_check
         if browser.text_field(how, what).exists?
           tf = browser.text_field(how, what)
-          #debug_to_log("#{tf.inspect}")
-            tf.set(value)
-              if tf.value == value
-                passed_to_log(msg)
-                true
-              elsif skip_value_check
-                passed_to_log(msg)
-                true
-              else
-                failed_to_log("#{msg}: Found:'#{tf.value}'.")
-              end
+          tf.set(value)
+          if skip_value_check
+            passed_to_log(msg)
+            true
+          else
+            if tf.value == value
+              passed_to_log(msg)
+              true
+            else
+              failed_to_log("#{msg}: Found:'#{tf.value}'.")
+            end
+          end
         else
-          failed_to_log("#{msg}: Textfield #{how}='#{what}' not found")
+          failed_to_log("#{msg}: Textfield not found")
         end
       rescue
         failed_to_log("Unable to '#{msg}': '#{$!}'")
@@ -451,16 +451,16 @@ module Awetestlib
         msg = build_message("#{__method__.to_s.humanize}  #{how}='#{what}'.", msg1)
         if browser.text_field(how, what).exists?
           tf = browser.text_field(how, what)
-            tf.clear
-              if tf.value == ''
-                passed_to_log(msg)
-                true
-              elsif skip_value_check
-                passed_to_log(msg)
-                true
-              else
-                failed_to_log("#{msg} Found:'#{tf.value}'.")
-              end
+          tf.clear
+          if tf.value == ''
+            passed_to_log(msg)
+            true
+          elsif skip_value_check
+            passed_to_log(msg)
+            true
+          else
+            failed_to_log("#{msg} Found:'#{tf.value}'.")
+          end
         else
           failed_to_log("#{msg} Textfield not found.")
         end
@@ -491,7 +491,7 @@ module Awetestlib
         #NOTE: use when value and valid_value differ as with dollar reformatting
         if set_text_field(browser, how, what, value, desc, true)
           expected = valid_value ? valid_value : value
-          validate_textfield_value(browser, how, what, expected)
+          validate_textfield_value(browser, how, what, expected, desc)
         end
       rescue
         failed_to_log("Unable to '#{msg}': '#{$!}'")
@@ -543,7 +543,7 @@ module Awetestlib
       # @return (see #click)
       #
       def fire_event(browser, element, how, what, event, desc = '')
-        msg  = build_message("#{element.to_s.titlecase}: #{how}=>'#{what}' event:'#{event}'", desc)
+        msg = build_message("#{element.to_s.titlecase}: #{how}=>'#{what}' event:'#{event}'", desc)
         begin
           case element
             when :link
@@ -564,8 +564,8 @@ module Awetestlib
             raise e
           end
         end
-          passed_to_log("Fire event: #{msg}. #{desc}")
-          true
+        passed_to_log("Fire event: #{msg}. #{desc}")
+        true
       rescue
         failed_to_log("Unable to fire event: #{msg}. '#{$!}' #{desc}")
       end

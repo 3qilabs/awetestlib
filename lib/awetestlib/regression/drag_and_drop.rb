@@ -284,6 +284,18 @@ module Awetestlib
         [x, y, w, h]
       end
 
+      def drag_and_drop(browser, how, what, delta_x, delta_y, desc = '')
+        #TODO: webdriver
+        msg = "Drag and drop element :#{how}=>#{what} by x=>#{delta_x} y=>#{delta_y}."
+        msg << " #{desc}" if desc.length > 0
+        drag_me = browser.div(how, what)
+        drag_me.drag_and_drop_by(delta_x, delta_y)
+        passed_to_log(msg)
+        true
+      rescue
+        failed_to_log("Unable to #{msg} '#{$!}'")
+      end
+
       def drag_and_drop(x1, y1, dx, dy, speed=nil)
         speed = 10 if not speed
         x2 = x1 + dx
