@@ -103,7 +103,7 @@ module Awetestlib
           if options[:log_path_subdir]
             FileUtils.mkdir options[:log_path_subdir] unless File.directory? options[:log_path_subdir]
             log_path = options[:log_path_subdir]
-            log_spec = file.join(log_path, log_name)
+            log_spec = File.join(log_path, log_name)
           else
             log_spec = log_name
           end

@@ -71,7 +71,6 @@ module Awetestlib
       # @return (see #click)
       #
       def click_no_wait(browser, element, how, what, desc = '')
-        debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
         msg = build_message("#{__method__.to_s.humanize} :#{element} :#{how}=>'#{what}'", desc)
         begin
           case element
@@ -492,7 +491,7 @@ module Awetestlib
         #NOTE: use when value and valid_value differ as with dollar reformatting
         if set_text_field(browser, how, what, value, desc, true)
           expected = valid_value ? valid_value : value
-          validate_textfield_value(browser, how, what, expected)
+          validate_textfield_value(browser, how, what, expected, desc)
         end
       rescue
         failed_to_log("Unable to '#{msg}': '#{$!}'")

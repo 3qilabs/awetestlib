@@ -310,7 +310,13 @@ module Awetestlib
       def exists?(browser, element, how, what, value = nil, desc = '')
         msg2 = "and value=>'#{value}' " if value
         msg = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'exists.', desc)
-        if browser.element(how, what).exists?
+        case element
+          when :link
+            bool = browser.link(how, what).exists?
+          else
+            bool = browser.element(how, what).exists?
+        end
+        if bool
           passed_to_log("#{msg}? #{desc}")
           true
         else
@@ -326,7 +332,13 @@ module Awetestlib
       def does_not_exist?(browser, element, how, what, value = nil, desc = '')
         msg2 = "and value=>'#{value}' " if value
         msg = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'does not exist.', desc)
-        if browser.element(how, what).exists?
+        case element
+          when :link
+            bool = browser.link(how, what).exists?
+          else
+            bool = browser.element(how, what).exists?
+        end
+        if bool
           failed_to_log(msg)
         else
           passed_to_log(msg)

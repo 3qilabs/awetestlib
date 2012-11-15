@@ -813,10 +813,27 @@ module Awetestlib
         failed_to_log("Close popup title=#{title} failed: '#{$!}' (#{__LINE__})")
       end
 
-      alias close_popup_validate_text close_modal_ie
-      alias close_popup close_modal_ie
+      #alias close_popup_validate_text close_modal_ie
+      #alias close_popup close_modal_ie
 
       #  private :close_modal_ie
+
+      # Close an IE modal popup by its title. Calls close_modal_ie.
+      # @deprecated Use close_modal.
+      # @param [String] title The title of the window to be closed.  Matched from beginning of string.
+      # @param [String] button The display name of the button to be clicked.
+      # @param [String] text The text of the window to be closed.  Matched from beginning of string.
+      # @param [String] side A string identifying which mouse button to click.
+      # @param [Fixnum] wait Number of seconds to wait for the popup to be seen.
+      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @param [Boolean] quiet If true, fewer messages and pass/fail validations are logged.
+      def close_popup(title = '', button = 'OK', text = '', side = 'primary',
+                      wait = WAIT, desc = '', quiet = false)
+        debug_to_log("#{__method__} begin")
+        close_modal_ie(@myBrowser, title, button, text, side, wait, desc, quiet)
+      end
+
+      alias close_popup_validate_text close_popup
 
       # Close a Firefox modal popup by its title.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
@@ -1136,7 +1153,7 @@ module Awetestlib
         if not browser
           msg  = "#{file_name}----browser is nil object. (#{lnbr})"
           myOK = false
-        elsif not browser.class.to_a =~ /Watir/
+        elsif not browser.class.to_s =~ /Watir/
           msg = "#{file_name}----not a Watir object. (#{lnbr})"
           debug_to_log(browser.inspect)
           myOK = false
