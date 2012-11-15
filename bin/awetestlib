@@ -22,6 +22,12 @@ elsif cmd == 'cucumber_setup'
 elsif cmd == 'mobile_app_setup'
   require File.join(File.dirname(__FILE__),"awetestlib-mobile-app-setup")
   awetestlib_mobile_app_setup
+elsif cmd == 'android_setup'
+  require File.join(File.dirname(__FILE__),"awetestlib-android-setup")
+  awetestlib_android_setup
+elsif cmd == 'driver_setup'
+  require File.join(File.dirname(__FILE__),"awetestlib-driver-setup")
+  awetestlib_driver_setup
 else
 
 require 'optparse'
