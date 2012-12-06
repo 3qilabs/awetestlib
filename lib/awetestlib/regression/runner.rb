@@ -95,7 +95,7 @@ module Awetestlib
         @targetBrowser  = browser_to_use(options[:browser], options[:version])
         @targetVersion  = @targetBrowser.version
         @browserAbbrev  = @targetBrowser.abbrev
-        @myRoot         = options[:root_path]
+        @myRoot         = options[:root_path] || Dir.pwd  # NOTE: bug fix pmn 05dec2012
         @myName         = File.basename(options[:script_file]).sub(/\.rb$/, '')
 
         if options[:output_to_log]

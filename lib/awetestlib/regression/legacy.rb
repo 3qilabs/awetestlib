@@ -701,8 +701,8 @@ module Awetestlib
       # It's *:value* attribute can also be used when needed by specifying *value*.
       # @param (see #set_file_field_by_name)
       # @return (see #click_button_by_id)
-      def clear_checkbox_by_name(browser, what, value = nil, desc = '')
-        clear(browser, :checkbox, :id, what, value, desc)
+      def clear_checkbox_by_id(browser, strg, value = nil, desc = '')
+        clear_checkbox(browser, :id, strg, desc)
       end
 
       # Clear (unset) radio button identified by the attribute specified in *how* with value *what*.

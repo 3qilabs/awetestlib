@@ -102,62 +102,44 @@ module Awetestlib
       return { :result => passed, :msg => output_str }
     end
 
-    # Put status message to the log and output window
-    # TODO: figure out a way to do the leveling automatically based on actual call depth within script (and project library?)
-    # When using to mark test groupings, include
-    # level 'lvl' (numeric literal, 1 through 9, usually 1-4)
-    # indicating test grouping hierarchy:
-    #   0  lowest level test case, a single validation
-    #      a.k.a TEST CASE, VALIDATION
-    #      not normally used in scripts as it is
-    #      implied by method with 'validate' in name
-    #   1  group of closely related level 0 validations
-    #      a.k.a TEST GROUP
-    #      should never be followed by another level 1
-    #      or higher level message without intervening
-    #      level 0 validations.
-    #   2  group of closely related level 1 validation sets.
-    #      a.k.a TEST SET, SUBMODULE, USE CASE
-    #      should never be followed by another level 2
-    #      or higher level message without intervening
-    #      lower levels.
-    #   3  group of closely related level 2 validation sets.
-    #      a.k.a TEST SET, TEST SUITE, MODULE, USE CASE
-    #      should never be followed by another level 3
-    #      or higher level message without intervening
-    #      lower levels.
-    #   4  group of closely related level 3 validation sets.
-    #      a.k.a TEST SUITE, APPLICATION UNDER TEST, PLAN, PROJECT
-    #      should never be followed by another level 4
-    #      or higher level message without intervening
-    #      lower levels. Will seldom appear directly in
-    #      scripts
 
     # Write a status message to the log and report indicating location or activity
-    # in the script.
-    # @param [String] message The text to place in the log and report
-    # @param [Fixnum] lvl A number from 0 to 9 to roughly indicate call level within
-    # the script.  '0' forces a message to the report without a specific level attached.
+    # in the script. mark_test_level automatically determines the call hierarchy level
+    # of the calling method within the script and project utility methods.  The top level
+    # method of the script is always level 1.  The method also prefixes the calling method
+    # name (titleized) to the message to be placed in the log.
+    # @param [String] message The text to place in the log and report after the titleized
+    # calling method name.
+    # @param [Fixnum] lvl '0' forces a message to the report without a specific level
+    # attached. Any other integer is ignored in favor of the calculated level
     # @param [String] desc Any additional information to add to the message.
     # @param [Boolean] dbg When set to true adds a trace to the message.
     # @return [void]
-    def mark_testlevel(message, lvl, desc = '', dbg = nil)
+    def mark_test_level(message = '', lvl = nil, desc = '', dbg = nil)
+      call_arr = get_call_array()
+      #debug_to_log("#{call_arr.to_yaml}")
       strg = ''
-      strg << message
-      strg << " [#{desc}]" if desc.length > 0
-      strg << " #{get_debug_list}" if dbg or @debug_calls
-      @report_class.add_to_report(strg, "&nbsp", lvl)
-      log_message(INFO, strg, lvl, 1)
+      call_script, call_line, call_meth = parse_caller(call_arr[1])
+      if not lvl or lvl > 1
+        lvl, list = get_test_level
+        strg << "#{call_meth.titleize}"
+      end
+      strg << " #{message}" if message.length > 0
+      strg << " (#{desc})" if desc.length > 0
+      strg << " [#{call_line}]"
+      strg << "\n#{list.to_yaml}" if dbg or @debug_calls
+      @report_class.add_to_report(strg, "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
+      log_message(INFO, strg, lvl, nil, 1)
     rescue
       failed_to_log("#{__method__}: #{$!}")
     end
 
-    alias mark_test_level mark_testlevel
+    alias mark_testlevel mark_test_level
 
     # @param [String] message The text to place in the log
     # @return [void]
     def info_to_log(message, lnbr = nil)
-      log_message(INFO, message, nil, lnbr)
+      log_message(INFO, message, 0, lnbr)
     end
 
     alias message_tolog info_to_log
@@ -188,7 +170,7 @@ module Awetestlib
       message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
       @my_passed_count += 1 if @my_passed_count
       parse_error_references(message)
-      @report_class.add_to_report(message, "PASSED")
+      @report_class.add_to_report(message, "PASSED") unless Awetestlib::Runner.nil?
       log_message(INFO, "#{message}", PASS, lnbr)
     end
 
@@ -204,7 +186,7 @@ module Awetestlib
       message << " \n#{get_debug_list}" if dbg or @debug_calls or @debug_calls_fail_only
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
-      @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]", "FAILED")
+      @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]", "FAILED") unless Awetestlib::Runner.nil?
       log_message(WARN, "#{message}", FAIL, lnbr)
     end
 
@@ -220,7 +202,7 @@ module Awetestlib
       message << " \n#{get_debug_list}" if dbg or (@debug_calls and not @debug_calls_fail_only)
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
-      @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]", "FAILED")
+      @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]", "FAILED") unless Awetestlib::Runner.nil?
       debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
       log_message(FATAL, "#{message} (#{lnbr})", FAIL, lnbr)
     end
@@ -306,7 +288,7 @@ module Awetestlib
       @start_timestamp = Time.now unless ts
       utc_ts = @start_timestamp.getutc
       loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
-      mark_testlevel(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})", 0)
+      mark_testlevel(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})", 1)
     end
 
     alias start_to_log start_run
@@ -314,16 +296,15 @@ module Awetestlib
     # @private
     # Tally and report duration, validation and failure counts, and end time for the script.
     # @param [DateTime] ts Time stamp indicating the time the script completed.
-    def finish_run(ts = nil)
+    def finish_run(ts = Time.now)
       tally_error_references
-      timestamp = Time.now unless ts
-      mark_testlevel(">> Duration: #{sec2hms(timestamp - @start_timestamp)}", 0)
-      mark_testlevel(">> Validations: #{@my_passed_count + @my_failed_count} | "+
-                     "Fails: #{@my_failed_count}", 0) if @my_passed_count and @my_failed_count
-      utc_ts = timestamp.getutc
-      loc_tm = "#{timestamp.strftime("%H:%M:%S")} #{timestamp.zone}"
-      debug_to_log(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm})")
-
+      mark_testlevel(
+          ">> #{@myName.titleize} duration: #{sec2hms(ts - @start_timestamp)}", 0)
+      mark_testlevel(">> #{@myName.titleize} validations: #{@my_passed_count + @my_failed_count} "+
+                         "fail: #{@my_failed_count}]", 0) if @my_passed_count and @my_failed_count
+      utc_ts = ts.getutc
+      loc_tm = "#{ts.strftime("%H:%M:%S")} #{ts.zone}"
+      mark_testlevel(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm})", 0)
     end
 
     alias finish_to_log finish_run

@@ -122,7 +122,7 @@ module Awetestlib
         2.upto(workbook.last_column) do |col|
           scriptName = workbook.cell(1, col)
           if scriptName == @myName
-            var_col = col
+            var_col              = col
             script_found_in_data = true
             break
           end
@@ -145,7 +145,7 @@ module Awetestlib
         password_col = 0
         url_col      = 0
         name_col     = 0
-        login_index   = find_sheet_with_name(workbook, 'Login')
+        login_index  = find_sheet_with_name(workbook, 'Login')
         if login_index and login_index >= 0
           workbook.default_sheet = workbook.sheets[login_index]
 
@@ -153,7 +153,7 @@ module Awetestlib
             a_cell = workbook.cell(1, col)
             case a_cell
               when @myName
-                login_col = col
+                login_col             = col
                 script_found_in_login = true
                 break
               when 'role'
@@ -937,6 +937,51 @@ module Awetestlib
       rescue
         debug_to_log("#{__method__}: #{method} #{$!}")
       end
+
+      def unable_to(message = '', no_dolbang = false)
+        call_arr                          = get_call_array()
+        call_script, call_line, call_meth = parse_caller(call_arr[1])
+        strg                              = "Unable to #{call_meth.titleize}:"
+        strg << " #{message}" if message.length > 0
+        strg << " '#{$!}'" unless no_dolbang
+        strg
+      end
+
+      def parse_caller(caller)
+        call_script, call_line, call_meth = caller.split(':')
+        call_script.gsub!(/\.rb/, '')
+        call_script = call_script.camelize
+        call_meth =~ /in .([\w\d_]+)./
+        call_meth = $1
+        [call_script, call_line, call_meth]
+      end
+
+      def get_test_level
+        arr       = []
+        each_line = 0
+        call_list = Kernel.caller
+        #debug_to_log("#{call_list.to_yaml}")
+        call_list.each_index do |x|
+          myCaller = call_list[x].to_s
+          myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
+          string = $1
+          unless string =~ /logging\.rb|mark_testlevel|mark_test_level|debug_to_report|debug_toreport/
+            if string.length > 0
+              if string =~ /each|each_key/
+                each_line = string.match(/\:(\d+)\:/)[1]
+              elsif string.match(/\:(\d+)\:/)[1] == each_line
+                next
+              else
+                arr << string.gsub(/eval/, @myName)
+              end
+            end
+          end
+          break if myCaller =~ /:in .run.$|runner\.rb/
+        end
+        #debug_to_log("#{arr.length} #{nice_array(arr)}")
+        [arr.length, arr]
+      end
+
 
     end
   end
