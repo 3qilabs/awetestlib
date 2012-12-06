@@ -212,7 +212,7 @@ module Awetestlib
     # @param [String] message The text to place in the log and report
     # @return [void]
     def message_to_report(message, dbg = false)
-      mark_testlevel("#{message}", 0, '', dbg)
+      mark_testlevel(message, 0, '', dbg)
     end
 
     # @param [String] message The text to place in the log and report
@@ -288,7 +288,7 @@ module Awetestlib
       @start_timestamp = Time.now unless ts
       utc_ts = @start_timestamp.getutc
       loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
-      mark_testlevel(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})", 1)
+      message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
     end
 
     alias start_to_log start_run
@@ -298,13 +298,13 @@ module Awetestlib
     # @param [DateTime] ts Time stamp indicating the time the script completed.
     def finish_run(ts = Time.now)
       tally_error_references
-      mark_testlevel(
-          ">> #{@myName.titleize} duration: #{sec2hms(ts - @start_timestamp)}", 0)
-      mark_testlevel(">> #{@myName.titleize} validations: #{@my_passed_count + @my_failed_count} "+
-                         "fail: #{@my_failed_count}]", 0) if @my_passed_count and @my_failed_count
+      message_to_report(
+          ">> #{@myName.titleize} duration: #{sec2hms(ts - @start_timestamp)}")
+      message_to_report(">> #{@myName.titleize} validations: #{@my_passed_count + @my_failed_count} "+
+                         "fail: #{@my_failed_count}]") if @my_passed_count and @my_failed_count
       utc_ts = ts.getutc
       loc_tm = "#{ts.strftime("%H:%M:%S")} #{ts.zone}"
-      mark_testlevel(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm})", 0)
+      message_to_report(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm})")
     end
 
     alias finish_to_log finish_run
@@ -314,22 +314,22 @@ module Awetestlib
       tags_tested = 0
       tags_hit    = 0
       if @my_error_hits and @my_error_hits.length > 0
-        mark_testlevel(">> Tagged Error Hits:", 0)
+        message_to_report(">> Tagged Error Hits:")
         tags_hit = @my_error_hits.length
         @my_error_hits.each_key do |ref|
-          mark_testlevel("#{ref} - #{@my_error_hits[ref]}", 0)
+          message_to_report("#{ref} - #{@my_error_hits[ref]}")
         end
       end
       if list_tags
         if @my_error_references and @my_error_references.length > 0
-          mark_testlevel(">> Error and Test Case Tags:", 0)
+          message_to_report(">> Error and Test Case Tags:")
           tags_tested = @my_error_references.length
           @my_error_references.each_key do |ref|
-            mark_testlevel("#{ref} - #{@my_error_references[ref]}", 0)
+            message_to_report("#{ref} - #{@my_error_references[ref]}")
           end
-          mark_testlevel(">> Fails were hit on #{tags_hit} of #{tags_tested} error/test case references", 0)
+          message_to_report(">> Fails were hit on #{tags_hit} of #{tags_tested} error/test case references")
         else
-          mark_testlevel(">> No Error or Test Case References found.", 0)
+          message_to_report(">> No Error or Test Case References found.")
         end
       end
     end

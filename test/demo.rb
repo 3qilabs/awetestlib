@@ -6,7 +6,7 @@ module Demo
   end
 
   def test_account_lookup(browser)
-    mark_testlevel('Account Lookup', 1)
+    mark_testlevel()
     browser.image(:title, 'Account Name Lookup').click
     sleep_for(5)
     popup = attach_browser_by_url(browser, /Parent/)
@@ -22,7 +22,7 @@ module Demo
   end
 
   def login(browser)
-    mark_testlevel('Zoho Login', 2)
+    mark_testlevel()
     user     = "joeklienwatir@gmail.com" #@zohologin.cell(2,2)
     password = "watir001"                #@zohologin.cell(2,3)
     go_to_url(browser, "https://accounts.zoho.com/login?serviceurl=https://www.zoho.com/&hide_signup=true&css=https://www.zoho.com/css/login.css")
@@ -37,11 +37,12 @@ module Demo
   end
 
   def navigate_to_crm(browser)
-    mark_testlevel('Navigate to CRM', 1)
+    mark_testlevel()
     click_text(browser, 'CRM')
   end
 
   def test_zoho(browser)
+    mark_testlevel()
     #get_variables("#{@myRoot}/zoho_variables.xls")
     navigate_to_crm(browser) #In Project Util
     create_account(browser)
@@ -52,7 +53,7 @@ module Demo
   end
 
   def create_account(browser)
-    mark_testlevel('Create New Account', 3)
+    mark_testlevel()
     sleep_for(3)
     click_link(browser, 'Accounts')
     sleep_for(3)
