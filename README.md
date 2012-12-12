@@ -18,6 +18,8 @@ You can check your Ruby version using:
 
 Additionally, you will need to install DevKit to compile a few dependent gems. You can download DevKit
 [here](http://rubyinstaller.org/downloads/)
+and the installation directions can be found
+[here](https://github.com/oneclick/rubyinstaller/wiki/Development-Kit)
 
 ## Install
 
