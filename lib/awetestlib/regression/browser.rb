@@ -87,19 +87,14 @@ module Awetestlib
       # @return [Watir::Browser, Firewatir::Browser]
       # Returns Firewatir::Browser if target browser is Firefox version less than 4.0
       def open_ff_for_version(version = @targetVersion)
-        if version.to_f < 4.0
-          browser = open_ff
-        else
-          browser = Watir::Browser.new(:firefox)
-        end
-        browser
+        browser = Watir::Browser.new :firefox
       end
 
       # Open FF (Firefox) browser instance under FireWatir.
       # @return [Firewatir::Browser]
       def open_ff
-        Watir::Browser.default = 'firefox'
-        browser = Watir::Browser.new
+        # Watir::Browser.default = 'firefox'
+        browser = Watir::Browser.new :firefox
       end
 
       # Open GC (Google Chrome) browser instance.
