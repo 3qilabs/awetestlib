@@ -40,6 +40,7 @@ module Awetestlib
 
       # Open a browser based on the command line parameters that identify the browser and
       # version to use for the test.
+      # @note Safari currently supported only on Mac OS X
       # @example
       #  browser = open_browser('www.google.com')
       # @param [String, Regexp] url When provided, the browser will go to this url.
@@ -53,10 +54,13 @@ module Awetestlib
               @myHwnd = @myBrowser.hwnd
             end
           when 'FF'
-            @myBrowser = open_ff_for_version
+            @myBrowser = open_ff
           when 'S'
-            aBrowser = Watir::Browser.new :safari
-            @myBrowser = aBrowser
+            if USING_OSX
+              @myBrowser = open_safari
+            else
+              raise "Safari is not supported under this operating system #{RUBY_PLATFORM}"
+            end
           when 'C', 'GC'
             @myBrowser = open_chrome
           else
@@ -82,18 +86,16 @@ module Awetestlib
         browser
       end
 
-      # Open FF (Firefox) browser instance.
-      # @param [Fixnum] version A number designating the version of the browser to be opened.
-      # @return [Watir::Browser, Firewatir::Browser]
-      # Returns Firewatir::Browser if target browser is Firefox version less than 4.0
-      def open_ff_for_version(version = @targetVersion)
-        browser = Watir::Browser.new :firefox
+      # Open Safari browser instance.
+      # @note Safari currently supported only on Mac OS X
+      # @return [Watir::Browser]
+      def open_safari
+        browser = Watir::Browser.new(:remote, :desired_capabilities=>:'safari')
       end
 
       # Open FF (Firefox) browser instance under FireWatir.
-      # @return [Firewatir::Browser]
+      # @return [Watir::Browser]
       def open_ff
-        # Watir::Browser.default = 'firefox'
         browser = Watir::Browser.new :firefox
       end
 
