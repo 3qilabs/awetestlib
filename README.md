@@ -5,7 +5,7 @@ Run automated regression and mobile tests
 
 After completing this guide you will be able to run tests locally from command line or from an IDE
 
-v0.1.29pre2 fixes an issue with running scripts against Safari on OSX
+v0.1.29pre3 fixes an issue with running scripts against Safari on OSX
 
 ------------
 
