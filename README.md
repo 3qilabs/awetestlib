@@ -5,6 +5,8 @@ Run automated regression and mobile tests
 
 After completing this guide you will be able to run tests locally from command line or from an IDE
 
+v0.1.29pre2 fixes an issue with running scripts against Safari on OSX
+
 ------------
 
 ## Prerequisites
@@ -44,7 +46,12 @@ Run the following command to see the different usages
 
 ### Setup Safari (Mac OS X only)
 
-To setup support for Safari browser, please follow the instructions at [SafariDriver](http://code.google.com/p/selenium/wiki/SafariDriver) 
+To setup support for Safari browser, please follow the instructions at [SafariDriver](http://code.google.com/p/selenium/wiki/SafariDriver)
+
+It is important to start a selenium-server-standalone process in a terminal session before running Safari scripts.
+When using raw Watir-webdriver for Safari, open the browser with
+
+    browser = Watir::Browser.new(:remote, :desired_capabilities=>:'safari')
 
 ### Setup Chrome
 To setup support for Google Chrome browser, please download the latest Chromedriver version from [here](http://code.google.com/p/chromedriver/downloads/list) 
