@@ -2,7 +2,7 @@ module Awetestlib
   module Regression
     # Methods for moving and resizing elements, manipulating the mouse, and checking for relative positioning of elements,
     # including overlap, overlay, etc.
-    # @note Still experimental. Works with IE but not fully tested with Firefox or Chrome in Windows.
+    # @note Still experimental. Works with IE but not fully tested with Firefox or Chrome in Windows using Watir-webdriver.
     #   Not compatible with Mac
     #   Rdoc is work in progress
     module DragAndDrop
@@ -284,8 +284,9 @@ module Awetestlib
         [x, y, w, h]
       end
 
-      def drag_and_drop(browser, how, what, delta_x, delta_y, desc = '')
+      def drag_and_drop_div(browser, how, what, delta_x, delta_y, desc = '')
         #TODO: webdriver
+        #TODO: assumes element is div
         msg = "Drag and drop element :#{how}=>#{what} by x=>#{delta_x} y=>#{delta_y}."
         msg << " #{desc}" if desc.length > 0
         drag_me = browser.div(how, what)
@@ -293,7 +294,7 @@ module Awetestlib
         passed_to_log(msg)
         true
       rescue
-        failed_to_log("Unable to #{msg} '#{$!}'")
+        failed_to_log(unable_to)
       end
 
       def drag_and_drop(x1, y1, dx, dy, speed=nil)

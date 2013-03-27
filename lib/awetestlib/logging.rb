@@ -126,7 +126,7 @@ module Awetestlib
       end
       strg << " #{message}" if message.length > 0
       strg << " (#{desc})" if desc.length > 0
-      strg << " [#{call_line}]"
+      strg << " [#{call_line}]" if dbg or @debug_calls
       strg << "\n#{list.to_yaml}" if dbg or @debug_calls
       @report_class.add_to_report(strg, "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
       log_message(INFO, strg, lvl, nil, 1)

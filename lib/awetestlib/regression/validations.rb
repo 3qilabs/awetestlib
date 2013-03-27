@@ -23,18 +23,18 @@ module Awetestlib
         msg = build_message("Expected Style #{type} value '#{expected}' in #{element} with #{how} = #{what}", desc)
         case element
           when :link
-            actual = browser.link(how => what).style type
+            actual = browser.link(how, what).style type
           when :button
-            actual = browser.button(how => what).style type
+            actual = browser.button(how, what).style type
           when :image
-            actual = browser.image(how => what).style type
+            actual = browser.image(how, what).style type
           when :span
-            actual = browser.span(how => what).style type
+            actual = browser.span(how, what).style type
           when :div
-            actual = browser.div(how => what).style type
+            actual = browser.div(how, what).style type
           else
-            if browser.element(how => what).responds_to?("style")
-              actual = browser.element(how => what).style type
+            if browser.element(how, what).responds_to?("style")
+              actual = browser.element(how, what).style type
             else
               failed_to_log("#{msg}: Element #{element} does not repond to style command.")
             end
@@ -46,23 +46,23 @@ module Awetestlib
           failed_to_log(msg)
         end
       rescue
-        failed_to_log("Unable to verify that #{msg} '#{$!}'")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       def validate_style_greater_than_value(browser, element, how, what, type, value, desc = '')
         case element
           when :link
-            actual_value = browser.link(how => what).style type
+            actual_value = browser.link(how, what).style type
           when :button
-            actual_value = browser.button(how => what).style type
+            actual_value = browser.button(how, what).style type
           when :image
-            actual_value = browser.image(how => what).style type
+            actual_value = browser.image(how, what).style type
           when :span
-            actual_value = browser.span(how => what).style type
+            actual_value = browser.span(how, what).style type
           when :div
-            actual_value = browser.div(how => what).style type
+            actual_value = browser.div(how, what).style type
           else
-            actual_value = browser.element(how => what).style type
+            actual_value = browser.element(how, what).style type
         end
         msg = build_message("The CSS value for style #{type} in #{element} :#{how}=>#{what}: '#{actual_value}' is greater than #{value}.", desc)
 
@@ -74,7 +74,7 @@ module Awetestlib
           failed_to_log(msg)
         end
       rescue
-        fail_to_log("Unable to verify #{msg}  '#{$!}'")
+        failed_to_log(unable_to(msg, false, true))
         # sleep_for(1)
       end
 
@@ -83,17 +83,17 @@ module Awetestlib
       def validate_style_less_than_value(browser, element, how, what, type, value, desc = '')
         case element
           when :link
-            actual_value = browser.link(how => what).style type
+            actual_value = browser.link(how, what).style type
           when :button
-            actual_value = browser.button(how => what).style type
+            actual_value = browser.button(how, what).style type
           when :image
-            actual_value = browser.image(how => what).style type
+            actual_value = browser.image(how, what).style type
           when :span
-            actual_value = browser.span(how => what).style type
+            actual_value = browser.span(how, what).style type
           when :div
-            actual_value = browser.div(how => what).style type
+            actual_value = browser.div(how, what).style type
           else
-            actual_value = browser.element(how => what).style type
+            actual_value = browser.element(how, what).style type
         end
         msg = build_message("The CSS value for style #{type} in #{element} :#{how}=>#{what}: '#{actual_value}' is greater than #{value}.", desc)
 
@@ -105,7 +105,7 @@ module Awetestlib
           failed_to_log(msg)
         end
       rescue
-        fail_to_log("Unable to verify #{msg}  '#{$!}'")
+        failed_to_log(unable_to(msg, false, true))
         # sleep_for(1)
       end
 
@@ -155,7 +155,7 @@ module Awetestlib
         end
         rtrn
       rescue
-        failed_to_log("#Unable to verify that #{msg}': '#{$!}")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       alias validate_enabled enabled?
@@ -189,7 +189,7 @@ module Awetestlib
         end
         rtrn
       rescue
-        failed_to_log("#Unable to verify that #{msg}: '#{$!}'")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       alias validate_not_enabled disabled?
@@ -220,7 +220,7 @@ module Awetestlib
         end
         rtrn
       rescue
-        failed_to_log("Unable to verify that #{msg}': '#{$!}'")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       alias validate_visible visible?
@@ -250,7 +250,7 @@ module Awetestlib
         end
         rtrn
       rescue
-        failed_to_log("Unable to verify that #{msg}': '#{$!}' #{desc}")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       alias validate_not_visible not_visible?
@@ -273,7 +273,7 @@ module Awetestlib
           failed_to_log(msg)
         end
       rescue
-        failed_to_log("Unable to verify that #{msg}: '#{$!}'")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       alias checkbox_checked? checked?
@@ -292,7 +292,7 @@ module Awetestlib
           failed_to_log(msg)
         end
       rescue
-        failed_to_log("Unable to verify that #{msg}: '#{$!}'")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       alias checkbox_checked? checked?
@@ -323,7 +323,7 @@ module Awetestlib
           failed_to_log("#{msg}? #{desc} [#{get_callers(1)}]")
         end
       rescue
-        failed_to_log("Unable to verify that #{msg}. #{desc} '#{$!}' [#{get_callers(1)}]")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       # Verify that a DOM element does not exist on the page.
@@ -345,7 +345,7 @@ module Awetestlib
           true
         end
       rescue
-        failed_to_log("Unable to verify that #{msg}': '#{$!}' #{desc}")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       alias not_exist? does_not_exist?
@@ -355,19 +355,19 @@ module Awetestlib
       # @return [Boolean] Returns true if the radio button is set.
       def set?(browser, how, what, desc = '', no_fail = false)
         #TODO: handle identification of element with value as well as other attribute. see radio_with_value_set?
-        msg = build_message("Radio #{how}=>#{what} is selected.", desc)
+        msg = build_message("Radio #{how}=>#{what} is set.", desc)
         if browser.radio(how, what).set?
           passed_to_log(msg)
           true
         else
           if no_fail
-            passed_to_log("Radio #{how}=>#{what} is not selected.")
+            passed_to_log("#{msg}.  (Fail suppressed)")
           else
             failed_to_log(msg)
           end
         end
       rescue
-        failed_to_log("Unable to verify taht #{msg}: '#{$!}'")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       alias radio_set? set?
@@ -379,19 +379,19 @@ module Awetestlib
       # @return [Boolean] Returns true if the radio button is not set.
       def not_set?(browser, how, what, desc = '', no_fail = false)
         #TODO: handle identification of element with value as well as other attribute. see radio_with_value_set?
-        msg = build_message("Radio #{how}=>#{what} is not selected.", desc)
+        msg = build_message("Radio #{how}=>#{what} is not set.", desc)
         if not browser.radio(how, what).set?
           passed_to_log(msg)
           true
         else
           if no_fail
-            passed_to_log("Radio #{how}=>#{what} is not selected.")
+            passed_to_log("#{msg} (Fail suppressed")
           else
             failed_to_log(msg)
           end
         end
       rescue
-        failed_to_log("Unable to verify that #{msg}: '#{$!}'")
+        failed_to_log(unable_to(msg, false, true))
       end
 
       alias radio_not_set? not_set?
@@ -491,7 +491,7 @@ module Awetestlib
           failed_to_log("#{msg}")
         end
       rescue
-        failed_to_log("Unable to #{msg}. #{$!}")
+        failed_to_log("Unable to verify #{msg}. #{$!}")
       end
 
       alias validate_string_equal string_equals?
@@ -584,6 +584,7 @@ module Awetestlib
       # Verify that a DOM element is ready, i.e., both exists and is enabled.
       # @param (see #exists?)
       # @return [Boolean] Returns true if the element is ready.
+      #TODO: Watir-webdriver support
       def ready?(browser, element, how, what, value = '', desc = '')
         msg2 = "and value=>'#{value}' " if value
         msg = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'exists and is enabled.', desc)
@@ -632,7 +633,7 @@ module Awetestlib
           end
         end
       rescue
-        failed_to_log("Unable to verify that #{msg}: '#{$!}")
+        failed_to_log(unable_to)
       end
 
       alias validate_textfield_value textfield_equals?
@@ -657,7 +658,7 @@ module Awetestlib
           failed_to_log("#{msg} Contents: '#{contents}'")
         end
       rescue
-        failed_to_log("Unable to verify that #{msg}  '#{$!}'")
+        failed_to_log(unable_to)
       end
 
       # Verify that a text field (also text area), identified by *how* and *what*, is empty.
@@ -679,7 +680,7 @@ module Awetestlib
           failed_to_log("#{msg} Contents: '#{contents}'")
         end
       rescue
-        failed_to_log("Unable to verify that #{msg}  '#{$!}'")
+        failed_to_log(unable_to)
       end
 
       alias validate_textfield_empty textfield_empty?
@@ -721,7 +722,7 @@ module Awetestlib
           failed_to_log("#{msg} Actual: #{browser.url}")
         end
       rescue
-        failed_to_log("Unable to validate that #{msg} '#{$!}'")
+        failed_to_log(unable_to)
       end
 
       # @!endgroup Core
@@ -766,7 +767,7 @@ module Awetestlib
           failed_to_log(msg)
         end
       rescue
-        failed_to_log("Unable to verify that #{msg}: '#{$!}'. (#{__LINE__})")
+        failed_to_log(unable_to)
       end
 
       alias popup_exist popup_is_browser?
@@ -819,19 +820,18 @@ module Awetestlib
           myText = browser.text
         end
         if myText.match(target)
-          #if myText.match(ptrn)
           passed_to_log("#{msg}")
           true
         else
           if skip_fail
-            debug_to_log("#{cls}  text does not contain the text: '#{ptrn}'.  #{desc}")
+            debug_to_log("#{cls} text does not contain the text: '#{ptrn}'.  #{desc} (Fail suppressed)")
           else
             failed_to_log("#{msg}")
           end
           #debug_to_log("\n#{myText}")
         end
       rescue
-        failed_to_log("Unable to verify that #{msg} '#{$!}'")
+        failed_to_log(unable_to)
       end
 
       alias validate_link validate_text
@@ -852,16 +852,16 @@ module Awetestlib
           end
         end
       rescue
-        failed_to_log("Unable to verify #{msg} '#{$!}'")
+        failed_to_log(unable_to)
       end
 
       def element_contains_text?(browser, element, how, what, expected, desc = '')
         msg = build_message("Element #{element} :{how}=>#{what} contains text '#{expected}'.", desc)
         case how
           when :href
-            who = browser.element(how, what)
-          else
             who = browser.link(how, what)
+          else
+            who = browser.element(how, what)
         end
         if who
           text = who.text
@@ -887,22 +887,26 @@ module Awetestlib
           end
         end
       rescue
-        failed_to_log("Unable to verify #{msg} '#{$!}'")
+        failed_to_log(unable_to)
       end
 
-      def validate_select_list(browser, how, what, opt_type, list = nil, multiple = false, ignore = ['Select One'], limit = 5)
-        mark_testlevel("#{__method__.to_s.titleize} (#{how}=>#{what})", 0)
+      def validate_select_list(browser, how, what, opt_type, list = nil, desc= '',  multiple = false, ignore = ['Select One'], limit = 5)
+        mark_testlevel("(#{how}=>#{what})")
+        msg  = "Select list #{how}=>#{what}"
         ok          = true
         select_list = browser.select_list(how, what)
         options     = select_list.options
         if list
           if options == list
-            passed_to_log("Select list options list equals expected list #{list}")
+            passed_to_log(build_message(msg, ": options list equals expected list #{list}"))
           else
             debug_to_report("actual:\n#{nice_array(options, true)}")
             debug_to_report("expected:\n#{nice_array(list, true)}")
-            failed_to_log("Select list options list #{nice_array(options, true)} "+
+            failed_to_log(build_message(
+                              msg,
+                              ": options list #{nice_array(options, true)}",
                               "does not equal expected list #{nice_array(list, true)}")
+                                       )
           end
         end
 
@@ -926,34 +930,36 @@ module Awetestlib
             select_option(select_list, opt_type, options[1])
             select_option(select_list, opt_type, options[2])
             selected = select_list.selected_options
+            msg1 = "#{msg}: selected options equals expected #{nice_array(targets)}."
             if selected == targets
-              passed_to_log("Select list selected options equals expected #{targets}")
+              passed_to_log(msg1)
             else
-              failed_to_log("Select list selected options #{selected} does not equal expected list #{targets.to_a}")
+              failed_to_log("#{msg} Found #{nice_array(selected)}")
             end
           else
-            debug_to_log("Too few options to test multiple selection (need 2 or more): '#{options}", __LINE__)
+            debug_to_log("#{msg}: Too few options to test multiple selection (need 2 or more): '#{options}")
           end
         end
       rescue
-        failed_to_log("Unable to validate select_list: '#{$!}'", __LINE__)
+        failed_to_log(unable_to)
       end
 
-      def validate_select_list_contents(browser, how, what, list)
-        mark_testlevel("#{__method__.to_s.titleize} (#{what})", 2)
+      def validate_select_list_contents(browser, how, what, list, desc = '')
+        mark_testlevel("#{how}=>#{what}", 2)
+        msg  = build_message("Select list #{how}=>#{what} options list equals", nice_array(list), desc)
         select_list = browser.select_list(how, what)
         options     = select_list.options
         if list
           if options == list
-            passed_to_log("Select list options list equals expected list #{list}")
+            passed_to_log(msg)
             options
           else
-            failed_to_log("Select list options list #{options} does not equal expected list #{list}")
+            failed_to_log("#{msg}. Found #{nice_array(options)}")
             nil
           end
         end
       rescue
-        failed_to_log("Unable to validate select_list contents: '#{$!}'", __LINE__)
+        failed_to_log(unable_to)
       end
 
       def validate_selected_options(browser, how, what, list, desc = '')
@@ -984,7 +990,7 @@ module Awetestlib
         end
 
       rescue
-        failed_to_log("Unable to validate selected option(s): '#{$!}' #{desc}", __LINE__)
+        failed_to_log(unable_to)
       end
 
       alias validate_selections validate_selected_options
@@ -1036,7 +1042,7 @@ module Awetestlib
           true
         end
       rescue
-        failed_to_log("Unable to verify that #{msg}: '#{$!}'")
+        failed_to_log(unable_to)
       end
 
       def textfield_does_not_equal?(browser, how, what, expected, desc = '')
@@ -1048,10 +1054,23 @@ module Awetestlib
           failed_to_log(msg)
         end
       rescue
-        failed_to_log("Unable to validate that #{msg}: '#{$!}'")
+        failed_to_log(unable_to)
       end
 
       alias validate_textfield_not_value textfield_does_not_equal?
+
+      def verify_class(browser, element, how, what, strg, desc = '')
+        msg = build_message("#{element} :#{how}=>#{what} :class contains '#{strg}'", desc)
+        class_strg = browser.element(how, what).class_name
+        if class_strg =~ /#{strg}/
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log(msg)
+        end
+      rescue
+        failed_to_log(unable_to)
+      end
 
       # @!endgroup Core
 

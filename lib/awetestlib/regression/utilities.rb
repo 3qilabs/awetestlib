@@ -59,6 +59,31 @@ module Awetestlib
         msg
       end
 
+      def get_date_names(date = Date.today)
+        this_month = date.month
+        if this_month == 12
+          next_month = 1
+        else
+          next_month = this_month + 1
+        end
+        if this_month == 1
+          prev_month = 12
+        else
+          prev_month = this_month - 1
+        end
+
+        month_arr = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                     'July', 'August', 'September', 'October', 'November', 'December']
+
+        this_month_name = month_arr[this_month]
+        next_month_name = month_arr[next_month]
+        prev_month_name = month_arr[prev_month]
+
+        arr = [date.year, date.day, this_month_name, next_month_name, prev_month_name]
+        debug_to_log("#{__method__} #{nice_array(arr)}")
+        arr
+      end
+
       def get_trace(lnbr)
         callertrace = "\nCaller trace: (#{lnbr})\n"
         Kernel.caller.each_index do |x|
@@ -286,12 +311,39 @@ module Awetestlib
         else
           new_arr = arr
         end
-        "['#{new_arr.join("','")}']"
+        "['#{new_arr.join("', '")}']"
       end
+
+      def nice_number(number, decimals = 0, dollars = false)
+        number.to_s.gsub!(/[,\$]/, '')
+        ptrn = "%0.#{decimals}f"
+        ptrn = '$' + ptrn if dollars
+        sprintf(ptrn, number).gsub(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,")
+      end
+
+      def pad_date(dt)
+       if dt and dt.length > 0
+         a, d1, b, d2, c = dt.split(/([\/\.-])/)
+         a = a.rjust(2, '0') unless a and a.length > 1
+         b = b.rjust(2, '0') unless b and b.length > 1
+         c = c.rjust(2, '0') unless c and c.length > 1
+         a + d1 + b + d2 + c
+       else
+         ''
+       end
+     end
 
       def string_count_in_string(strg, substrg)
         count = strg.scan(substrg).length
         count
+      end
+
+      def strip_regex_mix(strg)
+        rslt = strg.dup
+        while match = rslt.match(/(\(\?-mix:(.+)\))/)
+          rslt.sub!(match[1], "/#{match[2]}/")
+        end
+        rslt
       end
 
       def rescue_me(e, me = nil, what = nil, where = nil, who = nil)
@@ -834,14 +886,10 @@ module Awetestlib
       #method for handling file upload dialog
       #use click_no_wait on the action that triggers the save dialog
       # TODO need version for Firefox
-      def file_upload(filepath)
-        title   = 'Choose File'
-        title   = translate_popup_title(title)
-        text    = ''
-        button  = "&Open"
-        control = "Edit1"
-        side    = 'primary'
-        msg     = "Window title=#{title} button='#{button}' text='#{text}' side='#{side}':"
+      def file_upload(filepath, title = 'Choose File', text = '', button = '&Open',
+          control = 'Edit1', side = 'primary')
+        title = translate_popup_title(title)
+        msg   = "Window title=#{title} button='#{button}' text='#{text}' side='#{side}':"
         begin
           if @ai.WinWait(title, text, WAIT)
             passed_to_log("#{msg} found.")
@@ -852,7 +900,10 @@ module Awetestlib
                 passed_to_log("#{msg} #{control} command sent.")
                 sleep_for 1
                 if @ai.ControlClick(title, text, button, "primary")
+
                   passed_to_log("#{msg} Upload of #{filepath} succeeded.")
+
+
                 else
                   failed_to_log("#{msg} Upload of #{filepath} failed. (#{__LINE__})")
                 end
@@ -938,10 +989,12 @@ module Awetestlib
         debug_to_log("#{__method__}: #{method} #{$!}")
       end
 
-      def unable_to(message = '', no_dolbang = false)
+      def unable_to(message = '', no_dolbang = false, verify_that = false)
         call_arr                          = get_call_array()
         call_script, call_line, call_meth = parse_caller(call_arr[1])
-        strg                              = "Unable to #{call_meth.titleize}:"
+        strg                              = "Unable to"
+        strg << " verify" if verify_that
+        strg << " #{call_meth.titleize}:"
         strg << " #{message}" if message.length > 0
         strg << " '#{$!}'" unless no_dolbang
         strg
@@ -982,6 +1035,11 @@ module Awetestlib
         [arr.length, arr]
       end
 
+      def awetestlib?
+        not Awetestlib::Runner.nil?
+      rescue
+        return false
+      end
 
     end
   end

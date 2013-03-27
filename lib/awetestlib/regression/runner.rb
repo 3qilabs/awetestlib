@@ -230,13 +230,7 @@ module Awetestlib
               require 'watir-webdriver'
             end
           when 'FF'
-            if @targetBrowser.version.to_f < 4.0
-              require 'firewatir'
-              require 'patches/firewatir'
-            else
-              require 'watir-webdriver'
-            end
-
+            require 'watir-webdriver'
           when 'S'
             require 'watir-webdriver'
 
