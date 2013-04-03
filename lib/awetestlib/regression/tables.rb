@@ -112,10 +112,8 @@ module Awetestlib
       # @param [Fixnum] column_index A number indicating which rows the column to focus the search in.
       # When not supplied, the entire row is searched for *strg*.
       # @param [Boolean] fail_if_found If true log a failure if *strg* _is_ found.
-      # @param [Fixnum] after_index Forces method to accept hit on *strg* only if it occurs
-      # after the row indicated by this argument. When omitted, the first hit is accepted.
       # @return [Fixnum] the index of the row containing *strg*
-      def get_index_of_row_with_text(table, strg, column_index = nil, fail_if_found = false, after_index = nil)
+      def get_index_of_row_with_text(table, strg, column_index = nil, fail_if_found = false)
         debug_to_log("#{__method__}: #{get_callers(5)}")
         if fail_if_found
           msg = 'No '
@@ -142,13 +140,8 @@ module Awetestlib
           end
           dbg << "\n#{index}. [#{text}]"
           if text =~ /#{strg}/
-            if after_index and index > after_index
-              found = true
-              break
-            else
-              found = true
-              break
-            end
+            found = true
+            break
           end
         end
         debug_to_log(dbg)
@@ -336,18 +329,17 @@ module Awetestlib
         hit
       end
 
-      def fetch_array_for_table_column(table, column_index, start_row = 2)
-        ary       = []
-        row_count = 0
-        table.each do |row|
-          row_count += 1
+      def fetch_array_for_table_column(nc_element, table_index, column_index)
+        ary = []
+        nc_element.tables[table_index].each do |row|
           if get_cell_count(row) >= column_index
-            if row_count >= start_row
+            #TODO this assumes column 1 is a number column
+            if row[1].text =~ /\d+/
               ary << row[column_index].text
             end
           end
         end
-        ary
+        return ary f
       end
 
       def fetch_hash_for_table_column(table, column_index, start_row = 2)

@@ -40,7 +40,6 @@ module Awetestlib
 
       # Open a browser based on the command line parameters that identify the browser and
       # version to use for the test.
-      # @note Safari currently supported only on Mac OS X
       # @example
       #  browser = open_browser('www.google.com')
       # @param [String, Regexp] url When provided, the browser will go to this url.
@@ -54,13 +53,10 @@ module Awetestlib
               @myHwnd = @myBrowser.hwnd
             end
           when 'FF'
-            @myBrowser = open_ff
+            @myBrowser = open_ff_for_version
           when 'S'
-            if USING_OSX
-              @myBrowser = open_safari
-            else
-              raise "Safari is not supported under this operating system #{RUBY_PLATFORM}"
-            end
+            aBrowser = Watir::Browser.new :safari
+            @myBrowser = aBrowser
           when 'C', 'GC'
             @myBrowser = open_chrome
           else
@@ -86,16 +82,18 @@ module Awetestlib
         browser
       end
 
-      # Open Safari browser instance.
-      # @note Safari currently supported only on Mac OS X
-      # @return [Watir::Browser]
-      def open_safari
-        browser = Watir::Browser.new(:remote, :desired_capabilities=>:'safari')
+      # Open FF (Firefox) browser instance.
+      # @param [Fixnum] version A number designating the version of the browser to be opened.
+      # @return [Watir::Browser, Firewatir::Browser]
+      # Returns Firewatir::Browser if target browser is Firefox version less than 4.0
+      def open_ff_for_version(version = @targetVersion)
+        browser = Watir::Browser.new :firefox
       end
 
       # Open FF (Firefox) browser instance under FireWatir.
-      # @return [Watir::Browser]
+      # @return [Firewatir::Browser]
       def open_ff
+        # Watir::Browser.default = 'firefox'
         browser = Watir::Browser.new :firefox
       end
 
@@ -504,18 +502,17 @@ module Awetestlib
       end
 
       # Closes main browser session. Misnamed. Usually used at end of script to shut down browser.
-      def close_browser(browser, where = @myName, lnbr = __LINE__)
+      def logout(browser, where = @myName, lnbr = __LINE__)
         #TODO Firewatir 1.6.5 does not implement .exists for FireWatir::Firefox class
         debug_to_log("Logging out in #{where} at line #{lnbr}.", lnbr, true)
         debug_to_log("#{__method__}: browser: #{browser.inspect} (#{__LINE__})")
-
-        url   = browser.url
-        title = browser.title
 
         if ['FF', 'S'].include?(@browserAbbrev) || browser.exists?
           case @browserAbbrev
             when 'FF'
               if is_browser?(browser)
+                url   = browser.url
+                title = browser.title
                 debug_to_log("#{__method__}: Firefox browser url: [#{url}]")
                 debug_to_log("#{__method__}: Firefox browser title: [#{title}]")
                 debug_to_log("#{__method__}: Closing browser: #{where} (#{lnbr})")
@@ -528,23 +525,16 @@ module Awetestlib
 
               end
             when 'IE'
-              debug_to_log("#{__method__}: Internet Explorer browser url: [#{url}]")
-              debug_to_log("#{__method__}: Internet Explorer browser title: [#{title}]")
-              debug_to_log("#{__method__}: Closing browser: #{where} (#{lnbr})")
-              if $watir_script
-                hwnd = browser.hwnd
-                pid  = Watir::IE::Process.process_id_from_hwnd(hwnd)
-                debug_to_log("#{__method__}: Closing browser: hwnd #{hwnd} pid #{pid} #{where} (#{lnbr}) (#{__LINE__})")
+              hwnd = browser.hwnd
+              pid  = Watir::IE::Process.process_id_from_hwnd(hwnd)
+              debug_to_log("#{__method__}: Closing browser: hwnd #{hwnd} pid #{pid} #{where} (#{lnbr}) (#{__LINE__})")
+              browser.close
+              if browser.exists? and pid > 0 and pid < 538976288 # value of uninitialized memory location
+                debug_to_log("Retry close browser: hwnd #{hwnd} pid #{pid} #{where} #{lnbr} (#{__LINE__})")
                 browser.close
-                if browser.exists? and pid > 0 and pid < 538976288 # value of uninitialized memory location
-                  debug_to_log("Retry close browser: hwnd #{hwnd} pid #{pid} #{where} #{lnbr} (#{__LINE__})")
-                  browser.close
-                end
-                if browser.exists? and pid > 0 and pid < 538976288 # value of uninitialized memory location
-                  kill_browser(browser.hwnd, __LINE__, browser)
-                end
-              else
-                browser.close
+              end
+              if browser.exists? and pid > 0 and pid < 538976288 # value of uninitialized memory location
+                kill_browser(browser.hwnd, __LINE__, browser)
               end
             when 'S'
               if is_browser?(browser)
@@ -565,6 +555,9 @@ module Awetestlib
                 debug_to_log("Closing browser: #{where} (#{lnbr})")
                 if url and url.length > 1
                   browser.close
+                  #else
+                  #browser = FireWatir::Firefox.attach(:title, title)
+                  #browser.close
                 end
 
               end
@@ -572,11 +565,11 @@ module Awetestlib
               raise "Unsupported browser: '#{@browserAbbrev}'"
           end
         end
-      rescue
-        failed_to_log(unable_to)
+        #  rescue => e
+        #    if not e.is_a?(Vapir::WindowGoneException)
+        #      raise e
+        #    end
       end
-
-      alias logout close_browser
 
       # Close a browser popup window. Does not apply to modal popups.
       # @param [Watir::Browser] popup Reference to the popup to be closed
