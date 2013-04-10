@@ -216,6 +216,9 @@ module Awetestlib
 
       def require_gems
 
+        require 'sys/uname'
+        include Sys
+
         case @targetBrowser.abbrev
 
           when 'IE'
@@ -267,6 +270,7 @@ module Awetestlib
       end
 
       def start
+        get_os
         before_run
         run
       rescue Exception => e
