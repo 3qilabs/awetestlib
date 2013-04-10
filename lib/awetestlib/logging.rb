@@ -182,12 +182,12 @@ module Awetestlib
 
     # @param [String] message The text to place in the log and report
     # @return [void]
-    def failed_to_log(message, lnbr = nil, dbg = false)
-      message << " \n#{get_debug_list}" if dbg or @debug_calls or @debug_calls_fail_only
+    def failed_to_log(message, lnbr = nil, dbg = false, exception = nil)
+      message << " \n#{get_debug_list}" if dbg.to_s == 'true' or @debug_calls or @debug_calls_fail_only
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
       @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]", "FAILED") unless Awetestlib::Runner.nil?
-      log_message(WARN, "#{message}", FAIL, lnbr)
+      log_message(WARN, "#{message}", FAIL, lnbr, nil, exception)
     end
 
     alias validate_failed_tolog failed_to_log
@@ -198,13 +198,13 @@ module Awetestlib
 
     # @param [String] message The text to place in the log and report
     # @return [void]
-    def fatal_to_log(message, lnbr = nil, dbg = false)
-      message << " \n#{get_debug_list}" if dbg or (@debug_calls and not @debug_calls_fail_only)
+    def fatal_to_log(message, lnbr = nil, dbg = false, exception = nil)
+      message << " \n#{get_debug_list}" if dbg.to_s == 'true' or (@debug_calls and not @debug_calls_fail_only)
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
       @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]", "FAILED") unless Awetestlib::Runner.nil?
       debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
-      log_message(FATAL, "#{message} (#{lnbr})", FAIL, lnbr)
+      log_message(FATAL, "#{message} (#{lnbr})", FAIL, lnbr, nil, exception)
     end
 
     alias fatal_tolog fatal_to_log
