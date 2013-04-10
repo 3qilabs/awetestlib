@@ -519,13 +519,14 @@ module Awetestlib
       # Compare strings for no match and log results
       # @param (see #string_equals?)
       # @param [Boolean] fail_on_format If set to true method will fail if the formats differ
+      # even though the dates/times match
       # @return [Boolean] Returns true if actual does not match expected.
       def date_string_equals?(actual, expected, desc = '', fail_on_format = true)
         rtrn = false
         if actual == expected
           rtrn = true
         elsif DateTime.parse(actual).to_s == DateTime.parse(expected).to_s
-          msg2 "with different formatting. "
+          msg2 = "with different formatting. "
           unless fail_on_format
             rtrn = true
           end
