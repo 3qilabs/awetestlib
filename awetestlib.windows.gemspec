@@ -33,6 +33,7 @@ Gem::Specification.new do |s|
   s.add_dependency('rdoc', '~> 3.11')
   s.add_dependency('cucumber')
   s.add_dependency('calabash-android', '0.4.3')
+  s.add_dependency('sys-uname')
   s.require_paths = ["lib"]
   s.files = `git ls-files`.split("\n")
   s.executables = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
