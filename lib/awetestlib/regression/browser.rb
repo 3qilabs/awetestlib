@@ -720,7 +720,9 @@ module Awetestlib
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String] title The title of the window to be closed.  Matched from beginning of string.
       # @param [String] button The display name of the button to be clicked.
-      # @param [String] text The text of the window to be closed.  Matched from beginning of string.
+      # @param [String] text The text of the window to be closed.  Matched from beginning of string in Windows
+      # with Internet Explorer (regular expressions will fail). Use enough of beginning of the text string, in quotes,
+      # to assure the correct modal is found. This will give best portability.
       # @param [String] side A string identifying which mouse button to click.
       # @param [Fixnum] wait Number of seconds to wait for the popup to be seen.
       def close_modal(browser, title="", button="OK", text='', side = 'primary', wait = WAIT)
@@ -743,17 +745,18 @@ module Awetestlib
       end
 
     # TODO: Logging
-      # Close a Safari modal popup by closing the frontmost Safari dialog.  MacOS only
+      # Close a Safari modal popup by closing the frontmost Safari dialog.  Mac OSX only.
       def close_modal_s
         # simply closes the frontmost Safari dialog
-        Appscript.app("Safari").activate; Appscript.app("System Events").processes["Safari"].key_code(52)
+        Appscript.app("Safari").activate
+        Appscript.app("System Events").processes["Safari"].key_code(52)
       end
 
-      # Close an IE modal popup by its title.
+      # Close an IE modal popup by its title using AutoItX3. Windows only.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [String] title The title of the window to be closed.  Matched from beginning of string.
       # @param [String] button The display name of the button to be clicked.
-      # @param [String] text The text of the window to be closed.  Matched from beginning of string.
+      # @param [String] text The text of the window to be closed.  Matched from beginning of string.  Do not use regular expression
       # @param [String] side A string identifying which mouse button to click.
       # @param [Fixnum] wait Number of seconds to wait for the popup to be seen.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
@@ -762,7 +765,7 @@ module Awetestlib
         #TODO needs simplifying, incorporating text verification, and debug code cleaned up
         title = translate_popup_title(title)
         msg   = "Modal window (popup) '#{title}'"
-        if @ai.WinWait(title, text, wait)
+        if @ai.WinWait(title, text, wait) > 0
           myHandle = @ai.WinGetHandle(title, text)
           if myHandle.length > 0
             debug_to_log("hwnd: #{myHandle.inspect}")
@@ -770,7 +773,7 @@ module Awetestlib
             window_handle = "[HANDLE:#{myHandle}]"
             sleep_for(0.5)
             @ai.WinActivate(window_handle)
-            if @ai.WinActive(window_handle)
+            if @ai.WinActive(window_handle) > 0
               debug_to_log("#{msg} activated.")
               controlHandle = @ai.ControlGetHandle(title, '', "[CLASS:Button; TEXT:#{button}]")
               if not controlHandle.length > 0
@@ -779,16 +782,16 @@ module Awetestlib
               end
               debug_to_log("Handle for button '#{button}': [#{controlHandle}]")
               debug_to_log("#{msg} focus gained.")
-              if @ai.ControlClick(title, '', "[CLASS:Button; TEXT:#{button}]")
+              if @ai.ControlClick(title, '', "[CLASS:Button; TEXT:#{button}]") > 0
                 passed_to_log("#{msg} #{side} click on '[CLASS:Button; TEXT:#{button}]' successful.")
                 sleep_for(0.5)
-                if @ai.WinExists(window_handle)
+                if @ai.WinExists(window_handle) > 0
                   debug_to_log("#{msg} close popup failed on click '#{button}'. Trying WinClose. (#{__LINE__})")
                   @ai.WinClose(title, text)
-                  if @ai.WinExists(window_handle)
+                  if @ai.WinExists(window_handle) > 0
                     debug_to_log("#{msg} close popup failed with WinClose(#{window_handle}). (#{__LINE__})")
                     @ai.WinKill(window_handle)
-                    if @ai.WinExists(window_handle)
+                    if @ai.WinExists(window_handle) > 0
                       debug_to_log("#{msg} close popup failed with WinKill(#{window_handle}). (#{__LINE__})")
                     else
                       debug_to_log("#{msg} closed successfully with WinKill(#{window_handle}).")
@@ -820,7 +823,7 @@ module Awetestlib
 
       #  private :close_modal_ie
 
-      # Close an IE modal popup by its title. Calls close_modal_ie.
+      # Close an Internet Explorer modal popup by its title. Calls close_modal_ie. Windows only.
       # @deprecated Use close_modal.
       # @param [String] title The title of the window to be closed.  Matched from beginning of string.
       # @param [String] button The display name of the button to be clicked.
