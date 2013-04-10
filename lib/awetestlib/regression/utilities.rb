@@ -15,13 +15,13 @@ module Awetestlib
       end
 
       def setup
-        #    if @os_sysname =~ /Windows.+Server\s+2003/
+        #    if @os.name =~ /Windows.+Server\s+2003/
         ##  'Microsoft(R) Windows(R) Server 2003, Enterprise Edition'
         #      @vertical_hack_ie   = 110
         #      @vertical_hack_ff   = 138
         #      @horizontal_hack_ie = 5
         #      @horizontal_hack_ff = 4
-        #    elsif @os_sysname =~ /Windows XP Professional/
+        #    elsif @os.name =~ /Windows XP Professional/
         #  'Microsoft Windows XP Professional'
         @vertical_hack_ie        = 118
         @vertical_hack_ff        = 144
@@ -428,7 +428,7 @@ module Awetestlib
             myList << "[#{$1.gsub(/eval/, @myName)}] "
             break
           end
-          break if x > depth or myCaller =~ /:in .run.$/
+          break if x > depth or myCaller =~ /:in .run.$/  # this break causes error in Ruby 1.9.x
         end
         if @projName
           call_list.each_index do |x|
@@ -439,7 +439,7 @@ module Awetestlib
               break
             end
           end
-          break if x > depth or myCaller =~ /:in .run.$/
+          break if x > depth or myCaller =~ /:in .run.$/  # this break causes error in Ruby 1.9.
         end
         myList
       end
@@ -1039,6 +1039,16 @@ module Awetestlib
         not Awetestlib::Runner.nil?
       rescue
         return false
+      end
+
+      def get_os
+        @os = OpenStruct.new(
+          :name     => Uname.sysname,
+          :version  => Uname.version,
+          :release  => Uname.release,
+          :nodename => Uname.nodename,
+          :machine  => Uname.machine
+        )
       end
 
     end
