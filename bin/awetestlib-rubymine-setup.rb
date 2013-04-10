@@ -20,17 +20,22 @@ def awetestlib_rubymine_setup
   @source_dir = File.join(File.dirname(__FILE__), '..', 'setup_samples', 'sample_rubymine')
 
   if File.exists?(@rubymine_dir)
-    puts "Rubymine project directory already exists."
+    puts "Rubymine project directory (#{@rubymine_dir}) already exists."
     exit 1
   end
 
   msg("Question") do
-    puts "I'm about to create a rubymine project named #{ARGV[1]} in this directory" if ARGV[1]
-    puts "I'm about to create a rubymine project named sample_rubymine in this directory" if ARGV[1].nil?
+    if ARGV[1]
+      puts "I'm about to create a rubymine project named #{ARGV[1]} in this directory"
+    else
+      puts "I'm about to create a rubymine project named sample_rubymine in this directory"
+    end
     puts "Please hit return to confirm that's what you want."
+    puts "Enter anything else and hit return to abort."
     puts "NOTE: You may need to run this command as an administrator."
   end
   exit 2 unless STDIN.gets.chomp == ''
+
   FileUtils.cp_r(@source_dir, @rubymine_dir)
   edit_config_file
   msg("Info") do
