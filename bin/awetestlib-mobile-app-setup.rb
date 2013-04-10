@@ -17,6 +17,7 @@ def awetestlib_mobile_app_setup
     puts "I'm about to create a mobile app project named #{ARGV[1]} in this directory" if ARGV[1]
     puts "I'm about to create a mobile app project named sample_mobile_app in this directory" if ARGV[1].nil?
     puts "Please hit return to confirm that's what you want."
+    puts "Enter anything else and hit return to abort."
     puts "NOTE: You may need to run this command as an administrator."
   end
   exit 2 unless STDIN.gets.chomp == ''

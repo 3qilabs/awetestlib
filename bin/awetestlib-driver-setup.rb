@@ -9,6 +9,7 @@ def awetestlib_driver_setup
     puts "I'm about to put the chromedriver and IEDriverServer in this directory"
     puts "If it already exists, we will overwrite it"
     puts "Please hit return to confirm that's what you want."
+    puts "Enter anything else and hit return to abort."
     puts "NOTE: You may need to run this command as an administrator."
   end
   exit 2 unless STDIN.gets.chomp == ''
