@@ -43,6 +43,7 @@ def awetestlib_netbeans_setup
     puts "I'm about to create a netbeans project named #{ARGV[1]} in this directory" if ARGV[1]
     puts "I'm about to create a netbeans project named sample_netbeans in this directory" if ARGV[1].nil?
     puts "Please hit return to confirm that's what you want."
+    puts "Enter anything else and hit return to abort."
     puts "NOTE: You may need to run this command as an administrator."
   end
   exit 2 unless STDIN.gets.chomp == ''

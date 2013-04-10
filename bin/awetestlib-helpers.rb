@@ -10,7 +10,7 @@ def print_usage
   Usage Options:
   
     awetestlib regression_setup
-      setup awetest regression and register autoitx3.dll
+      setup awetest regression and register autoitx3.dll in Windows
 
     awetestlib rubymine_setup <project_name>
       setup a rubymine project 

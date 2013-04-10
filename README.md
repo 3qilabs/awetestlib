@@ -3,9 +3,7 @@ Awetestlib
 
 Run automated regression and mobile tests
 
-After completing this guide you will be able to run tests locally from command line or from an IDE
-
-v0.1.29pre3 fixes an issue with running scripts against Safari on OSX
+After completing this guide you will be able to run tests locally from command line or from an IDE.
 
 ------------
 
@@ -18,23 +16,23 @@ You can check your Ruby version using:
 
     ruby -v
 
-Additionally, you will need to install DevKit to compile a few dependent gems. You can download DevKit
+Additionally, for Windows, you will need to install the RubyInstaller DevKit to compile a few dependent gems. You can download DevKit
 [here](http://rubyinstaller.org/downloads/)
 and the installation directions can be found
 [here](https://github.com/oneclick/rubyinstaller/wiki/Development-Kit)
 
 ## Install
 
-In a terminal or command prompt, install the awetestlib gem
+In a terminal or command prompt, install the awetestlib gem:
 
     gem install awetestlib --no-ri --no-rdoc
 
-Note: This could take up to 5 minutes for first time installs and you may need to use 'sudo'
+Note: This could take up to 5 minutes for first time installs.  You may need to use 'sudo' on OSX
 
 
 ## Setup Regression Module
 
-To setup the regression module, run the following command and verify the step
+Run the following command and verify the step
   
     awetestlib regression_setup
 
@@ -101,10 +99,18 @@ The full list of parameters for the command line currently are:
 
     Usage: awetestlib <script_file> [parameters] [options]
         -b, --browser BROWSER            Specify a browser (IE, FF, S, C)
-        -l, --library LIBRARY            Specify a library to be loaded
         -r, --root_path ROOT_PATH        Specify the root path
+        -l, --library LIBRARY            Specify a library to be loaded
         -x, --excel EXCEL_FILE           Specify an excel file containing variables to be loaded
         -v, --version VERSION            Specify a browser version
+        -e, --environment_url URL        Specify the environment URL
+        -f, --environment_nodename NODE  Specify the environment node name
+        -n, --environment_name NAME      Specify the environment name
+        -u, --selenium_remote_url URL    Specify the device's remote url and port
+        -s, --screencap_path PATH        Specify the path where screenshots will be saved
+        -o, --output_to_log              Write to log file
+            --log_path_subdir SUBDIR     Specify log path relative to root_path
+            --report_all_test_refs       Include list of all error/test case reference ids actually validated
 
 To start writing your own script, refer to the [Scripting Guide/Wiki](https://github.com/3qilabs/awetestlib/wiki/Getting-Started---Scripting) wiki
 
