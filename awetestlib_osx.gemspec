@@ -16,14 +16,8 @@ Gem::Specification.new do |s|
   s.description = %q{Awetest DSL for automated testing of browser-based applications.}
 
   s.add_dependency('watir-webdriver')
-  #s.add_dependency('watir', '1.8.1')
-  #s.add_dependency('commonwatir', '1.8.1')
-  #s.add_dependency('firewatir', '1.8.1')
   s.add_dependency('activesupport', '~> 3.0.0')
   s.add_dependency('andand')
-  #s.add_dependency('watirloo')
-  #s.add_dependency('win32-process')
-  #s.add_dependency('win32screenshot')
   s.add_dependency('spreadsheet', '0.6.8')
   s.add_dependency('google-spreadsheet-ruby', '0.1.6')
   s.add_dependency('roo', '1.10.1')
@@ -32,7 +26,6 @@ Gem::Specification.new do |s|
   s.add_dependency('nokogiri')
   s.add_dependency('i18n')
   s.add_dependency('rb-appscript')
-  #s.add_dependency('json', '1.6.1') #for safari support
   s.add_dependency('pry')
   s.add_dependency('cucumber')
   s.add_dependency('calabash-cucumber')
