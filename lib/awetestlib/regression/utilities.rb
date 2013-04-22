@@ -1043,11 +1043,11 @@ module Awetestlib
 
       def get_os
         @os = OpenStruct.new(
-          :name     => Uname.sysname,
-          :version  => Uname.version,
-          :release  => Uname.release,
-          :nodename => Uname.nodename,
-          :machine  => Uname.machine
+          :name     => Sys::Uname.sysname,
+          :version  => Sys::Uname.version,
+          :release  => Sys::Uname.release,
+          :nodename => Sys::Uname.nodename,
+          :machine  => Sys::Uname.machine
         )
       end
 
