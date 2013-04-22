@@ -543,14 +543,14 @@ module Awetestlib
         tables.each do |tbl|
           tbl_cnt += 1
           row_cnt = 0
-          msg <<"\n=================\ntable: #{tbl_cnt}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
+          msg << "\n=================\ntable: #{tbl_cnt}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
           tbl.rows.each do |row|
             row_cnt  += 1
             cell_cnt = 0
-            msg <<"\n=================\ntable: #{tbl_cnt} row: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
+            msg << "\n=================\ntable: #{tbl_cnt} row: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
             row.each do |cell|
               cell_cnt += 1
-              msg <<"\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+              msg << " \ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
             end
           end
         end
@@ -579,14 +579,14 @@ module Awetestlib
       def dump_table_rows_and_cells(tbl)
         msg     = ''
         row_cnt = 0
-        msg <<"\n=================\ntable: #{tbl.inspect}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
+        msg << "\n=================\ntable: #{tbl.inspect}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
         tbl.rows.each do |row|
           row_cnt  += 1
           cell_cnt = 0
-          msg <<"\n=================\nrow: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
+          msg << "\n=================\nrow: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
           row.each do |cell|
             cell_cnt += 1
-            msg <<"\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+            msg << "\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
           end
         end
         debug_to_log(msg)
@@ -597,10 +597,10 @@ module Awetestlib
       def dump_row_cells(row)
         msg      = ''
         cell_cnt = 0
-        msg <<"\n=================\nrow: #{row.inspect}\n#{row}\ntext:'#{row.text}'"
+        msg << "\n=================\nrow: #{row.inspect}\n#{row}\ntext:'#{row.text}'"
         row.each do |cell|
           cell_cnt += 1
-          msg <<"\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+          msg << "\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
         end
         debug_to_log(msg)
       end
