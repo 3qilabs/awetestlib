@@ -15,13 +15,13 @@ module Awetestlib
       end
 
       def setup
-        #    if @os_sysname =~ /Windows.+Server\s+2003/
+        #    if @os.name =~ /Windows.+Server\s+2003/
         ##  'Microsoft(R) Windows(R) Server 2003, Enterprise Edition'
         #      @vertical_hack_ie   = 110
         #      @vertical_hack_ff   = 138
         #      @horizontal_hack_ie = 5
         #      @horizontal_hack_ff = 4
-        #    elsif @os_sysname =~ /Windows XP Professional/
+        #    elsif @os.name =~ /Windows XP Professional/
         #  'Microsoft Windows XP Professional'
         @vertical_hack_ie        = 118
         @vertical_hack_ff        = 144
@@ -376,7 +376,7 @@ module Awetestlib
             myList << "[#{$1.gsub(/eval/, @myName)}] "
             break
           end
-          break if x > depth or myCaller =~ /:in .run.$/
+          break if x > depth or myCaller =~ /:in .run.$/  # this break causes error in Ruby 1.9.x
         end
         if @projName
           call_list.each_index do |x|
@@ -387,7 +387,7 @@ module Awetestlib
               break
             end
           end
-          break if x > depth or myCaller =~ /:in .run.$/
+          break if x > depth or myCaller =~ /:in .run.$/  # this break causes error in Ruby 1.9.
         end
         myList
       end
@@ -491,14 +491,14 @@ module Awetestlib
         tables.each do |tbl|
           tbl_cnt += 1
           row_cnt = 0
-          msg <<"\n=================\ntable: #{tbl_cnt}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
+          msg << "\n=================\ntable: #{tbl_cnt}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
           tbl.rows.each do |row|
             row_cnt  += 1
             cell_cnt = 0
-            msg <<"\n=================\ntable: #{tbl_cnt} row: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
+            msg << "\n=================\ntable: #{tbl_cnt} row: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
             row.each do |cell|
               cell_cnt += 1
-              msg <<"\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+              msg << " \ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
             end
           end
         end
@@ -527,14 +527,14 @@ module Awetestlib
       def dump_table_rows_and_cells(tbl)
         msg     = ''
         row_cnt = 0
-        msg <<"\n=================\ntable: #{tbl.inspect}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
+        msg << "\n=================\ntable: #{tbl.inspect}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
         tbl.rows.each do |row|
           row_cnt  += 1
           cell_cnt = 0
-          msg <<"\n=================\nrow: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
+          msg << "\n=================\nrow: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
           row.each do |cell|
             cell_cnt += 1
-            msg <<"\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+            msg << "\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
           end
         end
         debug_to_log(msg)
@@ -545,10 +545,10 @@ module Awetestlib
       def dump_row_cells(row)
         msg      = ''
         cell_cnt = 0
-        msg <<"\n=================\nrow: #{row.inspect}\n#{row}\ntext:'#{row.text}'"
+        msg << "\n=================\nrow: #{row.inspect}\n#{row}\ntext:'#{row.text}'"
         row.each do |cell|
           cell_cnt += 1
-          msg <<"\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+          msg << "\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
         end
         debug_to_log(msg)
       end
@@ -982,6 +982,16 @@ module Awetestlib
         [arr.length, arr]
       end
 
+
+      def get_os
+        @os = OpenStruct.new(
+          :name     => Sys::Uname.sysname,
+          :version  => Sys::Uname.version,
+          :release  => Sys::Uname.release,
+          :nodename => Sys::Uname.nodename,
+          :machine  => Sys::Uname.machine
+        )
+      end
 
     end
   end
