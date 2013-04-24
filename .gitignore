@@ -67,3 +67,4 @@ dump.rdb
 config/settings.yml
 PROJECT_NAME
 *.log
+awetest_reports/
