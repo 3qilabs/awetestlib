@@ -487,7 +487,7 @@ module Awetestlib
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output. Required in this method.
       # @param [String] valid_value The expected value of the text field, e.g., following reformatting.
       # @return (see #click)
-      def set_text_field_and_validate(browser, how, what, value, desc, valid_value = nil)
+      def set_text_field_and_validate(browser, how, what, value, valid_value = nil, desc ='')
         #NOTE: use when value and valid_value differ as with dollar reformatting
         if set_text_field(browser, how, what, value, desc, true)
           expected = valid_value ? valid_value : value

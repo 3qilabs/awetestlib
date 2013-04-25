@@ -99,7 +99,7 @@ module Awetestlib
       # failed_to_log "SIKULI LOG:\n\n #{output_lines.join('\n')}"
       # end
 
-      return { :result => passed, :msg => output_str }
+      return { :result => passed, :msg => output_lines }
     end
 
 
@@ -126,9 +126,9 @@ module Awetestlib
       end
       strg << " #{message}" if message.length > 0
       strg << " (#{desc})" if desc.length > 0
-      strg << " [#{call_line}]"
+      strg << " [#{call_line}]" if dbg or @debug_calls
       strg << "\n#{list.to_yaml}" if dbg or @debug_calls
-      @report_class.add_to_report(strg, "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
+      @report_class.add_to_report(strg, "&nbsp", "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
       log_message(INFO, strg, lvl, nil, 1)
     rescue
       failed_to_log("#{__method__}: #{$!}")
@@ -170,7 +170,7 @@ module Awetestlib
       message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
       @my_passed_count += 1 if @my_passed_count
       parse_error_references(message)
-      @report_class.add_to_report(message, "PASSED") unless Awetestlib::Runner.nil?
+      @report_class.add_to_report(message, get_caller(lnbr), "PASSED") unless Awetestlib::Runner.nil?
       log_message(INFO, "#{message}", PASS, lnbr)
     end
 
@@ -186,7 +186,7 @@ module Awetestlib
       message << " \n#{get_debug_list}" if dbg.to_s == 'true' or @debug_calls or @debug_calls_fail_only
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
-      @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]", "FAILED") unless Awetestlib::Runner.nil?
+      @report_class.add_to_report("#{message}", get_caller(lnbr), "FAILED") unless Awetestlib::Runner.nil?
       log_message(WARN, "#{message}", FAIL, lnbr, nil, exception)
     end
 
@@ -202,7 +202,7 @@ module Awetestlib
       message << " \n#{get_debug_list}" if dbg.to_s == 'true' or (@debug_calls and not @debug_calls_fail_only)
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
-      @report_class.add_to_report("#{message}" + " [#{get_caller(lnbr)}]", "FAILED") unless Awetestlib::Runner.nil?
+      @report_class.add_to_report("#{message}", get_caller(lnbr), "FAILED") unless Awetestlib::Runner.nil?
       debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
       log_message(FATAL, "#{message} (#{lnbr})", FAIL, lnbr, nil, exception)
     end
