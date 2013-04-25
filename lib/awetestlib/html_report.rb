@@ -147,21 +147,6 @@ module Awetestlib
 
       @reportContent2 += row + "\n"
 
-
-      #if (result == 'PASSED')
-      #  @reportContent2 = @reportContent2 + '<tr>C'
-      #  @reportContent2 = @reportContent2 + '<td class=border_right width=20%><p class=result_ok>' + result + '</p></td>'
-      #elsif (result == 'FAILED')
-      #  @reportContent2 = @reportContent2 + '<tr><td class=border_left width=80%><p class=normal_text>' + step + '</p></td>'
-      #  @reportContent2 = @reportContent2 + '<td class=border_right width=20%><p class=result_nok>' + result + '</p></td>'
-      #elsif level < 1
-      #  @reportContent2 = @reportContent2 + '<tr><td class=border_left width=80%><p class=normal_text>' + step + '</p></td>'
-      #  @reportContent2 = @reportContent2 + '<td class=border_right width=20%><p class=result_ok>' + result + '</p></td>'
-      #else
-      #  @reportContent2 = @reportContent2 + '<tr><td class=mark_testlevel_left width=80%><p class=bold_large_text>' + step + '</p></td>'
-      #  @reportContent2 = @reportContent2 + '<td class=mark_testlevel_right width=20%><p class=result_ok>' + result + '</p></td>'
-      #end
-
     end
 
     # Close the report HTML
