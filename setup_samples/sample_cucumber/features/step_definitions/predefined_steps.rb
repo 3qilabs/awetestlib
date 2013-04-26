@@ -18,7 +18,7 @@ Given /^I run with Watir$/ do
 end
 
 Given /^I run with Classic Watir$/ do
-  step "I run with Watir$"
+  step "I run with Watir"
 end
 
 Given /^I run with Watir-webdriver$/i do
