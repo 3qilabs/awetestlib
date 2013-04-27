@@ -77,6 +77,9 @@ OptionParser.new do |opts|
   opts.on("-o", "--output_to_log", "Write to log file") do
     options[:output_to_log] = true
   end
+  opts.on("-c", "--classic_watir", "Use Classic Watir for IE instead of Watir-webdriver") do
+    options[:classic_watir] = true
+  end
   opts.on("", "--log_path_subdir LOG_PATH_SUBDIR", "Specify log path relative to root_path.") do |log_path_subdir|
     options[:log_path_subdir] = log_path_subdir
   end
@@ -91,6 +94,8 @@ options[:environment]["name"] = options[:environment_name]
 options[:environment]["url"] = options[:environment_url]
 options[:environment]["nodename"] = options[:environment_nodename]
 check_script_type(options)
+
+$watir_script = options[:classic_watir]
 
 IS_WIN_2008 = File.exists?("config/win2008.txt")
 Awetestlib::Runner.new(options)
