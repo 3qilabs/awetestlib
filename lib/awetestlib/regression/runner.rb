@@ -1,20 +1,20 @@
-require 'awetestlib/regression/browser'
-require 'awetestlib/regression/find'
-require 'awetestlib/regression/user_input'
-require 'awetestlib/regression/waits'
-require 'awetestlib/regression/tables'
-require 'awetestlib/regression/page_data'
-require 'awetestlib/regression/drag_and_drop'
-require 'awetestlib/regression/utilities'
-require 'awetestlib/regression/legacy'
-require 'awetestlib/logging'
-require 'awetestlib/regression/validations'
-require 'awetestlib/html_report'
-#require 'rbconfig'
-require 'ostruct'
-require 'active_support'
-require 'active_support/inflector'
-require 'sys/uname'
+require 'awetestlib/regression/browser'  #; load_time
+require 'awetestlib/regression/find'  #; load_time
+require 'awetestlib/regression/user_input'  #; load_time
+require 'awetestlib/regression/waits'  #; load_time
+require 'awetestlib/regression/tables'  #; load_time
+require 'awetestlib/regression/page_data'  #; load_time
+require 'awetestlib/regression/drag_and_drop'  #; load_time
+require 'awetestlib/regression/utilities'  #; load_time
+require 'awetestlib/regression/legacy'  #; load_time
+require 'awetestlib/logging'  #; load_time
+require 'awetestlib/regression/validations'  #; load_time
+require 'awetestlib/html_report'  #; load_time
+#require 'rbconfig'  #; load_time
+require 'ostruct'  #; load_time
+require 'active_support'  #; load_time
+require 'active_support/inflector'  #; load_time
+require 'sys/uname'  #; load_time
 
 module Awetestlib
   module Regression
@@ -22,19 +22,19 @@ module Awetestlib
     class Runner < Awetestlib::Runner
 
     # order matters here
-      include Sys
-      include ActiveSupport::Inflector
-      include Awetestlib::Logging
-      include Awetestlib::Regression::Utilities
-      include Awetestlib::Regression::Browser
-      include Awetestlib::Regression::Find
-      include Awetestlib::Regression::UserInput
-      include Awetestlib::Regression::Waits
-      include Awetestlib::Regression::Tables
-      include Awetestlib::Regression::PageData
-      include Awetestlib::Regression::DragAndDrop
-      include Awetestlib::Regression::Validations
-      include Awetestlib::Regression::Legacy
+      include Sys  #; load_time('include Sys')
+      include ActiveSupport::Inflector  #; load_time('include ActiveSupport::Inflector')
+      include Awetestlib::Logging  #; load_time('include Awetestlib::Logging')
+      include Awetestlib::Regression::Utilities  #; load_time('include Awetestlib::Regression::Utilities')
+      include Awetestlib::Regression::Browser  #; load_time('include Awetestlib::Regression::Browser')
+      include Awetestlib::Regression::Find  #; load_time('include Awetestlib::Regression::Find')
+      include Awetestlib::Regression::UserInput  #; load_time('include Awetestlib::Regression::UserInput')
+      include Awetestlib::Regression::Waits  #; load_time('include Awetestlib::Regression::Waits')
+      include Awetestlib::Regression::Tables  #; load_time('include Awetestlib::Regression::Tables')
+      include Awetestlib::Regression::PageData  #; load_time('include Awetestlib::Regression::PageData')
+      include Awetestlib::Regression::DragAndDrop  #; load_time('include Awetestlib::Regression::DragAndDrop')
+      include Awetestlib::Regression::Validations  #; load_time('include Awetestlib::Regression::Validations')
+      include Awetestlib::Regression::Legacy  #; load_time('include Awetestlib::Regression::Legacy')
 
       ::DEBUG   = 0
       ::INFO    = 1
@@ -59,7 +59,7 @@ module Awetestlib
                     :environment, :environment_name, :environment_url, :environment_nodename,
                     :cycle, :browser_sequence,
                     :output_to_log, :log_path_subdir, :report_all_test_refs,
-                    :timeout
+                    :timeout, :classic_watir, :capture_load_times
 
       #def self.build(options)
       #  #build_class = "Awetestlib::#{script_module_for options[:script_type]}::Runner".constantize
@@ -222,31 +222,31 @@ module Awetestlib
 
           when 'IE'
             if $watir_script
-              require 'watir/ie'
-              require 'watir'
-              require 'watir/process'
-              require 'watirloo'
-              require 'patches/watir'
+              require 'watir/ie'  #; load_time
+              require 'watir'  #; load_time
+              require 'watir/process'  #; load_time
+              require 'watirloo'  #; load_time
+              require 'patches/watir'  #; load_time
               Watir::IE.visible = true
             else
-              require 'watir-webdriver'
+              require 'watir-webdriver'  #; load_time
             end
           when 'FF'
-            require 'watir-webdriver'
+            require 'watir-webdriver'  #; load_time
           when 'S'
-            require 'watir-webdriver'
+            require 'watir-webdriver'  #; load_time
 
           when 'C', 'GC'
-            require 'watir-webdriver'
+            require 'watir-webdriver'  #; load_time
 
           # when 'CL'
-          #   require 'celerity'
-          #   require 'watir-webdriver'
+          #   require 'celerity'  #; load_time
+          #   require 'watir-webdriver'  #; load_timerequi
 
         end
 
         if USING_WINDOWS
-          require 'watir/win32ole'
+          require 'watir/win32ole'  #; load_time
           @ai = ::WIN32OLE.new('AutoItX3.Control')
         else
           # TODO: Need alternative for Mac?
@@ -254,7 +254,7 @@ module Awetestlib
         end
 
         if @xls_path
-          require 'roo'
+          require 'roo'  #; load_time
         end
 
       end

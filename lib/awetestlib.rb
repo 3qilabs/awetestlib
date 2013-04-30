@@ -27,13 +27,13 @@ module Awetestlib
   #require 'active_support/inflector'
   #require 'active_support/core_ext/object'
   #require 'active_support/core_ext/hash'
-  require 'awetestlib/runner'
-  require 'andand'
-  require 'awetestlib/regression/runner'
-  require 'pry'
+  require 'awetestlib/runner'  #; load_time
+  require 'andand'  #; load_time
+  require 'awetestlib/regression/runner'  #; load_time
+  require 'pry'  #; load_time
 
   if USING_OSX
-    require 'appscript'
+    require 'appscript'  #; load_time
   end
 
   #require 'roo' #moved to awetestlib runner

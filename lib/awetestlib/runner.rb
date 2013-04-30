@@ -1,4 +1,4 @@
-require 'open-uri'
+require 'open-uri'  #; load_time
 module Awetestlib
   # Parent class. Each script type will have a Runner that inherits from this class.
   class Runner
