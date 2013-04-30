@@ -1,6 +1,11 @@
 $: << "./lib"
+
+$base_time = Time.now
+$load_times = Hash.new
+$capture_load_times = true
+
 require File.join(File.dirname(__FILE__),"awetestlib-helpers")
-require 'fileutils'
+require 'fileutils'  #: load_time
 
 cmd = ARGV[0]
 
@@ -30,8 +35,8 @@ elsif cmd == 'driver_setup'
   awetestlib_driver_setup
 else
 
-require 'optparse'
-require 'awetestlib'
+require 'optparse'  #; load_time('optparse')
+require 'awetestlib'  #; load_time
 
 options = { }
 OptionParser.new do |opts|
@@ -86,6 +91,9 @@ OptionParser.new do |opts|
   opts.on("", "--report_all_test_refs REPORT_ALL_TEST_REFS", "Include list of all error/test case reference ids actually validated.") do
     options[:report_all_test_refs] = true
   end
+  opts.on("", "--capture_load_times CAPTURE_LOAD_TIMES", "Capture load time for gem requires.") do
+    options[:capture_load_times] = true
+  end
 
 end.parse!
 
@@ -95,7 +103,9 @@ options[:environment]["url"] = options[:environment_url]
 options[:environment]["nodename"] = options[:environment_nodename]
 check_script_type(options)
 
-$watir_script = options[:classic_watir]
+$watir_script       = options[:classic_watir]
+$capture_load_times = options[:capture_load_times] unless $capture_load_times
+
 
 IS_WIN_2008 = File.exists?("config/win2008.txt")
 Awetestlib::Runner.new(options)

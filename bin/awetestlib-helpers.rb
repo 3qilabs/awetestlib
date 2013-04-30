@@ -40,3 +40,22 @@ def check_script_type(options)
     options[:script_file] = ARGV[0]
   end
 end
+
+def load_time(what = nil, time = Time.now)
+  if $capture_load_times
+    caller = Kernel.caller
+    called = $"
+    unless what
+      what = "#{caller[0]} => #{called[called.length - 1]}"
+    end
+    elapsed = time - $base_time
+    msg = "#{what} #{sprintf('%.4f', elapsed)}"
+    $load_times[time.to_f] = msg
+    begin
+      debug_to_report("#{time.to_f}: #{msg}")
+    rescue
+      puts("#{time.to_f}: #{msg}")
+    end
+    $base_time = time
+  end
+end
