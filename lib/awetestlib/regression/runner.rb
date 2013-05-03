@@ -14,7 +14,7 @@ require 'awetestlib/html_report'  #; load_time
 require 'ostruct'  #; load_time
 require 'active_support'  #; load_time
 require 'active_support/inflector'  #; load_time
-require 'sys/uname'  #; load_time
+#require 'sys/uname'  #; load_time
 
 module Awetestlib
   module Regression
@@ -22,7 +22,7 @@ module Awetestlib
     class Runner < Awetestlib::Runner
 
     # order matters here
-      include Sys  #; load_time('include Sys')
+    #  include Sys  #; load_time('include Sys')
       include ActiveSupport::Inflector  #; load_time('include ActiveSupport::Inflector')
       include Awetestlib::Logging  #; load_time('include Awetestlib::Logging')
       include Awetestlib::Regression::Utilities  #; load_time('include Awetestlib::Regression::Utilities')
@@ -269,7 +269,7 @@ module Awetestlib
       end
 
       def start
-        get_os
+        #get_os
         before_run
         run
       rescue Exception => e
