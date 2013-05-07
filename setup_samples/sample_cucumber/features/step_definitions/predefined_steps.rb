@@ -1,90 +1,51 @@
-require 'pry'
-
 def awetestlib?
   not Awetestlib::Runner.nil?
 rescue
   return false
 end
 
-Given /^I run with Watir$/ do
-  require 'watir'
-  require 'win32ole'
-  $ai          = ::WIN32OLE.new('AutoItX3.Control')
-  $first_index = 1
-  $timestamp     = Time.now.strftime("%Y%m%d%H%M%S")
-  $watir_script = true
-  Watir::IE.close_all
-  Watir::IE.visible = true
-end
+def setup_classic_watir
+    require 'watir'
+    require 'win32ole'
+    $ai          = ::WIN32OLE.new('AutoItX3.Control')
+    $first_index = 1
+    $timestamp     = Time.now.strftime("%Y%m%d%H%M%S")
+    $watir_script = true
+    Watir::IE.close_all
+    Watir::IE.visible = true
+  end
 
-Given /^I run with Classic Watir$/ do
-  step "I run with Watir"
-end
-
-Given /^I run with Watir-webdriver$/i do
+def setup_watir_webdriver
   require 'watir-webdriver'
   $first_index = 0
   $timestamp     = Time.now.strftime("%Y%m%d%H%M%S")
   $watir_script = false
 end
 
-
-When /^I open a new browser$/i do
-	if @params
-    puts "@params: #{@params}"
-	  case @params["browser"]
-      when "FF"
-        step "I open Firefox"
-      when "IE"
-        step "I open Internet Explorer"
-      when "C", "GC"
-        step "I open Chrome"
-	  end
-	else
-    step "I open Firefox"
-  end
-	end
-
-Given /^I open a F?f?irefox B?b?rowser$/i do
-  step "I open Firefox"
-end
-
-Given /^I open Firefox$/ do
-  step "I run with Watir-webdriver"
+def open_firefox
+  setup_watir_webdriver
   @browser = Watir::Browser.new :firefox
 end
 
-Given /^I open a C?c?hrome B?b?rowser$/i do
-  step "I open Chrome"
+def open_chrome
+  setup_watir_webdriver
+  @browser = Watir::Browser.new :chrome
 end
 
-Given /^I open Chrome$/ do
-  step "I run with Watir-webdriver"
-  @browser = Watir::Browser.new :chrome	
-end
-
-When /^I open an IE B?b?rowser$/i do
-  step "I open Internet Explorer"
-end
-
-Given /^I open an I?i?nternet E?e?xplorer B?b?rowser$/i do
-  step "I open Internet Explorer"
-end
-
-Given /^I open Internet Explorer$/i do
+def open_internet_explorer
   if $watir_script
-    step "I run with Watir"
+    setup_classic_watir
     @browser       = Watir::IE.new
     @browser.speed = :fast
   else
-    step "I run with Watir-webdriver"
+    setup_watir_webdriver
     client         = Selenium::WebDriver::Remote::Http::Default.new
     client.timeout = 300 # seconds – default is 60
     @browser       = Watir::Browser.new :ie, :http_client => client
   end
 end
 
-Then /^I navigate to the environment url$/ do
+def navigate_to_environment_url
   if @params and @params['environment'] and @params['environment']['url']
   url = @params['environment']['url']
   elsif @login and @login['url']
@@ -95,12 +56,88 @@ Then /^I navigate to the environment url$/ do
   @browser.goto url
 end
 
+def open_a_browser
+  if @params
+     puts "@params: #{@params}"
+ 	  case @params["browser"]
+       when "FF"
+         open_firefox
+       when "IE"
+         open_internet_explorer
+       when "C", "GC"
+         open_chrome
+ 	  end
+ 	else
+     if $watir_script
+       open_internet_explorer
+     else
+       open_firefox
+     end
+   end
+end
+
+Given /^I run with Watir$/ do
+  if @params and not @params["browser"] == "IE"
+    puts "@params['browser']=>#{@params['browser']} not compatible with classic Watir. Loading Watir-Webdriver."
+  else
+    setup_classic_watir
+  end
+end
+
+Given /^I run with Classic Watir$/ do
+  step "I run with Watir"
+end
+
+Given /^I run with Watir-webdriver$/i do
+  setup_watir_webdriver
+end
+
+When /^I open a browser$/i do
+  open_a_browser
+end
+
+When /^I open a new browser$/i do
+  open_a_browser
+end
+
+Given /^I open a F?f?irefox B?b?rowser$/i do
+  open_firefox
+end
+
+Given /^I open Firefox$/ do
+  open_firefox
+end
+
+Given /^I open a C?c?hrome B?b?rowser$/i do
+  open_chrome
+end
+
+Given /^I open Chrome$/ do
+  open_chrome
+end
+
+When /^I open an IE B?b?rowser$/i do
+  open_internet_explorer
+end
+
+Given /^I open an I?i?nternet E?e?xplorer B?b?rowser$/i do
+  open_internet_explorer
+end
+
+Given /^I open Internet Explorer$/i do
+  open_internet_explorer
+end
+
+Then /^I navigate to the environment url$/ do
+  navigate_to_environment_url
+end
+
 Then /^I go to the url "(.*?)"$/ do |url|
   @browser.goto url
 end
 
 Then /^I go to the (URL|url)$/ do |dummy|
-  step "I navigate to the environment url"
+  navigate_to_environment_url
 end
 
 Then /^I click "(.*?)"$/ do |element_text|
@@ -204,6 +241,7 @@ Then /^I fill in "(.*?)" with "(.*?)"$/ do |field, value| # assumes a label elem
 end
 
 Then /^let me debug$|^pry$|^execute binding.pry$/ do
+  require 'pry'
   binding.pry
 end
 
