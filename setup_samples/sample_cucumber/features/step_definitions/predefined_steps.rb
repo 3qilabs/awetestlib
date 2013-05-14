@@ -27,6 +27,11 @@ def open_firefox
   @browser = Watir::Browser.new :firefox
 end
 
+def open_safari
+  setup_watir_webdriver
+  @browser = Watir::Browser.new(:remote, :desired_capabilities=>:'safari')
+end
+
 def open_chrome
   setup_watir_webdriver
   @browser = Watir::Browser.new :chrome
@@ -66,6 +71,8 @@ def open_a_browser
          open_internet_explorer
        when "C", "GC"
          open_chrome
+       when "S"
+       	 open_safari
  	  end
  	else
      if $watir_script
