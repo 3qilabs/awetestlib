@@ -1,20 +1,20 @@
-require 'awetestlib/regression/browser'  #; load_time
-require 'awetestlib/regression/find'  #; load_time
-require 'awetestlib/regression/user_input'  #; load_time
-require 'awetestlib/regression/waits'  #; load_time
-require 'awetestlib/regression/tables'  #; load_time
-require 'awetestlib/regression/page_data'  #; load_time
-require 'awetestlib/regression/drag_and_drop'  #; load_time
-require 'awetestlib/regression/utilities'  #; load_time
-require 'awetestlib/regression/legacy'  #; load_time
-require 'awetestlib/logging'  #; load_time
-require 'awetestlib/regression/validations'  #; load_time
-require 'awetestlib/html_report'  #; load_time
-#require 'rbconfig'  #; load_time
-require 'ostruct'  #; load_time
-require 'active_support'  #; load_time
-require 'active_support/inflector'  #; load_time
-#require 'sys/uname'  #; load_time
+require 'awetestlib/regression/browser'; load_time
+require 'awetestlib/regression/find'; load_time
+require 'awetestlib/regression/user_input'; load_time
+require 'awetestlib/regression/waits'; load_time
+require 'awetestlib/regression/tables'; load_time
+require 'awetestlib/regression/page_data'; load_time
+require 'awetestlib/regression/drag_and_drop'; load_time
+require 'awetestlib/regression/utilities'; load_time
+require 'awetestlib/regression/legacy'; load_time
+require 'awetestlib/logging'; load_time
+require 'awetestlib/regression/validations'; load_time
+require 'awetestlib/html_report'; load_time
+#require 'rbconfig'; load_time
+require 'ostruct'; load_time
+require 'active_support'; load_time
+require 'active_support/inflector'; load_time
+#require 'sys/uname'; load_time
 
 module Awetestlib
   module Regression
@@ -59,7 +59,7 @@ module Awetestlib
                     :environment, :environment_name, :environment_url, :environment_nodename,
                     :cycle, :browser_sequence,
                     :output_to_log, :log_path_subdir, :report_all_test_refs,
-                    :timeout, :classic_watir, :capture_load_times
+                    :timeout, :classic_watir, :capture_load_times, :pry
 
       #def self.build(options)
       #  #build_class = "Awetestlib::#{script_module_for options[:script_type]}::Runner".constantize
@@ -169,6 +169,11 @@ module Awetestlib
         options.each_pair do |k, v|
           self.send("#{k}=", v)
         end
+
+        if options[:pry]
+          require 'pry'; load_time
+        end
+
         script_file = options[:script_file]
         load script_file
         setup_global_test_vars(options)
@@ -222,31 +227,31 @@ module Awetestlib
 
           when 'IE'
             if $watir_script
-              require 'watir/ie'  #; load_time
-              require 'watir'  #; load_time
-              require 'watir/process'  #; load_time
-              require 'watirloo'  #; load_time
-              require 'patches/watir'  #; load_time
+              require 'watir/ie'; load_time
+              require 'watir'; load_time
+              require 'watir/process'; load_time
+              require 'watirloo'; load_time
+              require 'patches/watir'; load_time
               Watir::IE.visible = true
             else
-              require 'watir-webdriver'  #; load_time
+              require 'watir-webdriver'; load_time
             end
           when 'FF'
-            require 'watir-webdriver'  #; load_time
+            require 'watir-webdriver'; load_time
           when 'S'
-            require 'watir-webdriver'  #; load_time
+            require 'watir-webdriver'; load_time
 
           when 'C', 'GC'
-            require 'watir-webdriver'  #; load_time
+            require 'watir-webdriver'; load_time
 
           # when 'CL'
-          #   require 'celerity'  #; load_time
-          #   require 'watir-webdriver'  #; load_timerequi
+          #   require 'celerity'; load_time
+          #   require 'watir-webdriver'; load_timerequi
 
         end
 
         if USING_WINDOWS
-          require 'watir/win32ole'  #; load_time
+          require 'watir/win32ole'; load_time
           @ai = ::WIN32OLE.new('AutoItX3.Control')
         else
           # TODO: Need alternative for Mac?
@@ -254,7 +259,7 @@ module Awetestlib
         end
 
         if @xls_path
-          require 'roo'  #; load_time
+          require 'roo'; load_time
         end
 
       end

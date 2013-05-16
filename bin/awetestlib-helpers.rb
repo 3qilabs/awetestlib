@@ -46,16 +46,19 @@ def load_time(what = nil, time = Time.now)
     caller = Kernel.caller
     called = $"
     unless what
-      what = "#{caller[0]} => #{called[called.length - 1]}"
+      drv, file, line, meth = caller[0].split(':')
+      if drv.length > 2
+        meth = line
+        line = file
+        file = drv
+      end
+      what = "#{File.basename(file)} at #{line} #{meth} => #{called[called.length - 1]}"
+      #what = "#{File.basename(caller[0])} => #{called[called.length - 1]}"
     end
     elapsed = time - $base_time
-    msg = "#{what} #{sprintf('%.4f', elapsed)}"
+    msg = "#{what} took #{sprintf('%.4f', elapsed)} seconds"
     $load_times[time.to_f] = msg
-    begin
-      debug_to_report("#{time.to_f}: #{msg}")
-    rescue
-      puts("#{time.to_f}: #{msg}")
-    end
+    puts("#{time.to_f}: #{msg}")
     $base_time = time
   end
 end

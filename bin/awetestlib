@@ -82,6 +82,9 @@ OptionParser.new do |opts|
   opts.on("-o", "--output_to_log", "Write to log file") do
     options[:output_to_log] = true
   end
+  opts.on("-p", "--pry", "Require Pry for debugging") do
+    options[:pry] = true
+  end
   opts.on("-c", "--classic_watir", "Use Classic Watir for IE instead of Watir-webdriver") do
     options[:classic_watir] = true
   end
