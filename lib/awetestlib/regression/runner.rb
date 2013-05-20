@@ -35,6 +35,7 @@ module Awetestlib
       include Awetestlib::Regression::DragAndDrop  #; load_time('include Awetestlib::Regression::DragAndDrop')
       include Awetestlib::Regression::Validations  #; load_time('include Awetestlib::Regression::Validations')
       include Awetestlib::Regression::Legacy  #; load_time('include Awetestlib::Regression::Legacy')
+      load_time('includes')
 
       ::DEBUG   = 0
       ::INFO    = 1
@@ -128,7 +129,7 @@ module Awetestlib
         #
         # @x_tolerance = 12
         # @y_tolerance = 12
-        require_gems
+        #require_gems
       end
 
       #def self.runner_class(options)
@@ -174,21 +175,22 @@ module Awetestlib
           require 'pry'; load_time
         end
 
-        script_file = options[:script_file]
-        load script_file
         setup_global_test_vars(options)
+        require_gems
+        #script_file = options[:script_file]
+        #load script_file; load_time('Load script file', Time.now)
 
         # load and extend with library module if it exists
         if options[:library]
           lib_file = options[:library]
-          load lib_file # force a fresh load
+          load lib_file; load_time('Load library file', Time.now) # force a fresh load
           lib_module = module_for lib_file
           self.extend(lib_module)
         end
 
         # load and extend with script
         script_file = options[:script_file]
-        load script_file # force a fresh load
+        load script_file; load_time('Reload script file', Time.now) # force a fresh load
         runner_module = module_for script_file
         self.extend(runner_module)
 
@@ -227,7 +229,7 @@ module Awetestlib
 
           when 'IE'
             if $watir_script
-              require 'watir/ie'; load_time
+              #require 'watir/ie'; load_time
               require 'watir'; load_time
               require 'watir/process'; load_time
               require 'watirloo'; load_time
@@ -270,6 +272,7 @@ module Awetestlib
 
       def before_run
         initiate_html_report
+        load_time('Total load time', $begin_time)
         start_run
       end
 

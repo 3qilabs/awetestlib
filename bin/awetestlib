@@ -1,11 +1,15 @@
 $: << "./lib"
 
+$begin_time = Time.now
 $base_time = Time.now
 $load_times = Hash.new
-$capture_load_times = true
+$capture_load_times = true if ENV['AWETESTLIB-LOAD-TIMES']
 
 require File.join(File.dirname(__FILE__),"awetestlib-helpers")
-require 'fileutils'  #: load_time
+require 'fileutils'; load_time
+if ENV['RUBY-PROF']
+  require 'ruby-prof'; load_time
+end
 
 cmd = ARGV[0]
 
@@ -35,8 +39,8 @@ elsif cmd == 'driver_setup'
   awetestlib_driver_setup
 else
 
-require 'optparse'  #; load_time('optparse')
-require 'awetestlib'  #; load_time
+require 'optparse'; load_time('optparse')
+require 'awetestlib'; load_time('awetestlib')
 
 options = { }
 OptionParser.new do |opts|
@@ -94,7 +98,7 @@ OptionParser.new do |opts|
   opts.on("", "--report_all_test_refs REPORT_ALL_TEST_REFS", "Include list of all error/test case reference ids actually validated.") do
     options[:report_all_test_refs] = true
   end
-  opts.on("", "--capture_load_times CAPTURE_LOAD_TIMES", "Capture load time for gem requires.") do
+  opts.on("-t", "--capture_load_times", "Capture load time for gem requires.") do
     options[:capture_load_times] = true
   end
 
