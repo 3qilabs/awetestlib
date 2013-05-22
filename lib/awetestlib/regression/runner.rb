@@ -304,11 +304,11 @@ module Awetestlib
       def open_report_file
         full_report_file = File.expand_path(@html_report_file)
         if USING_WINDOWS
-          system("explorer file:///#{full_report_file}")
+          system("start file:///#{full_report_file}")
         elsif USING_OSX
           system("open #{full_report_file}")
         else
-          puts "Can find report in #{full_report_file}"
+          puts "Report can be found in #{full_report_file}"
         end
 
       end
