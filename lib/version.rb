@@ -1,4 +1,4 @@
 module Awetestlib
-  VERSION = "0.1.30pre4"
-  VERSION_DATE = "2013-05-10"
+  VERSION = "0.1.30"
+  VERSION_DATE = "2013-05-21"
 end

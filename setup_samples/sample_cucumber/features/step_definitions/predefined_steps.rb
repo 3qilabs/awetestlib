@@ -5,26 +5,31 @@ rescue
 end
 
 def setup_classic_watir
-    require 'watir'
-    require 'win32ole'
-    $ai          = ::WIN32OLE.new('AutoItX3.Control')
-    $first_index = 1
-    $timestamp     = Time.now.strftime("%Y%m%d%H%M%S")
-    $watir_script = true
-    Watir::IE.close_all
-    Watir::IE.visible = true
-  end
+  require 'watir'
+  require 'win32ole'
+  $ai           = ::WIN32OLE.new('AutoItX3.Control')
+  $first_index  = 1
+  $timestamp    = Time.now.strftime("%Y%m%d%H%M%S")
+  $watir_script = true
+  Watir::IE.close_all
+  Watir::IE.visible = true
+end
 
 def setup_watir_webdriver
   require 'watir-webdriver'
-  $first_index = 0
-  $timestamp     = Time.now.strftime("%Y%m%d%H%M%S")
+  $first_index  = 0
+  $timestamp    = Time.now.strftime("%Y%m%d%H%M%S")
   $watir_script = false
 end
 
 def open_firefox
   setup_watir_webdriver
   @browser = Watir::Browser.new :firefox
+end
+
+def open_safari
+  setup_watir_webdriver
+  @browser = Watir::Browser.new(:remote, :desired_capabilities => :'safari')
 end
 
 def open_chrome
@@ -47,7 +52,7 @@ end
 
 def navigate_to_environment_url
   if @params and @params['environment'] and @params['environment']['url']
-  url = @params['environment']['url']
+    url = @params['environment']['url']
   elsif @login and @login['url']
     url = @login['url']
   elsif @role and @login[@role] and @login[@role]['url']
@@ -58,22 +63,24 @@ end
 
 def open_a_browser
   if @params
-     puts "@params: #{@params}"
- 	  case @params["browser"]
-       when "FF"
-         open_firefox
-       when "IE"
-         open_internet_explorer
-       when "C", "GC"
-         open_chrome
- 	  end
- 	else
-     if $watir_script
-       open_internet_explorer
-     else
-       open_firefox
-     end
-   end
+    puts "@params: #{@params}"
+    case @params["browser"]
+      when "FF"
+        open_firefox
+      when "IE"
+        open_internet_explorer
+      when "C", "GC"
+        open_chrome
+      when "S"
+        open_safari
+    end
+  else
+    if $watir_script
+      open_internet_explorer
+    else
+      open_firefox
+    end
+  end
 end
 
 Given /^I run with Watir$/ do
@@ -253,9 +260,9 @@ When /^I wait until "?(.*?)"? with "?(.*?)"? "(.*?)" is ready$/ do |element, how
   #what = Regexp.new(Regexp.escape(what)) unless how =~ /index|text/i or what.is_a?(Regexp)
   ok = false
   if $watir_script
-    if Watir::Wait.until {@browser.element(how, what).exists?}
-      if Watir::Wait.until {@browser.element(how, what).visible?}
-        if Watir::Wait.until {@browser.element(how, what).enabled?}
+    if Watir::Wait.until { @browser.element(how, what).exists? }
+      if Watir::Wait.until { @browser.element(how, what).visible? }
+        if Watir::Wait.until { @browser.element(how, what).enabled? }
           ok = true
         end
       end
@@ -269,8 +276,8 @@ When /^I wait until "?(.*?)"? with "?(.*?)"? "(.*?)" is ready$/ do |element, how
       when 'text field'
         sleep 2
         #if @browser.text_field(how.to_sym, what).wait_until_present
-          ok = true
-        #end
+        ok = true
+      #end
       else
         if @browser.element(how.to_sym, what).wait_until_present
           ok = true
@@ -306,14 +313,14 @@ end
 
 Given /^I load data spreadsheet "(.*?)" for "(.*?)"$/ do |file, feature|
   require 'roo'
-  @workbook               = Excel.new(file)
-  @feature_name           = feature     #File.basename(feature, ".feature")
+  @workbook     = Excel.new(file)
+  @feature_name = feature #File.basename(feature, ".feature")
   step "I load @login from spreadsheet"
   step "I load @var from spreadsheet"
 end
 
 Then /^I load @login from spreadsheet$/ do
-  @login                 = Hash.new
+  @login                  = Hash.new
   @workbook.default_sheet = @workbook.sheets[0]
 
   script_col   = 0
@@ -362,10 +369,10 @@ Then /^I load @login from spreadsheet$/ do
 end
 
 Then /^I load @var from spreadsheet$/ do
-  @var                   = Hash.new
+  @var                    = Hash.new
   @workbook.default_sheet = @workbook.sheets[1]
-  script_col             = 0
-  name_col               = 0
+  script_col              = 0
+  name_col                = 0
 
   1.upto(@workbook.last_column) do |col|
     header = @workbook.cell(1, col)
