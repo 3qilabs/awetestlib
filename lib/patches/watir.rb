@@ -61,6 +61,17 @@ module Watir
       hash.sort.to_yaml
     end
 
+    def list_attributes
+      attributes = browser.execute_script(%Q[
+                var s = [];
+                var attrs = arguments[0].attributes;
+                for (var l = 0; l < attrs.length; ++l) {
+                    var a = attrs[l]; s.push(a.name + ': ' + a.value);
+                } ;
+                return s;],
+                                          self)
+    end
+
     ###################################
     def bottom_edge
       assert_exists
