@@ -15,7 +15,7 @@ cmd = ARGV[0]
 
 if cmd.nil?
   print_usage
-  
+
 elsif cmd == "regression_setup"
   require File.join(File.dirname(__FILE__),"awetestlib-regression-setup")
   awetestlib_regression_setup
@@ -108,6 +108,9 @@ options[:environment] ||= {}
 options[:environment]["name"] = options[:environment_name]
 options[:environment]["url"] = options[:environment_url]
 options[:environment]["nodename"] = options[:environment_nodename]
+
+options[:log_path_subdir] = 'logs' if options[:output_to_log]
+
 check_script_type(options)
 
 $watir_script       = options[:classic_watir]
