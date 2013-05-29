@@ -311,7 +311,7 @@ module Awetestlib
       # @param (see #click_button_by_id)
       # @return (see #click_button_by_id)
       def click_img_by_xpath_and_name(browser, what, desc = '')
-        click(browser, :image, :xpath, "//a[@id = '#{what}']", desc)
+        click(browser, :image, :xpath, "//a[@name = '#{what}']", desc)
       end
 
       alias click_img_by_xpath click_img_by_xpath_and_name

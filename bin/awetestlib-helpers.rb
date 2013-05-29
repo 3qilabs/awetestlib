@@ -41,21 +41,28 @@ def check_script_type(options)
   end
 end
 
-def load_time(what = nil, time = Time.now)
+def load_time(what = nil, base = nil, time = Time.now)
   if $capture_load_times
     caller = Kernel.caller
     called = $"
     unless what
-      what = "#{caller[0]} => #{called[called.length - 1]}"
+      drv, file, line, meth = caller[0].split(':')
+      if drv.length > 2
+        meth = line
+        line = file
+        file = drv
+      end
+      what = "#{File.basename(file)} at #{line} #{meth} => #{called[called.length - 1]}"
+      #what = "#{File.basename(caller[0])} => #{called[called.length - 1]}"
     end
-    elapsed = time - $base_time
-    msg = "#{what} #{sprintf('%.4f', elapsed)}"
+    if base
+      elapsed = time - base
+    else
+      elapsed = time - $base_time
+    end
+    msg = "#{what} took #{sprintf('%.4f', elapsed)} seconds"
     $load_times[time.to_f] = msg
-    begin
-      debug_to_report("#{time.to_f}: #{msg}")
-    rescue
-      puts("#{time.to_f}: #{msg}")
-    end
-    $base_time = time
+    puts("#{time.to_f}: #{msg}")
+    $base_time = time unless base
   end
 end
