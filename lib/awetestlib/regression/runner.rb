@@ -95,7 +95,7 @@ module Awetestlib
           @runenv = options[:environment_name]
         end
 
-        @targetBrowser  = browser_to_use(options[:browser], options[:version])
+        @targetBrowser, @actualBrowser  = browser_to_use(options[:browser], options[:version])
         @targetVersion  = @targetBrowser.version
         @browserAbbrev  = @targetBrowser.abbrev
         @myRoot         = options[:root_path] || Dir.pwd  # NOTE: bug fix pmn 05dec2012
@@ -175,10 +175,11 @@ module Awetestlib
           require 'pry'; load_time
         end
 
+        # load script file to get overrides
+        script_file = options[:script_file]
+        load script_file; load_time('Load script file', Time.now)
         setup_global_test_vars(options)
         require_gems
-        #script_file = options[:script_file]
-        #load script_file; load_time('Load script file', Time.now)
 
         # load and extend with library module if it exists
         if options[:library]
@@ -216,11 +217,18 @@ module Awetestlib
               browser_version = 10
           end
         end
-        return OpenStruct.new(
+        target = OpenStruct.new(
               :name => (Awetestlib::BROWSER_MAP[browser_abbrev]),
               :abbrev => browser_abbrev,
               :version => browser_version
         )
+        actual = OpenStruct.new(
+              :name => (Awetestlib::BROWSER_MAP[browser_abbrev]),
+              :abbrev => browser_abbrev,
+              :version => '',
+              :driver => ''
+        )
+        [target, actual]
       end
 
       def require_gems

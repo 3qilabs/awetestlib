@@ -181,44 +181,37 @@ module Awetestlib
       # @param [Fixnum] timeout Maximum time to wait, in seconds.
       # @param [Boolean] verbose When set to true, more debug information is written to the log and
       # all steps return pass/fail messages in the report.
-      # @return [Boolean] True if condition returns false within time limit.
+      # @return [Boolean] True if condition returns false within time limit. (Ignored as of this version)
       def wait_until_ready(browser, how, what, desc = '', timeout = 90, verbose = false)
         msg = "#{__method__.to_s.titleize}: element: #{how}='#{what}'"
         msg << " #{desc}" if desc.length > 0
-        proc_exists  = Proc.new { browser.element(how, what).exists? }
-        proc_enabled = Proc.new { browser.element(how, what).enabled? }
-        case how
-          when :href
-            proc_exists  = Proc.new { browser.link(how, what).exists? }
-            proc_enabled = Proc.new { browser.link(how, what).enabled? }
-        end
-        if verbose
-          if wait_until(browser, "#{msg} Element exists.", timeout) { proc_exists.call(nil) }
-            if wait_until(browser, "#{msg} Element enabled.", timeout) { proc_enabled.call(nil) }
-              passed_to_log(msg)
-              true
-            else
-              failed_to_log(msg)
-            end
-          else
-            failed_to_log(msg)
+        ok  = false
+        start = Time.now.to_f
+        Watir::Wait.until(timeout) { browser.exists? }
+
+        if $using_webdriver
+          proc_present = Proc.new { browser.element(how, what).present? }
+          if Watir::Wait.until(timeout) { proc_present.call(nil) }
+            ok = true
           end
         else
-          start = Time.now.to_f
-          Watir::Wait.until { browser.exists? }
+          proc_exists  = Proc.new { browser.element(how, what).exists? }
+          proc_enabled = Proc.new { browser.element(how, what).enabled? }
+          if how == :href
+            proc_exists  = Proc.new { browser.link(how, what).exists? }
+            proc_enabled = Proc.new { browser.link(how, what).enabled? }
+          end
           if Watir::Wait.until(timeout) { proc_exists.call(nil) }
             if Watir::Wait.until(timeout) { proc_enabled.call(nil) }
-              stop = Time.now.to_f
-              #debug_to_log("#{__method__}: start:#{"%.5f" % start} stop:#{"%.5f" % stop}")
-              passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)")
-              true
-            else
-              failed_to_log(msg)
+              ok = true
             end
-          else
-            failed_to_log(msg)
           end
         end
+
+        stop = Time.now.to_f
+        msg += " (#{"%.5f" % (stop - start)} seconds)"
+        (ok == true) ? passed_to_log(msg) : failed_to_log(msg)
+        ok
       rescue
         failed_to_log("Unable to #{msg}. '#{$!}'")
       end

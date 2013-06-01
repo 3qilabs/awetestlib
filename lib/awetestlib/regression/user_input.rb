@@ -57,7 +57,8 @@ module Awetestlib
       # Click a specific DOM element by one of its attributes (*how) and that attribute's value (*what) and
       # do not wait for the browser to finish reloading.  Used when a modal popup or alert is expected. Allows the script
       # to keep running so the popup can be handled.
-      # @todo handle using Watir Webdriver which does not need no_wait.
+      #
+      # Call is passed to click() if using watir-webdriver as it does not recognize click_no_wait.
       #
       # @example
       #  # html for a link element:
@@ -71,40 +72,44 @@ module Awetestlib
       # @return (see #click)
       #
       def click_no_wait(browser, element, how, what, desc = '')
-        msg = build_message("#{__method__.to_s.humanize} :#{element} :#{how}=>'#{what}'", desc)
-        begin
-          case element
-            when :link
-              browser.link(how, what).click_no_wait
-            when :button
-              browser.button(how, what).click_no_wait
-            when :image
-              browser.image(how, what).click_no_wait
-            when :radio
-              case how
-                when :index
-                  set_radio_no_wait_by_index(browser, what, desc)
-                else
-                  browser.radio(how, what).click_no_wait
-              end
-            when :span
-              browser.span(how, what).click_no_wait
-            when :div
-              browser.div(how, what).click_no_wait
-            when :checkbox
-              browser.checkbox(how, what).click_no_wait
-            when :cell
-              browser.cell(how, what).click_no_wait
-            else
-              browser.element(how, what).click_no_wait
+        if $using_webdriver
+          click(browser, element, how, what, "#{desc} (called from click_no_wait)") # [#50300875]
+        else
+          msg = build_message("#{__method__.to_s.humanize} :#{element} :#{how}=>'#{what}'", desc)
+          begin
+            case element
+              when :link
+                browser.link(how, what).click_no_wait
+              when :button
+                browser.button(how, what).click_no_wait
+              when :image
+                browser.image(how, what).click_no_wait
+              when :radio
+                case how
+                  when :index
+                    set_radio_no_wait_by_index(browser, what, desc)
+                  else
+                    browser.radio(how, what).click_no_wait
+                end
+              when :span
+                browser.span(how, what).click_no_wait
+              when :div
+                browser.div(how, what).click_no_wait
+              when :checkbox
+                browser.checkbox(how, what).click_no_wait
+              when :cell
+                browser.cell(how, what).click_no_wait
+              else
+                browser.element(how, what).click_no_wait
+            end
+          rescue => e
+            unless rescue_me(e, __method__, rescue_me_command(element, how, what, :click_no_wait), "#{browser.class}")
+              raise e
+            end
           end
-        rescue => e
-          unless rescue_me(e, __method__, rescue_me_command(element, how, what, :click_no_wait), "#{browser.class}")
-            raise e
-          end
+          passed_to_log(msg)
+          true
         end
-        passed_to_log(msg)
-        true
       rescue
         failed_to_log("Unable to #{msg}  '#{$!}'")
         sleep_for(1)
