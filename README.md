@@ -6,44 +6,66 @@ Automate testing of browser-based applications in Windows or Mac.
 After completing this guide you will be able to run tests locally from command line or from an IDE.
 
 ------------
-## Prerequisites: Ruby 1.8.7 and RubyInstaller Devkit
+## Prerequisites: Ruby 1.8.7 and RubyInstaller Devkit (Windows) or Xtools (Mac)
 
-You need to have Ruby 1.8.7 installed using RubyInstaller. 
+### Ruby 1.8.7
+You need to have Ruby 1.8.7 installed using the RubyInstaller package.
 
-You can download the RubyInstaller for 1.8.7 
-[here](http://rubyinstaller.org/downloads/).  Choose the most recent 1.8.7.  
+You can download the RubyInstaller for 1.8.7
+[here](http://rubyinstaller.org/downloads/).  Choose the most recent 1.8.7.
 
-Make sure you tell the installer to put Ruby in the PATH environment variable.
+**Make sure you tell the installer to put Ruby in the PATH environment variable.**
 
 You can check your Ruby version using:
 
     ruby -v
 
-Additionally, for Windows, you will need to install the RubyInstaller DevKit to compile a few dependent gems. 
+### RubyInstaller Devkit
+Additionally, for Windows, you will need to install the RubyInstaller DevKit to compile a few dependent gems.
 
 Download DevKit
-[here](http://rubyinstaller.org/downloads/)
-and the installation directions can be found
-[here](https://github.com/oneclick/rubyinstaller/wiki/Development-Kit). 
+[from here](http://rubyinstaller.org/downloads/)
+and the installation directions can also be found
+[here](https://github.com/oneclick/rubyinstaller/wiki/Development-Kit).
 
-Choose the one for Ruby 1.8.7.
+Choose the one for Ruby 1.8.7 and download the package.
+
+Create directory C:\devkit and unzip the devkit package into that directory.
+
+Open a command window and change to C:\devkit.
+
+Then execute
+
+	ruby dk.rb init
+
+And do
+
+	ruby dk.rb review
+
+And make sure you see C:\Ruby187 at the end of the output.  Now
+
+	ruby dk.rb install
 
 If you have difficulties with the above in Windows 7 and/or behind a firewall, you may have to set the http_proxy and/or run the installers as administrator. (see below)
 
-## Install Awetestlib
+### Mac X-tools
+
+Follow Mac instructions for installing/upgrading X-tools to latest version.
+
+### Install Awetestlib
 
 **Start** by opening a command window or terminal
 
 ----------
 
-####NOTE: If you are behind a firewall:
+#### NOTE: If you are behind a firewall:
 
 1. You will need to set the http_proxy environment variable
 2. You may have to change the HOMEDRIVE environment variable to C: in Windows
 3. You may need to run the Windows 7 command window as administrator.
 
 In Windows
-	
+
 	set http_proxy=http://myproxy.mycompany.com:80
 	set HOMEDRIVE=C:
 
@@ -53,16 +75,24 @@ In OSX
 
 
 ----------
-	
+**Temporary but necessary (13may2013)**
 
-**Then**, in a terminal or command prompt, install the awetestlib gem:
+In the command window:
 
-    gem install awetestlib --no-ri --no-rdoc
+	gem install nokogiri -v 1.5.9 --no-ri --no-rdoc
+
+Then
+
+	gem install mini_magick -v 3.5.0 --no-ri --no-rdoc
+
+**Then**, in the command window, install the awetestlib gem.
 
 Note: This could take up to 5 minutes for first time installs.  You may need to use 'sudo' on OSX
 
+    gem install awetestlib --no-ri --no-rdoc
+
 **Then** run the following command and verify the step
-  
+
     awetestlib regression_setup
 
 ### Usage
@@ -82,7 +112,7 @@ When using raw Watir-webdriver for Safari, open the browser with
     browser = Watir::Browser.new(:remote, :desired_capabilities=>:'safari')
 
 ### Chrome
-To setup support for Google Chrome browser, please download the latest Chromedriver version from [here](http://code.google.com/p/chromedriver/downloads/list) 
+To setup support for Google Chrome browser, please download the latest Chromedriver version from [here](http://code.google.com/p/chromedriver/downloads/list)
 
 Then move the executables in your PATH. To find your PATH, type the command below in your terminal/command prompt:
 
@@ -93,11 +123,11 @@ For Mac OSX:
 For Windows:
 
     PATH
- 
+
 We suggest putting both drivers in \Ruby187\bin as it should already be in your path.
-   
+
 ### Internet Explorer
-To setup support for Internet Explorer, please download the latest IEDriverServer version from [here](http://code.google.com/p/selenium/downloads/list) 
+To setup support for Internet Explorer, please download the latest IEDriverServer version from [here](http://code.google.com/p/selenium/downloads/list)
 and move the executable into your PATH.
 
 
@@ -106,9 +136,9 @@ and move the executable into your PATH.
 To setup the awetestlib gem with Rubymine use:
 
     awetestlib rubymine_setup <ProjectName>
-    
+
 To setup awetestlib with Netbeans use:
- 
+
     awetestlib netbeans_setup <ProjectName>
 
 You can now start your scripts within the IDE. Follow the instructions in each IDE for creating and executing run/debug configurations.
@@ -151,7 +181,7 @@ To start writing your own script, refer to the [Scripting Guide/Wiki](https://gi
 
 For the latest documentation of the Awetest DSL go to [Rubydoc](http://rubydoc.info/gems/awetestlib) and look in Awetestlib::Regression.
 
-### Cucumber Support 
+### Cucumber Support
 
 One of the technologies that the Awetest framework supports is [Cucumber](http://cukes.info/). To get setup with cucumber, you can run the following command:
 
