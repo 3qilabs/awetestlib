@@ -8,12 +8,12 @@ end
 def print_usage
   puts <<EOF
   Usage Options:
-  
+
     awetestlib regression_setup
       setup awetest regression and register autoitx3.dll in Windows
 
     awetestlib rubymine_setup <project_name>
-      setup a rubymine project 
+      setup a rubymine project
 
     awetestlib netbeans_setup <project_name>
       setup a netbeans project
@@ -30,10 +30,15 @@ def print_usage
 EOF
 end
 
-def check_script_type(options)
-  script_options = ['Regression', 'Cucumber']
+def parse_script_type(options)
+  script_options = ['Regression', 'Awetest', 'AwetestDSL', 'Awetestlib', 'Cucumber']
   if script_options.include? ARGV[0]
-    options[:script_type] = ARGV[0]
+    case ARGV[0]
+      when 'Regression', 'Awetest', 'AwetestDSL', 'Awetestlib'
+        options[:script_type] = 'Regression'
+      else
+        options[:script_type] = ARGV[0]
+    end
     options[:script_file] = ARGV[1]
   else
     options[:script_type] = 'Regression'

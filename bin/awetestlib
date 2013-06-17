@@ -61,8 +61,8 @@ OptionParser.new do |opts|
   opts.on("-b BROWSER", "--browser BROWSER", "Specify a browser (IE, FF, S, C)") do |browser|
     options[:browser] = browser
   end
-  opts.on("-v VERSION", "--version VERSION", "Specify a browser version") do |v|
-    options[:version] = v
+  opts.on("-v VERSION", "--version VERSION", "Specify a browser version") do |version|
+    options[:version] = version
   end
   opts.on("-e", "--environment_url ENVIRONMENT_URL", "Specify the environment URL") do |environment_url|
     options[:environment_url] = environment_url
@@ -95,7 +95,7 @@ OptionParser.new do |opts|
   opts.on("", "--log_path_subdir LOG_PATH_SUBDIR", "Specify log path relative to root_path.") do |log_path_subdir|
     options[:log_path_subdir] = log_path_subdir
   end
-  opts.on("", "--report_all_test_refs REPORT_ALL_TEST_REFS", "Include list of all error/test case reference ids actually validated.") do
+  opts.on("", "--report_all_test_refs", "Include list of all error/test case reference ids actually validated.") do
     options[:report_all_test_refs] = true
   end
   opts.on("-t", "--capture_load_times", "Capture load time for gem requires.") do
@@ -109,9 +109,9 @@ options[:environment]["name"] = options[:environment_name]
 options[:environment]["url"] = options[:environment_url]
 options[:environment]["nodename"] = options[:environment_nodename]
 
-options[:log_path_subdir] = 'logs' if options[:output_to_log]
+options[:log_path_subdir] = 'logs' if options[:output_to_log] and not options[:log_path_subdir]
 
-check_script_type(options)
+parse_script_type(options)
 
 $watir_script       = options[:classic_watir]
 $capture_load_times = options[:capture_load_times] unless $capture_load_times
