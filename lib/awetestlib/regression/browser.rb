@@ -165,6 +165,23 @@ module Awetestlib
       alias attach_popup attach
       alias attach_window attach
       alias attach_browser attach
+      alias use_window attach
+
+      def re_attach(browser, window = 0)
+        if $using_webdriver
+          @myBrowser.driver.switch_to.window(browser.driver.window_handles[window])
+          #@myBrowser.window.use
+        else
+          case window
+            when 0
+              @myBrowser
+            else
+              @myBrowser
+          end
+        end
+      end
+
+      alias re_attach_window re_attach
 
       # Locate and close instances of IE browsers
       def find_other_browsers
@@ -653,16 +670,18 @@ module Awetestlib
       # @param [String] side A string identifying which mouse button to click.
       # @param [Fixnum] wait Number of seconds to wait for the popup to be seen.
       def close_modal(browser, title="", button="OK", text='', side = 'primary', wait = WAIT)
-        if @targetBrowser.abbrev == 'IE' and $watir_script
-          close_modal_ie(browser, title, button, text, side, wait)
-        else
+        if $using_webdriver
           case button
             when /^OK$/i, /^Yes$/i
               browser.alert.ok
             else
               browser.alert.dismiss
           end
+        else
+          close_modal_ie(browser, title, button, text, side, wait)
         end
+      rescue
+        failed_to_log(unable_to)
       end
 
       alias close_alert close_modal
