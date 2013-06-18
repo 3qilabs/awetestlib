@@ -124,7 +124,7 @@ module Awetestlib
         lvl, list = get_test_level
         strg << "#{call_meth.titleize}"
       end
-      strg << " #{message}" if message.length > 0
+      strg << "#{message}" if message.length > 0
       strg << " (#{desc})" if desc.length > 0
       strg << " [#{call_line}]" if dbg or @debug_calls
       strg << "\n#{list.to_yaml}" if dbg or @debug_calls
@@ -265,19 +265,20 @@ module Awetestlib
     end
 
     # @private
-    def init_logger(logFile, scriptName = nil)
-      if File.exist?(logFile)
-        puts "==> Logfile already exists: #{logFile}. Replacing it."
+    def init_logger(log_spec, scriptName = nil)
+      if File.exist?(log_spec)
+        puts "==> log_spec already exists: #{log_spec}. Replacing it."
         begin
-          File.delete(logFile)
+          File.delete(log_spec)
         rescue
           puts "#{scriptName}: init_logger RESCUE: #{$!}"
         end
       end
-      logger               = ActiveSupport::BufferedLogger.new(logFile)
+      @log_spec = log_spec
+      logger               = ActiveSupport::BufferedLogger.new(log_spec)
       logger.level         = ActiveSupport::BufferedLogger::DEBUG
       logger.auto_flushing = (true)
-      logger.add(INFO, "#{logFile}\n#{ENV["OS"]}")
+      logger.add(INFO, "#{log_spec}\n#{ENV["OS"]}")
       logger
     end
 
@@ -289,6 +290,7 @@ module Awetestlib
       utc_ts = @start_timestamp.getutc
       loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
       message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
+      message_to_report(">> Logging to #{File.join(@myRoot, @log_spec)}") if @log_spec
     end
 
     alias start_to_log start_run

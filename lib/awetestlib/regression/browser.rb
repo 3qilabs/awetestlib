@@ -1007,7 +1007,7 @@ module Awetestlib
       rescue
         debug_to_log("Unable to determine #{@browserAbbrev} browser version: '#{$!}' (#{__LINE__})")
       ensure
-        message_to_report("Browser version: target => #{@targetBrowser.version}, actual => #{@actualBrowser.version}")
+        message_to_report("#{@browserName} version: target => #{@targetBrowser.version}, actual => #{@actualBrowser.version}")
       end
 
       protected :get_browser_version
