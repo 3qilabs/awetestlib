@@ -347,7 +347,7 @@ module Awetestlib
       end
 
       def rescue_me(e, me = nil, what = nil, where = nil, who = nil)
-        #TODO: these are rescues from exceptions raised in Watir/Firewatir
+        #TODO: these are rescues from exceptions raised in Watir or Watir-webdriver
         debug_to_log("#{__method__}: Begin rescue")
         ok = false
         begin
@@ -372,25 +372,30 @@ module Awetestlib
           ok = true
         elsif msg =~ /wrong number of arguments \(1 for 0\)/i
           ok = true
-        elsif (msg =~ /unable to locate element/i)
+        elsif msg =~ /unable to locate element/i
           if located
             ok = true
           elsif where == 'Watir::Div'
             ok = true
           end
-        elsif (msg =~ /HRESULT error code:0x80070005/)
+        elsif msg =~ /(The SafariDriver does not interact with modal dialogs)/i
+          to_report = $1
+          ok = true
+        elsif msg =~ /HRESULT error code:0x80070005/
           ok = true
                                                       #elsif msg =~ /missing\s+\;\s+before statement/
                                                       #  ok = true
         end
+        call_list = get_call_list(6, true)
         if ok
           debug_to_log("#{__method__}: RESCUED: \n#{who.to_yaml}=> #{what} in #{me}()\n=> '#{$!}'")
           debug_to_log("#{__method__}: #{who.inspect}") if who
           debug_to_log("#{__method__}: #{where.inspect}")
-          debug_to_log("#{__method__}: #{get_callers(6, true)}")
+          debug_to_log("#{__method__}: #{call_list}")
+          failed_to_log("#{to_report}  #{call_list}")
         else
           debug_to_log("#{__method__}: NO RESCUE: #{e.message}")
-          debug_to_log("#{__method__}: NO RESCUE: \n#{get_callers(6, true)}")
+          debug_to_log("#{__method__}: NO RESCUE: \n#{call_list}")
         end
         debug_to_log("#{__method__}: Exit")
         ok

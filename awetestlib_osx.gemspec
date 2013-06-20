@@ -27,8 +27,8 @@ Gem::Specification.new do |s|
   s.add_dependency('i18n')
   s.add_dependency('rb-appscript')
   s.add_dependency('pry')
-  s.add_dependency('cucumber')
   s.add_dependency('calabash-cucumber')
+  s.add_dependency('cucumber')
   s.add_dependency('sys-uname')
   s.require_paths = ["lib"]   #,"ext"]
   s.files = `git ls-files`.split("\n")

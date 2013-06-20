@@ -25,28 +25,34 @@ module Awetestlib
       def click(browser, element, how, what, desc = '')
         #debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
         msg = build_message("#{__method__.to_s.humanize} :#{element} :#{how}=>'#{what}'", desc)
-        case element
-          when :link
-            browser.link(how, what).click
-          when :button
-            browser.button(how, what).click
-          when :image
-            browser.image(how, what).click
-          when :radio
-            case how
-              when :index
-                set_radio_by_index(browser, what, desc)
-              else
-                browser.radio(how, what).set
-            end
-          when :span
-            browser.span(how, what).click
-          when :div
-            browser.div(how, what).click
-          when :cell
-            browser.cell(how, what).click
-          else
-            browser.element(how, what).click
+        begin
+          case element
+            when :link
+              browser.link(how, what).click
+            when :button
+              browser.button(how, what).click
+            when :image
+              browser.image(how, what).click
+            when :radio
+              case how
+                when :index
+                  set_radio_by_index(browser, what, desc)
+                else
+                  browser.radio(how, what).set
+              end
+            when :span
+              browser.span(how, what).click
+            when :div
+              browser.div(how, what).click
+            when :cell
+              browser.cell(how, what).click
+            else
+              browser.element(how, what).click
+          end
+        rescue => e
+          unless rescue_me(e, __method__, rescue_me_command(element, how, what, :click_no_wait), "#{browser.class}")
+            raise e
+          end
         end
         passed_to_log(msg)
         true
