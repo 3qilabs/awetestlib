@@ -9,11 +9,14 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::CURRENT
 
   #s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Anthony Woo", "Patrick Neve"]
+  s.authors = ["Patrick Neve", "Anthony Woo"]
   s.email = %q{patrick@3qilabs.com}
   s.summary = %q{Awetest DSL for automated testing of browser-based applications.}
   s.homepage = %q{http://3qilabs.com}
   s.description = %q{Awetest DSL for automated testing of browser-based applications.}
+
+  s.add_dependency('nokogiri', '<= 1.5.9')
+  s.add_dependency('mini_magick', '<= 3.5.0' )
 
   s.add_dependency('watir-webdriver')
   s.add_dependency('watir', '1.8.1')

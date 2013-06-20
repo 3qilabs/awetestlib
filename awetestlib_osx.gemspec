@@ -9,11 +9,14 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Anthony Woo", "Patrick Neve"]
+  s.authors = ["Patrick Neve", "Anthony Woo"]
   s.email = %q{patrick@3qilabs.com}
   s.summary = %q{Awetest DSL for automated testing of browser-based applications.}
   s.homepage = %q{http://3qilabs.com}
   s.description = %q{Awetest DSL for automated testing of browser-based applications.}
+
+  s.add_dependency('nokogiri', '<= 1.5.9')
+  s.add_dependency('mini_magick', '<= 3.5.0' )
 
   s.add_dependency('watir-webdriver')
   s.add_dependency('activesupport', '~> 3.0.0')
@@ -23,7 +26,6 @@ Gem::Specification.new do |s|
   s.add_dependency('roo', '1.10.1')
   s.add_dependency('multipart-post', '1.1.4')
   s.add_dependency('selenium-webdriver')
-  s.add_dependency('nokogiri')
   s.add_dependency('i18n')
   s.add_dependency('rb-appscript')
   s.add_dependency('pry')
