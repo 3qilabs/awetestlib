@@ -16,36 +16,28 @@ module Awetestlib
     # @param [Fixnum] lnbr the line number in the calling script
     # @param [Fixnum] addts Obsolete, no longer used.
     # @param [String] exception Obsolete, no longer used.
-    def log_message(severity, message, tag = '', lnbr = nil, addts = 1, exception=nil)
-      # caller = get_caller(lnbr, exception)
-
-      # @sequence ||= log_properties ? log_properties.fetch('sequence', 0) : 0
-      # @sequence += 1
-
+    def log_message(severity, message, tag = '', lnbr = nil, addts = 1, exception = nil)
       t        = Time.now.utc
       @last_t  ||= t
+      duration = (t.to_f - @last_t.to_f)
       @last_t  = t
-      dt       = t.strftime("%H%M%S")
-      mySev    = translate_severity(severity)
-      myCaller = get_caller(lnbr) || 'unknown'
-
-      myMsg = "%-8s" % mySev
-      myMsg << '[' + dt + ']:'
+      tstmp    = t.strftime("%H%M%S") + '.' + t.to_f.modulo(t.to_i).to_s.split('.')[1].slice(0, 5)
+      my_sev    = translate_severity(severity)
+      my_msg = "%-8s" % my_sev
+      my_msg << '[' + tstmp + ']:'
+      my_msg << "[#{"%9.5f" % duration}]:"
       if tag
         if tag.is_a? Fixnum
           tag = '-LVL' + tag.to_s
         end
       end
-      myMsg << "[%-5s]:" % tag
-      #myMsg << '[' + t.to_f.to_s + ']:'
-      #myMsg << '[' + myCaller + ']:'
-      #myMsg << "#{get_call_list[-1]}#{get_call_list[-2]} "
-      myMsg << get_call_list_new.to_s
-      myMsg << ' '+message
-      myMsg << " [#{lnbr}] " if lnbr
+      my_msg << "[%-5s]:" % tag
+      my_msg << get_debug_list(false, true, true)
+      my_msg << ' '+message
+      my_msg << " [#{lnbr}] " if lnbr
 
-      @myLog.add(severity, myMsg) if @myLog # add persistent logging for awetestlib. pmn 05jun2012
-      puts myMsg+"\n"
+      @myLog.add(severity, my_msg) if @myLog # add persistent logging for awetestlib. pmn 05jun2012
+      puts my_msg+"\n"
 
       nil # so method doesn't return whole @output.
     end
@@ -316,7 +308,7 @@ module Awetestlib
       tags_tested = 0
       tags_hit    = 0
       if @my_error_hits and @my_error_hits.length > 0
-        message_to_report(">> Tagged Error Hits:")
+        message_to_report(">> Failed Defect or Test Case references:")
         tags_hit = @my_error_hits.length
         @my_error_hits.each_key do |ref|
           message_to_report("#{ref} - #{@my_error_hits[ref]}")
@@ -324,19 +316,19 @@ module Awetestlib
       end
       if list_tags
         if @my_error_references and @my_error_references.length > 0
-          message_to_report(">> Error and Test Case Tags:")
+          message_to_report(">> All tested Defect or Test Case references")
           tags_tested = @my_error_references.length
           @my_error_references.each_key do |ref|
             message_to_report("#{ref} - #{@my_error_references[ref]}")
           end
-          message_to_report(">> Fails were hit on #{tags_hit} of #{tags_tested} error/test case references")
+          message_to_report(">> Fails on tested Defect or Test Case references: #{tags_hit} of #{tags_tested}")
         else
-          message_to_report(">> No Error or Test Case References found.")
+          message_to_report(">> No Defect or Test Case references found.")
         end
       end
     end
 
-    # @private
+  # @private
     def parse_error_references(message, fail = false)
       msg = message.dup
       while msg =~ /(\*\*\*\s+[\w\d_\s,-:;\?]+\s+\*\*\*)/

@@ -50,16 +50,19 @@ module Awetestlib
         @y_tolerance             = 4
       end
 
-      def build_message(strg1, desc = '', strg2 = '', strg3 = '', strg4 = '')
+      def build_message(strg1, *strings)
         msg = "#{strg1}"
-        msg << " #{desc}" if desc and desc.length > 0
-        msg << " #{strg2}" if strg2 and strg2.length > 0
-        msg << " #{strg3}" if strg3 and strg3.length > 0
-        msg << " #{strg4}" if strg4 and strg4.length > 0
+        strings.each do |strg|
+          msg << " #{strg}" if strg and strg.length > 0
+        end
         msg
       end
 
-      def get_date_names(date = Date.today)
+      alias build_msg build_message
+      alias bld_msg build_message
+
+
+    def get_date_names(date = Date.today)
         this_month = date.month
         if this_month == 12
           next_month = 1
@@ -130,8 +133,11 @@ module Awetestlib
         (index / every) + (every - 1)
       end
 
-      def get_variables(file, key_type = :role, dbg = true)
+      def get_variables(file, key_type = :role, enabled_only = true, dbg = true)
+
+        #TODO: support for xlsx files
         #TODO refactor this
+
         debug_to_log("#{__method__}: file = #{file}")
         debug_to_log("#{__method__}: key  = #{key_type}")
 
@@ -164,60 +170,75 @@ module Awetestlib
         end if dbg
 
         @login       = Hash.new
-        login_col    = 0
+        script_col   = 0
         role_col     = 0
         userid_col   = 0
+        company_col  = 0
         password_col = 0
         url_col      = 0
+        env_col      = 0
         name_col     = 0
         login_index  = find_sheet_with_name(workbook, 'Login')
         if login_index and login_index >= 0
           workbook.default_sheet = workbook.sheets[login_index]
 
           1.upto(workbook.last_column) do |col|
-            a_cell = workbook.cell(1, col)
+            a_cell = workbook.cell(1, col).downcase
             case a_cell
-              when @myName
-                login_col             = col
+              when @myName.downcase
+                script_col            = col
                 script_found_in_login = true
                 break
               when 'role'
                 role_col = col
-              when 'userid'
+              when 'userid', 'user_id'
                 userid_col = col
+              when 'companyid', 'company_id'
+                company_col = col
               when 'password'
                 password_col = col
               when 'url'
                 url_col = col
+              when 'environment'
+                env_col = col
               when 'name'
                 name_col = col
             end
           end
 
           2.upto(workbook.last_row) do |line|
-            role     = workbook.cell(line, role_col)
-            userid   = workbook.cell(line, userid_col)
-            password = workbook.cell(line, password_col)
-            url      = workbook.cell(line, url_col)
-            username = workbook.cell(line, name_col)
-            enabled  = workbook.cell(line, login_col).to_s
+            role      = workbook.cell(line, role_col)
+            userid    = workbook.cell(line, userid_col)
+            password  = workbook.cell(line, password_col)
+            url       = workbook.cell(line, url_col)
+            env       = workbook.cell(line, env_col)
+            username  = workbook.cell(line, name_col)
+            companyid = workbook.cell(line, company_col)
+            enabled   = workbook.cell(line, script_col).to_s
 
             case key_type
               when :id, :userid
                 key = userid
+              when :environment
+                key = env
               when :role
                 key = role
               else
                 key = userid
             end
 
-            @login[key]             = Hash.new
-            @login[key]['role']     = role
-            @login[key]['userid']   = userid
-            @login[key]['password'] = password
-            @login[key]['url']      = url
-            @login[key]['name']     = username
-            @login[key]['enabled']  = enabled
+            if enabled_only and enabled.length == 0
+              next
+            end
+
+            @login[key]              = Hash.new
+            @login[key]['role']      = role
+            @login[key]['userid']    = userid
+            @login[key]['companyid'] = companyid
+            @login[key]['password']  = password
+            @login[key]['url']       = url
+            @login[key]['name']      = username
+            @login[key]['enabled']   = enabled
 
           end
 
@@ -232,7 +253,7 @@ module Awetestlib
           failed_to_log("Script found: in Login = #{script_found_in_login}; in Data = #{script_found_in_data}")
         end
       rescue
-        failed_to_log("#{__method__}: '#{$!}'")
+        failed_to_log(unable_to)
       end
 
       def translate_var_list(key)
@@ -423,30 +444,34 @@ module Awetestlib
       alias get_callers get_call_list
 
       def get_call_list_new(depth = 9, dbg = false)
-        myList    = []
+        a_list    = []
         call_list = Kernel.caller
         puts call_list if dbg
         call_list.each_index do |x|
-          myCaller = call_list[x].to_s
-          if myCaller.include? @myName
-            myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-            myList << "[#{$1.gsub(/eval/, @myName)}] "
+          a_caller = call_list[x].to_s
+          if a_caller.include? @myName
+            a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
+            a_list << "[#{$1.gsub(/eval/, @myName)}] "
             break
           end
-          break if x > depth or myCaller =~ /:in .run.$/  # this break causes error in Ruby 1.9.x
+          next if a_caller =~ /:in .run.$/
+          break if x > depth # or a_caller =~ /:in .run.$/ # this break causes error in Ruby 1.9.x
         end
         if @projName
           call_list.each_index do |x|
-            myCaller = call_list[x].to_s
-            if myCaller.include? @projName
-              myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-              myList << "[#{$1.gsub(/eval/, @projName)}] "
+            a_caller = call_list[x].to_s
+            if a_caller.include? @projName
+              a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
+              a_list << "[#{$1.gsub(/eval/, @projName)}] "
               break
             end
+            next if a_caller =~ /:in .run.$/
+            break if x > depth # or a_caller =~ /:in .run.$/ # this break causes error in Ruby 1.9.
           end
-          break if x > depth or myCaller =~ /:in .run.$/  # this break causes error in Ruby 1.9.
         end
-        myList
+        a_list
+      rescue
+        failed_to_log(unable_to)
       end
 
       def get_call_array(depth = 9)
@@ -461,22 +486,76 @@ module Awetestlib
         arr
       end
 
-      def get_debug_list(dbg = false)
+      def report_error_count(errors, msg)
+        call_script, call_line, call_meth = parse_caller(get_call_array()[1])
+        msg = build_msg("#{call_meth.titleize}:", msg)
+        if errors > 0
+          failed_to_log("<b>#{msg}</b>")
+        else
+          passed_to_log(msg)
+          true
+        end
+      end
+
+      def convert_color_value(value)
+        expectedvalue    = value[/(\(.*)/]
+        expectedvalue    = expectedvalue.gsub(')', '')
+        expectedvalue    = expectedvalue.gsub('(', '')
+        expectedvalue    = expectedvalue.split(",").map { |s| s.to_f }
+        expectedvalue[3] = expectedvalue[3].round
+      end
+
+      def module_for(script_file)
+        File.read(script_file).match(/^module\s+(\w+)/)[1].constantize
+      end
+
+      def get_debug_list(dbg = false, no_trace = false, last_only = false)
         calls = get_call_array(10)
         puts "#{calls.to_yaml}" if dbg
         arr = []
         calls.each_index do |ix|
           if ix > 1 # skip this method and the logging method
-            arr << calls[ix]
+            if filter_call(calls[ix])
+              arr << calls[ix]
+            end
           end
         end
         puts "#{arr.to_yaml}" if dbg
         if arr.length > 0
-          list = 'TRACE:'
-          arr.reverse.each { |l| list << "=>#{l}" }
-          " [[#{list}]]"
+          list = ''
+          arr.reverse.each { |l| list << "=>#{l}"; break if last_only}
+          if no_trace
+            "[#{list}]"
+          else
+            " [[TRACE:#{list}]]"
+          end
         else
-          nil
+          '[]'
+        end
+      end
+
+      def filter_call(call)
+        rtrn = true
+        modl = call.match(/^(browser|logging|find|runner|tables|user_input|utilities|validations|waits|page_data|legacy|drag_and_drop|awetest)/) || ''
+        meth = call.match(/in .(run|each)/) || ''
+        if "#{modl}#{meth}".length > 0
+          rtrn = false
+        end
+        rtrn
+      end
+
+      def analyse_element_presence(container, element, how, what, max_seconds = 30, interval = 0.5)
+        duration = 0
+        code = build_webdriver_fetch(element, how, what) + '.present?'
+        debug_to_log("#{__method__}: code=>[#{code}")
+        until duration > max_seconds do
+          begin
+            debug_to_log("#{eval(code)} #{duration}")
+          rescue => e
+            debug_to_log("#{__method__}: #{e.inspect}")
+          end
+          duration += interval
+          sleep(interval)
         end
       end
 
@@ -619,6 +698,104 @@ module Awetestlib
           cookies[key.lstrip] = value
         end
         cookies
+      end
+
+      def parse_test_flag(string)
+        test = false
+        refs = nil
+        if string
+          if string == true or string == false
+            test = string
+          else
+            if string.length > 0
+              unless string =~ /^no$/i
+                test = true
+                unless string =~ /^yes$/i
+                  refs = format_refs(string)
+                end
+              end
+            end
+          end
+        end
+        [test, refs]
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def parse_mdy_to_datetime(mdy)
+        if mdy and mdy.length > 0
+          m, d1, d, d2, y = mdy.split(/([\/\.-])/)
+          y = "20#{y}" unless y.length == 4
+          ymd = "#{y}#{d1}#{m}#{d1}#{d}"
+          DateTime.parse(ymd)
+        end
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def diff_datetimes_in_days(beg_dt, end_dt)
+        (end_dt - beg_dt).to_i
+      end
+
+      def build_webdriver_fetch(element, how, what, more = {})
+        code = "container.#{element}(:#{how} => "
+        what = escape_stuff(what) unless how == :index
+        if what.is_a?(Regexp)
+          code << "/#{what.source}/"
+        elsif how == :index
+          code << "#{what}"
+        else
+          code << "'#{what}'"
+        end
+        if more and not more.empty?
+          more.each do |key, vlu|
+            next if key == :desc or key == 'desc'
+            unless vlu
+              code << ", :#{key} => "
+              if vlu.is_a?(Regexp)
+                vlu << "/#{vlu}/"
+              else
+                vlu.gsub!('/', '\/')
+                code << "'#{vlu}'"
+              end
+            end
+          end
+        end
+        code << ')'
+        debug_to_log("code: '#{code}'")
+        code
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def escape_stuff(strg)
+        rslt = strg.dup
+        unless rslt.is_a?(Regexp)
+          if rslt.match( /[\/\(\)]/ )
+            rslt.gsub!('/', '\/')
+            rslt.gsub!('(', '\(')
+            rslt.gsub!(')', '\)')
+            rslt = Regexp.new(rslt)
+          end
+        end
+        rslt
+      rescue
+        failed_to_log(unable_to("#{rslt}"))
+      end
+
+      def extract_selected(selected_options, which = :text)
+        arr = Array.new
+        selected_options.each do |so|
+          case which
+            when :text
+              arr << so.text
+            else
+              arr << so.value
+          end
+        end
+        arr.sort
+      rescue
+        failed_to_log(unable_to)
       end
 
       def capture_screen(browser, ts)
@@ -1038,6 +1215,115 @@ module Awetestlib
         end
         #debug_to_log("#{arr.length} #{nice_array(arr)}")
         [arr.length, arr]
+      end
+
+      def insert_id_pswd_in_url(userid, password, url)
+        http = url.match(/^(http)(s?)(:\/\/)/)
+        path = url.gsub(http[0], '')
+        URI.encode("#{http[0]}#{userid}:#{password}@#{path}")
+      end
+
+      def get_basic_auth_control_indexes
+        case $win_major
+          when '5'
+            case @browserAbbrev
+              when 'IE'
+                ['2', '3', '1', 'Connect to']
+              when 'FF'
+                ['2', '3', '1', 'Authentication Required']
+              when 'GC', 'C'
+                ['2', '1', '2', 'Authentication Required']
+            end
+          when '6'
+            case @browserAbbrev
+              when 'IE'
+                ['1', '2', '2', 'Windows Security']
+              when 'FF'
+                ['2', '1', '2', 'Authentication Required']
+              when 'GC', 'C'
+                ['2', '1', '2', 'Authentication Required']
+            end
+        end
+      end
+
+      def windows_to_log(browser)
+        msg = ("===== Current windows (#{where_am_i?(2)})")
+        idx = 0
+        browser.windows.each do |w|
+          msg << "\n  #{idx}: #{w.title} current?=#{w.current?}" #" (#{w.url})"
+          idx += 1
+        end
+        debug_to_log(msg)
+      rescue => e
+        debug_to_log(unable_to("#{where_am_i?(2)}: #{e.inspect}"))
+      end
+
+      def where_am_i?(index = 1)
+        get_call_list_new[index].to_s
+      end
+
+      def get_windows_version
+        ver          = `ver`.gsub("\n", '')
+        mtch         = ver.match(/(.*)\s\[Version\s*(\d+)\.(\d+)\.(\d+)\]/)
+        $win_name    = mtch[1]
+        $win_major   = mtch[2]
+        $win_minor   = mtch[3]
+        $win_build   = mtch[4]
+        $win_version = "#{$win_major}.#{$win_minor}.#{$win_build}"
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def set_env_name(xls = @xls_path, fix = :prefix, strg = 'toad')
+        if fix == :prefix
+          pattern = /#{strg}_([\w\d]+)\.xls$/
+        else
+          pattern = /([\w\d]+)_#{strg}\.xls$/
+        end
+        if awetestlib?
+          if @runenv
+            @env_name = @myAppEnv.name.downcase
+          else
+            @env_name = 'dev'
+            #if xls
+            #  xls =~ pattern
+            #  @env_name = $1
+            #else
+            #  @env_name = 'sit'
+            #end
+          end
+        else
+          @env_name = @myAppEnv.nodename.downcase #.gsub(/^toad./, '')
+        end
+        debug_to_report("#{__LINE__}: @env_name=#{@env_name}")
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def set_xls_spec(proj_acro = 'unknown', env = @env_name.downcase, fix = :prefix)
+        case fix
+          when :prefix
+            xls_name = "#{proj_acro}_#{env}.xls"
+          when :suffix
+            xls_name = "#{env}_#{proj_acro}.xls"
+          when :none
+            xls_name = "#{env.gsub('-', '_')}.xls"
+        end
+        spec = "#{@myRoot}/#{xls_name}"
+        debug_to_log("#{where_am_i?}: #{spec}")
+        spec
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def format_refs(list)
+        refs = ''
+        if list
+          list.split(/,\s*/).each do |ref|
+            refs << "*** #{ref} *** "
+          end
+        end
+        refs
       end
 
       def awetestlib?

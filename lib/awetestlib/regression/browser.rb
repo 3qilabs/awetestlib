@@ -12,16 +12,15 @@ module Awetestlib
         Watir::Browser.class_eval do
           def goto(uri)
             uri = "http://#{uri}" unless uri =~ URI.regexp
-            @driver.navigate.to uri
+            begin
+              @driver.navigate.to uri
+            rescue => e
+              debug_to_log("#{e.inspect} '#{$!}'")
+            end
             run_checkers
           end
         end
         browser.goto(url)
-
-        #in basic_auth1 edit:
-        #a = Thread.new {
-        #    goto_wd_url(browser, @myURL)
-        #  }
 
       end
 
@@ -83,11 +82,22 @@ module Awetestlib
       # @return [Watir::Browser]
       def open_ie
         if $watir_script
-          browser = Watir::Browser.new
+          @browser = Watir::IE.new
         else
-          browser = Watir::Browser.new :ie
+          #browser = Watir::Browser.new :ie
+          @caps    = Selenium::WebDriver::Remote::Capabilities.internet_explorer(
+              #:nativeEvents => false,
+              #'nativeEvents' => false,
+              :enablePersistentHover                               => false,
+              :ignoreProtectedModeSettings                         => true,
+              :introduceInstabilityByIgnoringProtectedModeSettings => true,
+              :unexpectedAlertBehaviour                            => 'ignore'
+          )
+          @browser = Watir::Browser.new(:ie, :desired_capabilities => @caps)
         end
-        browser
+        @browser
+      rescue
+        failed_to_log(unable_to)
       end
 
       # Open Safari browser instance.
@@ -243,38 +253,96 @@ module Awetestlib
       # @param [Boolean] bypass_validate When set to true, the call to validate(),
       # which checks the health of the browser, is skipped..
       def basic_auth(browser, user, password, url, bypass_validate = false)
-        mark_testlevel("Basic Authorization Login", 0)
+        mark_testlevel("Basic Auth Login")
 
-        message_to_report ("Login:    #{user}")
-        message_to_report ("URL:      #{url}")
-        message_to_report ("Password: #{password}")
+        get_browser_version(browser)
+        message_to_log(@browserName)
+        message_to_log(@browserVersion)
+        message_to_log("Login:    #{user}")
+        message_to_log("URL:      #{url}")
+        message_to_log("Password: #{password}")
+        debug_to_report("@user: #{user}, @pass: #{password} (#{__LINE__})")
 
-        @login_title = "Connect to"
+        case @browserAbbrev
+          when 'IE', 'FF'
 
-        a = Thread.new {
-          browser.goto(url)
-        }
+            user_name, pass_word, login_button, login_title = get_basic_auth_control_indexes
 
-        sleep_for(2)
-        message_to_log("#{@login_title}...")
+            a = Thread.new {
+              begin
+                #go_to_wd_url(browser, url)
+                browser.goto(url)
+                Watir::Wait.until(5) { browser.alert.exists? }
+              rescue => e
+                debug_to_log("#{__LINE__}: #{e.inspect}")
+              rescue => e
+                debug_to_log("#{__LINE__}: #{e.inspect}")
+              end
+            }
 
-        if (@ai.WinWait(@login_title, "", 90) > 0)
-          win_title = @ai.WinGetTitle(@login_title)
-          debug_to_log("Basic Auth Login window appeared: '#{win_title}'")
-          @ai.WinActivate(@login_title)
-          @ai.ControlSend(@login_title, '', "[CLASS:Edit; INSTANCE:2]", '!u')
-          @ai.ControlSend(@login_title, '', "[CLASS:Edit; INSTANCE:2]", user, 1)
-          @ai.ControlSend(@login_title, '', "[CLASS:Edit; INSTANCE:3]", password.gsub(/!/, '{!}'), 1)
-          @ai.ControlClick(@login_title, "", '[CLASS:Button; INSTANCE:1]')
-        else
-          debug_to_log("Basic Auth Login window did not appear.")
+            sleep(1)
+            message_to_log("#{login_title}...")
+            if @ai.WinWait(login_title, "", 90) > 0
+              win_title = @ai.WinGetTitle(login_title)
+              debug_to_log("Basic Auth Login window appeared: '#{win_title}'")
+              @ai.WinActivate(login_title)
+
+              case @browserAbbrev
+                when 'FF'
+                  @ai.Send(user)
+                  @ai.Send('{TAB}')
+                  @ai.Send(password)
+                  sleep(1)
+                  @ai.Send('{ENTER}')
+                when 'IE'
+                  begin
+                    @ai.ControlSend(login_title, '', "[CLASS:Edit; INSTANCE:#{user_name}]", '!u')
+                    @ai.ControlSetText(login_title, '', "[CLASS:Edit; INSTANCE:#{user_name}]", user)
+                    @ai.ControlSetText(login_title, '', "[CLASS:Edit; INSTANCE:#{pass_word}]", password.gsub(/!/, '{!}'))
+                    sleep(1)
+                    @ai.ControlClick(login_title, "", "[CLASS:Button; INSTANCE:#{login_button}]")
+                  rescue => e
+                    debug_to_log("#{__LINE__}: #{e.inspect}")
+                  rescue => e
+                    debug_to_log("#{__LINE__}: #{e.inspect}")
+                  end
+              end
+            else
+              debug_to_log("Basic Auth Login window '#{login_title}' did not appear.")
+            end
+            begin
+              a.join
+            rescue => e
+              debug_to_log("#{__LINE__}: #{e.inspect}")
+            rescue => e
+              debug_to_log("#{__LINE__}: #{e.inspect}")
+            end
+            begin
+              validate(browser, @myName) unless bypass_validate
+            rescue => e
+              debug_to_log("#{__LINE__}: #{e.inspect}")
+            rescue => e
+              debug_to_log("#{__LINE__}: #{e.inspect}")
+            end
+
+          when 'GC', 'C'
+            browser.goto(url)
+            sleep(2)
+            browser.alert.use do
+              browser.send_keys(user)
+              browser.send_keys("{TAB}")
+              browser.send_keys(password)
+              browser.send_keys("~") # Enter
+            end
+            browser.windows[0].use
         end
-        a.join
 
-        validate(browser, @myName) unless bypass_validate
+        message_to_log("URL: [#{browser.url}]")
 
-        message_to_report("URL: [#{browser.url}] User: [#{user}]")
-
+      rescue => e
+        debug_to_log("#{__LINE__}: #{e.inspect}")
+      rescue => e
+        debug_to_log("#{__LINE__}: #{e.inspect}")
       end
 
       # Provide an authorization token or passcode in a specified text field element identified by its *:id* attribute.
@@ -905,8 +973,12 @@ module Awetestlib
         myClass = browser.class.to_s
         case @targetBrowser.abbrev
           when 'IE'
-            myClass =~ /Watir::IE|Watir::Browser/i
-          else
+            myClass =~ /Watir::IE|Watir::Browser|Watir::Window/i
+          when 'FF'
+            myClass =~ /Watir::Browser|Watir::Window/i
+          when 'S'
+            myClass =~ /Watir::Browser|Watir::Window/i
+          when 'C', 'GC'
             myClass =~ /Watir::Browser|Watir::Window/i
         end
       end
@@ -987,32 +1059,66 @@ module Awetestlib
       # @todo Bring up to date with newer browser versions
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       def get_browser_version(browser)
-        case @browserAbbrev
+        debug_to_log("starting get_browser_version")
+        case @targetBrowser.abbrev
           when 'IE'
-            @browserName = 'Internet Explorer'
+            @browserAbbrev = 'IE'
+            @browserName   = 'Internet Explorer'
             if $watir_script
-              @browserAppInfo = browser.document.invoke('parentWindow').navigator.userAgent
+              @browserAppInfo = browser.document.invoke('parentWindow').navigator.appVersion
             else
               @browserAppInfo = browser.execute_script("return navigator.userAgent;")
             end
             @browserAppInfo =~ /MSIE\s(.*?);/
-            @actualBrowser.version = $1
-          else
-            @browserName    = Awetestlib::BROWSER_MAP[@browserAbbrev]
-            @browserAppInfo = browser.driver.execute_script("return navigator.userAgent;")
-            @browserAppInfo =~ /#{@browserName}\/([\d\.]+)/
-            @actualBrowser.version = $1
+            @browserVersion = $1
+          when 'FF'
+            @browserAbbrev  = 'FF'
+            @browserName    = 'Firefox'
+            @browserAppInfo = browser.execute_script("return navigator.userAgent;")
+            @browserAppInfo =~ /Firefox\/([\d\.]+)/
+            @browserVersion = $1
+            debug_to_report("#{@browserName}, @browserAppInfo: (#{@browserAppInfo})")
+          when 'S'
+            @browserAbbrev  = 'S'
+            @browserName    = 'Safari'
+            @browserVersion = '6.0' #TODO: get actual version from browser itself
+            @browserAppInfo = browser.execute_script("return navigator.userAgent;")
+            debug_to_report("#{@browserName}, @browserAppInfo: (#{@browserAppInfo})")
+          when 'C', 'GC'
+            @browserAbbrev  = 'C'
+            @browserName    = 'Chrome'
+            @browserAppInfo = browser.execute_script("return navigator.userAgent;")
+            @browserAppInfo =~ /Chrome\/([\d\.]+)/
+            @browserVersion = $1
+            debug_to_report("#{@browserName}, @browserAppInfo: (#{@browserAppInfo})")
         end
-        debug_to_log("#{@browserName}, #{@actualBrowser.version}, [[@browserAppInfo: (#{@browserAppInfo})]]")
+        @browserVersion
       rescue
-        debug_to_log("Unable to determine #{@browserAbbrev} browser version: '#{$!}' (#{__LINE__})")
+        failed_to_log(unable_to)
       ensure
-        message_to_report("#{@browserName} version: target => #{@targetBrowser.version}, actual => #{@actualBrowser.version}")
+        message_to_report("Browser: [#{@browserAbbrev} #{@browserVersion}]")
       end
 
       protected :get_browser_version
 
-      # @!group Browser
+      def get_viewport_to_win_diff(browser)
+        window_width = browser.window.size.width.to_f
+        body_width   = browser.body.style("width")
+        body_width   = body_width.to_f
+        (window_width - body_width).to_i
+      end
+
+      def calc_window_size(browser, bpsize)
+        diff = get_viewport_to_win_diff(browser)
+        if @targetBrowser.abbrev == 'C'
+          new_size = bpsize + diff -1
+        elsif @targetBrowser.abbrev == 'FF'
+          new_size = bpsize + diff -16
+        end
+      end
+    end
+
+    # @!group Browser
 
       # Open and attach a browser popup window where the link to open it and its title contain the same string.
       # @deprecated

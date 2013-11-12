@@ -22,42 +22,66 @@ module Awetestlib
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return [Boolean] True if the Watir or Watir-webdriver function does not throw an exception.
       #
-      def click(browser, element, how, what, desc = '')
-        #debug_to_log("#{__method__}: #{element}, #{how}, #{what}")
-        msg = build_message("#{__method__.to_s.humanize} :#{element} :#{how}=>'#{what}'", desc)
+      def click(container, element, how, what, desc = '', wait = 10)
+        msg  = build_message("#{__method__.to_s.humanize} :#{element} :#{how}=>'#{what}'", desc, wait.to_s)
+        code = build_webdriver_fetch(element, how, what)
         begin
-          case element
-            when :link
-              browser.link(how, what).click
-            when :button
-              browser.button(how, what).click
-            when :image
-              browser.image(how, what).click
-            when :radio
-              case how
-                when :index
-                  set_radio_by_index(browser, what, desc)
-                else
-                  browser.radio(how, what).set
-              end
-            when :span
-              browser.span(how, what).click
-            when :div
-              browser.div(how, what).click
-            when :cell
-              browser.cell(how, what).click
-            else
-              browser.element(how, what).click
-          end
+          eval("#{code}.when_present(#{wait}).click")
         rescue => e
-          unless rescue_me(e, __method__, rescue_me_command(element, how, what, :click_no_wait), "#{browser.class}")
+          unless rescue_me(e, __method__, rescue_me_command(element, how, what, __method__.to_s), "#{container.class}")
             raise e
           end
         end
         passed_to_log(msg)
         true
       rescue
-        failed_to_log("Unable to #{msg}. '#{$!}'")
+        if desc =~ /second try/i
+          passed_to_log(unable_to(msg))
+        else
+          failed_to_log(unable_to(msg))
+        end
+      end
+
+      alias click_js click
+
+      def click_as_needed(browser, target_container, target_elem, target_how, target_what, confirm_container, confirm_elem, confirm_how, confirm_what, desc = '', neg = false)
+        rtrn = true
+        nope = neg ? 'not ' : ''
+        debug_to_log("#{__method__.to_s.titleize}: Target:  :#{target_elem} :#{target_how}=>'#{target_what}' in #{target_container}")
+        debug_to_log("#{__method__.to_s.titleize}: Confirm: :#{confirm_elem} :#{confirm_how}=>'#{confirm_what}' in #{confirm_container}")
+        windows_to_log(browser)
+        click(target_container, target_elem, target_how, target_what, desc)
+
+        if confirm_elem == :window
+          query = 'current?'
+        else
+          query = 'present?'
+        end
+
+        if confirm_what.is_a?(Regexp)
+          code = "#{nope}confirm_container.#{confirm_elem.to_s}(:#{confirm_how}, /#{confirm_what}/).#{query}"
+        else
+          code = "#{nope}confirm_container.#{confirm_elem.to_s}(:#{confirm_how}, '#{confirm_what}').#{query}"
+        end
+        debug_to_log("#{__method__}: code=[#{code}]")
+        limit = 30.0
+        increment = 0.5
+        seconds = 0.0
+        until eval(code) do
+          debug_to_log("#{__method__}: seconds=[#{seconds}] [#{code}]")
+          sleep(increment)
+          seconds += increment
+          if seconds.modulo(3.0) == 0.0
+            click(target_container, target_elem, target_how, target_what, "#{desc} (#{seconds} seconds)")
+          end
+          if seconds > limit
+            rtrn = false
+            break
+          end
+        end
+        rtrn
+      rescue
+        failed_to_log(unable_to)
       end
 
       # Click a specific DOM element by one of its attributes (*how) and that attribute's value (*what) and
@@ -281,9 +305,11 @@ module Awetestlib
       # @param [Boolean] nofail If true do not log a failed message if the option is not found in the select list.
       # @return (see #click)
       def select_option(browser, how, what, which, option, desc = '', nofail = false)
-        list = browser.select_list(how, what)
+        list = browser.select_list(how, what).when_present
         msg  = build_message("from list with :#{how}=>'#{what}", desc)
         select_option_from_list(list, which, option, msg, nofail)
+      rescue
+        failed_to_log(unable_to)
       end
 
       # Set radio button or checkbox to selected.
@@ -421,26 +447,21 @@ module Awetestlib
       def set_text_field(browser, how, what, value, desc = '', skip_value_check = false)
         #TODO: fix this to handle Safari password field
         msg = build_message("#{__method__.to_s.humanize} #{how}='#{what}' to '#{value}'", desc)
-        msg << " (Skip value check)" if skip_value_check
-        if browser.text_field(how, what).exists?
-          tf = browser.text_field(how, what)
-          tf.set(value)
-          if skip_value_check
+        msg << ' (Skip value check)' if skip_value_check
+        browser.text_field(how, what).when_present.set(value)
+        if skip_value_check
+          passed_to_log(msg)
+          true
+        else
+          if browser.text_field(how, what).value == value
             passed_to_log(msg)
             true
           else
-            if tf.value == value
-              passed_to_log(msg)
-              true
-            else
-              failed_to_log("#{msg}: Found:'#{tf.value}'.")
-            end
+            failed_to_log("#{msg}: Found:'#{browser.text_field(how, what).value}'.")
           end
-        else
-          failed_to_log("#{msg}: Textfield not found")
         end
       rescue
-        failed_to_log("Unable to '#{msg}': '#{$!}'")
+        failed_to_log(unable_to(msg))
       end
 
       alias set_textfield set_text_field
@@ -553,33 +574,87 @@ module Awetestlib
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return (see #click)
       #
-      def fire_event(browser, element, how, what, event, desc = '')
-        msg = build_message("#{element.to_s.titlecase}: #{how}=>'#{what}' event:'#{event}'", desc)
+      def fire_event(container, element, how, what, event, desc = '', wait = 10)
+        msg  = build_message("#{element.to_s.titlecase}: #{how}=>'#{what}' event:'#{event}'", desc)
+        code = build_webdriver_fetch(element, how, what)
         begin
-          case element
-            when :link
-              browser.link(how, what).fire_event(event)
-            when :button
-              browser.button(how, what).fire_event(event)
-            when :image
-              browser.image(how, what).fire_event(event)
-            when :span
-              browser.span(how, what).fire_event(event)
-            when :div
-              browser.div(how, what).fire_event(event)
-            else
-              browser.element(how, what).fire_event(event)
-          end
+          eval("#{code}.when_present(#{wait}).fire_event('#{event}')")
         rescue => e
-          unless rescue_me(e, __method__, rescue_me_command(element, how, what, __method__.to_s, event), "#{browser.class}")
+          unless rescue_me(e, __method__, rescue_me_command(element, how, what, __method__.to_s, event), "#{container.class}")
             raise e
           end
         end
-        passed_to_log("Fire event: #{msg}. #{desc}")
+        passed_to_log(msg)
         true
       rescue
-        failed_to_log("Unable to fire event: #{msg}. '#{$!}' #{desc}")
+        failed_to_log(unable_to(msg))
       end
+
+      def resize_browser_window(browser, width, height, move_to_origin = true)
+        browser.driver.manage.window.resize_to(width, height)
+        message_to_report("Browser window resized to (#{width}, #{height}).")
+        sleep_for(0.5)
+        if move_to_origin
+          browser.driver.manage.window.move_to(0, 0)
+          message_to_report('Browser window moved to origin (0, 0).')
+        end
+        scroll_to_top(browser)
+      rescue
+        failed_to_log(unable_to)
+      end
+      alias resize_window resize_browser_window
+
+      #TODO: does this really scroll all the way to the bottom?
+      def send_page_down(browser)
+        browser.send_keys :page_down
+        debug_to_log('Sent page down')
+      end
+      alias scroll_to_bottom send_page_down
+      alias press_page_down send_page_down
+
+      #TODO: does this really scroll all the way to the top?
+      def sent_page_up(browser)
+        browser.send_keys :page_up
+        debug_to_log('Sent page up')
+      end
+      alias scroll_to_top sent_page_up
+      alias press_page_up sent_page_up
+
+      def send_spacebar(browser)
+        browser.send_keys :space
+        debug_to_log('Sent space')
+      end
+      alias press_spacebar send_spacebar
+
+      def send_enter(browser)
+        browser.send_keys :enter
+        debug_to_log('Sent enter')
+      end
+      alias press_enter send_enter
+
+      def send_tab(browser)
+        browser.send_keys :tab
+        debug_to_log('Sent tab')
+      end
+      alias press_tab send_tab
+
+      def send_right_arrow(browser)
+        browser.send_keys :arrow_right
+        debug_to_log('Sent right arrow')
+      end
+      alias press_right_arrow send_right_arrow
+
+      def send_left_arrow(browser)
+        browser.send_keys :arrow_left
+        debug_to_log('Sent left arrow')
+      end
+      alias press_left_arrow send_left_arrow
+
+      def send_escape(browser)
+        browser.send_keys :escape
+        debug_to_log('Sent Esc key')
+      end
+      alias press_escape send_escape
 
     end
   end
