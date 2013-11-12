@@ -5,12 +5,18 @@ Automate testing of browser-based applications in Windows or Mac.
 
 After completing this guide you will be able to run tests locally from command line or from an IDE.
 
+## IMPORTANT: Follow these steps exactly!  Read carefully!  It is easy to miss something critical.
+
+Awetestlib is built into the 3qiLabs Shamisen product where installation is automatic.  For this open source release we have not built an installer.
+
 ------------
 ## Prerequisites: Ruby 1.8.7 and RubyInstaller Devkit (Windows) or Xcode (Mac)
 
 ### Windows
 #### Ruby 1.8.7
 You need to have Ruby 1.8.7 installed using the RubyInstaller package.
+
+Awetestlib is not tested with Ruby 1.9.x or 2.x.  There are some known incompatibilies.
 
 You can download the RubyInstaller for 1.8.7
 [here](http://rubyinstaller.org/downloads/).  Choose the most recent 1.8.7.
