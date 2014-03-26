@@ -15,6 +15,8 @@ You need to have Ruby 1.8.7 installed using the RubyInstaller package.
 You can download the RubyInstaller for 1.8.7
 [here](http://rubyinstaller.org/downloads/).  Choose the most recent 1.8.7.
 
+**Install in a directory without spaces, like C:\Ruby187. Don't install in Program Files.**
+
 **Make sure you tell the installer to put Ruby in the PATH environment variable.**
 
 You can check your Ruby version using:
