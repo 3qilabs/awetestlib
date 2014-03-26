@@ -311,6 +311,13 @@ And /^I close the browser$/ do
   @browser.close
 end
 
+When(/^I should see "([^"]*)" but proceed if not present$/) do |arg|
+  @text_list[arg]= @browser.link(:text, "#{arg}").exists?
+  File.open(@error_file,"w") do |f|
+    f.write(@text_list.to_json)
+  end
+end
+
 Given /^I load data spreadsheet "(.*?)" for "(.*?)"$/ do |file, feature|
   require 'roo'
   @workbook     = Excel.new(file)
@@ -396,4 +403,6 @@ end
 #    manifest_file = File.join(File.dirname(__FILE__), '..', 'manifest.json')
 #    @params = JSON.parse(File.open(manifest_file).read)['params'] #Have access to all params in manifest file
 #  end
+#  @text_list = Hash.new()
+#  @error_file = File.join(File.dirname(__FILE__), '..', '..', 'error.txt')
 #end
