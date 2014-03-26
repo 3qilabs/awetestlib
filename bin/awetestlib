@@ -39,8 +39,8 @@ elsif cmd == 'driver_setup'
   awetestlib_driver_setup
 else
 
-require 'optparse'; load_time('optparse')
-require 'awetestlib'; load_time('awetestlib')
+require 'optparse' #; load_time('optparse')
+require 'awetestlib' #; load_time('awetestlib')
 
 options = { }
 OptionParser.new do |opts|

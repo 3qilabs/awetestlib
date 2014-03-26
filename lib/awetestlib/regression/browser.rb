@@ -1116,7 +1116,6 @@ module Awetestlib
           new_size = bpsize + diff -16
         end
       end
-    end
 
     # @!group Browser
 

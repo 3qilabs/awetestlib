@@ -261,7 +261,7 @@ module Awetestlib
         end
 
         if USING_WINDOWS
-          require 'watir/win32ole'; load_time
+          require 'win32ole'; load_time
           @ai = ::WIN32OLE.new('AutoItX3.Control')
         else
           # TODO: Need alternative for Mac?

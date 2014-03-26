@@ -1,5 +1,5 @@
-#require 'yaml'    #Couldn't find use anywhere
-require 'active_support/core_ext/hash'
+require 'yaml'    #Couldn't find use anywhere
+require 'active_support/all'
 
 module Awetestlib
   ::USING_WINDOWS = !!((RUBY_PLATFORM =~ /(win|w)(32|64)$/) || (RUBY_PLATFORM=~ /mswin|mingw/))

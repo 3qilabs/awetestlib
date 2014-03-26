@@ -1,7 +1,8 @@
+require 'active_support/buffered_logger'
 module Awetestlib
   # Logging and reporting.
   module Logging
-
+    include ActiveSupport
     # @deprecated
     def self.included(mod)
       # puts "RegressionSupport::Logging extended by #{mod}"
@@ -162,8 +163,11 @@ module Awetestlib
       message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
       @my_passed_count += 1 if @my_passed_count
       parse_error_references(message)
-      @report_class.add_to_report(message, get_caller(lnbr), "PASSED") unless Awetestlib::Runner.nil?
+      caller = get_caller(lnbr)
+      @report_class.add_to_report(message, caller, "PASSED") unless Awetestlib::Runner.nil?
       log_message(INFO, "#{message}", PASS, lnbr)
+    rescue
+      failed_to_log(unable_to)
     end
 
     alias validate_passed_tolog passed_to_log
@@ -178,7 +182,8 @@ module Awetestlib
       message << " \n#{get_debug_list}" if dbg.to_s == 'true' or @debug_calls or @debug_calls_fail_only
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
-      @report_class.add_to_report("#{message}", get_caller(lnbr), "FAILED") unless Awetestlib::Runner.nil?
+      caller = get_caller(lnbr)
+      @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
       log_message(WARN, "#{message}", FAIL, lnbr, nil, exception)
     end
 
@@ -194,7 +199,8 @@ module Awetestlib
       message << " \n#{get_debug_list}" if dbg.to_s == 'true' or (@debug_calls and not @debug_calls_fail_only)
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
-      @report_class.add_to_report("#{message}", get_caller(lnbr), "FAILED") unless Awetestlib::Runner.nil?
+      caller = get_caller(lnbr)
+      @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
       debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
       log_message(FATAL, "#{message} (#{lnbr})", FAIL, lnbr, nil, exception)
     end
@@ -237,6 +243,7 @@ module Awetestlib
     # @private
     def get_caller(lnbr=nil, exception=nil)
       script_name ||= File.basename(script_file)
+      lib_name ||= File.basename(library)
       if lnbr && script_type.eql?("Selenium")
         [script_name, lnbr, 'in run()'].join(":")
       elsif lnbr && script_type.eql?("MobileNativeApp")
@@ -244,7 +251,7 @@ module Awetestlib
       else
         caller_object = exception ? exception.backtrace : Kernel.caller
         call_frame    = caller_object.detect do |frame|
-          frame.match(/#{script_name}/) or (library && frame.match(/#{library}/))
+          frame.match(/#{script_name}/) or (library && frame.match(/#{lib_name}/))
         end
         unless call_frame.nil?
           call_frame.gsub!(/^C:/, '')
@@ -267,9 +274,9 @@ module Awetestlib
         end
       end
       @log_spec = log_spec
-      logger               = ActiveSupport::BufferedLogger.new(log_spec)
-      logger.level         = ActiveSupport::BufferedLogger::DEBUG
-      logger.auto_flushing = (true)
+      logger               = ActiveSupport::Logger.new(log_spec)
+      logger.level         = ActiveSupport::Logger::DEBUG
+      #logger.auto_flushing = (true)
       logger.add(INFO, "#{log_spec}\n#{ENV["OS"]}")
       logger
     end
@@ -283,6 +290,7 @@ module Awetestlib
       loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
       message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
       message_to_report(">> Logging to #{File.join(@myRoot, @log_spec)}") if @log_spec
+      message_to_report(">> Running with #{`ruby --version`.chomp}}")
     end
 
     alias start_to_log start_run
