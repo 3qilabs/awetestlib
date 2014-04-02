@@ -322,16 +322,16 @@ module Awetestlib
       end
 
       def pad_date(dt)
-       if dt and dt.length > 0
-         a, d1, b, d2, c = dt.split(/([\/\.-])/)
-         a = a.rjust(2, '0') unless a and a.length > 1
-         b = b.rjust(2, '0') unless b and b.length > 1
-         c = c.rjust(2, '0') unless c and c.length > 1
-         a + d1 + b + d2 + c
-       else
-         ''
-       end
-     end
+        if dt and dt.length > 0
+          a, d1, b, d2, c = dt.split(/([\/\.-])/)
+          a = a.rjust(2, '0') unless a and a.length > 1
+          b = b.rjust(2, '0') unless b and b.length > 1
+          c = c.rjust(2, '0') unless c and c.length > 1
+          a + d1 + b + d2 + c
+        else
+          ''
+        end
+      end
 
       def string_count_in_string(strg, substrg)
         count = strg.scan(substrg).length
@@ -380,8 +380,8 @@ module Awetestlib
           end
         elsif (msg =~ /HRESULT error code:0x80070005/)
           ok = true
-                                                      #elsif msg =~ /missing\s+\;\s+before statement/
-                                                      #  ok = true
+          #elsif msg =~ /missing\s+\;\s+before statement/
+          #  ok = true
         end
         if ok
           debug_to_log("#{__method__}: RESCUED: \n#{who.to_yaml}=> #{what} in #{me}()\n=> '#{$!}'")
@@ -438,8 +438,8 @@ module Awetestlib
               myList << "[#{$1.gsub(/eval/, @projName)}] "
               break
             end
+            break if x > depth or myCaller =~ /:in .run.$/  # this break causes error in Ruby 1.9.
           end
-          break if x > depth or myCaller =~ /:in .run.$/  # this break causes error in Ruby 1.9.
         end
         myList
       end
@@ -1043,11 +1043,11 @@ module Awetestlib
 
       def get_os
         @os = OpenStruct.new(
-          :name     => Sys::Uname.sysname,
-          :version  => Sys::Uname.version,
-          :release  => Sys::Uname.release,
-          :nodename => Sys::Uname.nodename,
-          :machine  => Sys::Uname.machine
+            :name     => Sys::Uname.sysname,
+            :version  => Sys::Uname.version,
+            :release  => Sys::Uname.release,
+            :nodename => Sys::Uname.nodename,
+            :machine  => Sys::Uname.machine
         )
       end
 
