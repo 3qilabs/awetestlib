@@ -1,14 +1,9 @@
 # -*- encoding: utf-8 -*-
-puts "#{$0}"
 require File.expand_path('../lib/version', __FILE__)
-
-#hack for debugging
-`wellsproxy`
-#end hack
 
 Gem::Specification.new do |s|
 
-  s.name = "awetestlib"
+  s.name = %q{awetestlib}
   s.version = Awetestlib::VERSION
   s.date = Awetestlib::VERSION_DATE
   s.platform = Gem::Platform::RUBY
@@ -20,38 +15,27 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://3qilabs.com}
   s.description = %q{Awetest DSL for automated testing of browser-based applications.}
 
-  # possible dependencies (from shamisen gemfile)
-  #s.add_dependency('i18n')
-
-  # windows specific
-  #s.add_dependency('watir', '1.8.1')
-  #s.add_dependency('commonwatir', '1.8.1')
-  #s.add_dependency('firewatir', '1.8.1')
-  #s.add_dependency('watirloo')
-  #s.add_dependency('win32-process')
-  #s.add_dependency('win32screenshot')
-
-  # all platforms?
-  begin
-    #s.add_dependency('ffi', '= 1.0.9')
-    s.add_dependency('activesupport', '~> 3.2.17')
-    s.add_dependency('watir-webdriver')
-    s.add_dependency('andand')
-    s.add_dependency('spreadsheet', '0.6.8')
-    s.add_dependency('google-spreadsheet-ruby', '0.1.6')
-    s.add_dependency('roo', '1.10.1')
-    #s.add_dependency('selenium-client')   # for running selenium scripts
-    s.add_dependency('selenium-webdriver')
-  rescue
-    puts "#{$!}"
-  end
-
-  s.require_paths = ["lib","ext"]
+  s.add_dependency('watir-webdriver')
+  s.add_dependency('activesupport', '~> 3.0.0')
+  s.add_dependency('andand')
+  s.add_dependency('spreadsheet', '0.6.8')
+  s.add_dependency('google-spreadsheet-ruby', '0.1.6')
+  s.add_dependency('roo', '1.10.1')
+  s.add_dependency('multipart-post', '1.1.4')
+  s.add_dependency('selenium-webdriver')
+  s.add_dependency('nokogiri')
+  s.add_dependency('i18n')
+  s.add_dependency('rb-appscript')
+  s.add_dependency('pry')
+  s.add_dependency('cucumber')
+  s.add_dependency('calabash-cucumber')
+  s.add_dependency('sys-uname')
+  s.require_paths = ["lib"]   #,"ext"]
   s.files = `git ls-files`.split("\n")
   s.executables = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
 
   #This line tells rubygems to look for an extension to install
-  s.extensions << 'ext/mkrf_conf.rb'
+  #s.extensions = ["ext\\mkrf_conf.rb"]
 
 end
 
