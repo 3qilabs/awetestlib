@@ -34,7 +34,7 @@ Gem::Specification.new do |s|
   # all platforms?
   begin
     #s.add_dependency('ffi', '= 1.0.9')
-    s.add_dependency('activesupport', '~> 3.0.0')
+    s.add_dependency('activesupport', '~> 3.2.17')
     s.add_dependency('watir-webdriver')
     s.add_dependency('andand')
     s.add_dependency('spreadsheet', '0.6.8')
