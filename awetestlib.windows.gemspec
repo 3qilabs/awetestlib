@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-require "lib/version"
+require File.expand_path('../lib/version', __FILE__)
 
 Gem::Specification.new do |s|
 
