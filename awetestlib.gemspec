@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 puts "#{$0}"
-require File.expand_path('../lib/awetestlib/version', __FILE__)
+require File.expand_path('../lib/version', __FILE__)
 
 #hack for debugging
 `wellsproxy`
