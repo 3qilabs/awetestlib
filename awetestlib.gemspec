@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency('spreadsheet', '0.6.8')
   s.add_dependency('google-spreadsheet-ruby', '0.1.6')
   s.add_dependency('roo', '1.10.1')
-  s.add_dependency('multipart-post', '1.1.4')
+  s.add_dependency('multipart-post', '2.0.0')
   s.add_dependency('selenium-webdriver')
   s.add_dependency('nokogiri')
   s.add_dependency('i18n')
