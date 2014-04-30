@@ -1,5 +1,10 @@
 # -*- encoding: utf-8 -*-
-require File.expand_path('../lib/version', __FILE__)
+puts "#{$0}"
+require "lib/version"
+
+#hack for debugging
+`wellsproxy`
+#end hack
 
 Gem::Specification.new do |s|
 
