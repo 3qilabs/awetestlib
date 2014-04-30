@@ -51,6 +51,7 @@ module Awetestlib
         start = Time.now.to_f
         # TODO: try Watir::Wait.until { browser.element(how, what).exists? } instead of this (cumbersome) case statement
         # TODO: above fails on frame
+        # TODO: Webdriver compatibility?
         Watir::Wait.until { browser.exists? }
         begin
           case element
@@ -88,12 +89,11 @@ module Awetestlib
           end
         end
         stop = Time.now.to_f
-        #debug_to_log("#{__method__}: start:#{start} stop:#{stop}")
-        #    sleep 1
-        passed_to_log("#{msg} (#{stop - start} seconds)")
+        msg += " (#{"%.5f" % (stop - start)} seconds)"
+        passed_to_log(msg)
         true
       rescue
-        failed_to_log("Unable to complete #{msg}: '#{$!}'")
+        failed_to_log(unable_to(msg))
       end
 
       # Wait _while_ expression in *&block* returns true.
@@ -111,7 +111,7 @@ module Awetestlib
       # @return [Boolean] True if condition returns false within time limit.
       def wait_while(browser, desc, timeout = 45, &block)
         #TODO: Would like to be able to see the block code in the log message instead of the identification
-        msg   = "Wait while #{desc}:"
+        msg   = build_message("Wait while", desc)
         start = Time.now.to_f
         Watir::Wait.until { browser.exists? }
         begin
@@ -128,9 +128,8 @@ module Awetestlib
           end
         end
         stop = Time.now.to_f
-        #debug_to_log("#{__method__}: start:#{start} stop:#{stop} block: #{block.to_s}")
-                                                                     #    sleep 1
-        passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") #  {#{block.to_s}}")
+        msg += " (#{"%.5f" % (stop - start)} seconds)"
+        passed_to_log(msg)
         true
       rescue
         failed_to_log("Unable to complete #{msg}. '#{$!}'")
@@ -146,7 +145,7 @@ module Awetestlib
       # @return [Boolean] True if condition in *&block* returns true within time limit.
       def wait_until(browser, desc, timeout = 45, skip_pass = false, &block)
         #TODO: Would like to be able to see the block code in the log message instead of the identification
-        msg   = "Wait until #{desc}"
+        msg   = build_message("Wait until", desc)
         start = Time.now.to_f
         Watir::Wait.until { browser.exists? }
         begin
@@ -160,12 +159,11 @@ module Awetestlib
           end
         end
         stop = Time.now.to_f
-        #debug_to_log("#{__method__}: start:#{start} stop:#{stop} block: #{block.to_s}")
-                                                                                      #    sleep 1
-        passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") unless skip_pass #  {#{block.to_s}}")
+        msg += " (#{"%.5f" % (stop - start)} seconds)"
+        passed_to_log(msg) unless skip_pass #  {#{block.to_s}}")
         true
       rescue
-        failed_to_log("Unable to complete #{msg}  '#{$!}'")
+        failed_to_log(unable_to(msg))
       end
 
       alias wait_until_true wait_until
@@ -179,147 +177,80 @@ module Awetestlib
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @param [Fixnum] timeout Maximum time to wait, in seconds.
-      # @param [Boolean] verbose When set to true, more debug information is written to the log and
-      # all steps return pass/fail messages in the report.
-      # @return [Boolean] True if condition returns false within time limit.
-      def wait_until_ready(browser, how, what, desc = '', timeout = 90, verbose = false)
-        msg = "#{__method__.to_s.titleize}: element: #{how}='#{what}'"
-        msg << " #{desc}" if desc.length > 0
-        proc_exists  = Proc.new { browser.element(how, what).exists? }
-        proc_enabled = Proc.new { browser.element(how, what).enabled? }
-        case how
-          when :href
-            proc_exists  = Proc.new { browser.link(how, what).exists? }
-            proc_enabled = Proc.new { browser.link(how, what).enabled? }
-        end
-        if verbose
-          if wait_until(browser, "#{msg} Element exists.", timeout) { proc_exists.call(nil) }
-            if wait_until(browser, "#{msg} Element enabled.", timeout) { proc_enabled.call(nil) }
-              passed_to_log(msg)
-              true
-            else
-              failed_to_log(msg)
-            end
-          else
-            failed_to_log(msg)
+      # @param [Boolean] verbose When set to true, actual wait time is reported.
+      # @param [Boolean] quiet When set to true, only fail messages are logged and reported.
+      # @return [Boolean] True if element is ready within time limit.
+      def wait_until_ready(browser, how, what, desc = '', timeout = 90, verbose = true, quiet = false)
+        msg = build_message("Wait until element :#{how}=>'#{what}') is ready.", desc)
+        ok  = false
+        start = Time.now.to_f if verbose
+        Watir::Wait.until(timeout) { browser.exists? }
+
+        if $using_webdriver
+          proc_present = Proc.new { browser.element(how, what).present? }
+          if Watir::Wait.until(timeout) { proc_present.call(nil) }
+            ok = true
           end
         else
-          start = Time.now.to_f
-          Watir::Wait.until { browser.exists? }
-          if Watir::Wait.until(timeout) { proc_exists.call(nil) }
-            if Watir::Wait.until(timeout) { proc_enabled.call(nil) }
-              stop = Time.now.to_f
-              #debug_to_log("#{__method__}: start:#{"%.5f" % start} stop:#{"%.5f" % stop}")
-              passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)")
-              true
-            else
-              failed_to_log(msg)
-            end
-          else
-            failed_to_log(msg)
-          end
-        end
-      rescue
-        failed_to_log("Unable to #{msg}. '#{$!}'")
-      end
-
-      # Wait _until_ element, identified by attribute *how* and its value *what*, exists.
-      # If it exists within *timeout* seconds then wait _until_ it is enabled.  Report only failures.
-      # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      # @param [Symbol] how The element attribute used to identify the specific element.
-      #   Valid values depend on the kind of element.
-      #   Common values: :text, :id, :title, :name, :class, :href (:link only)
-      # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
-      # @param [String] desc Contains a message or description intended to appear in the log and/or report output
-      # @param [Fixnum] timeout Maximum time to wait, in seconds.
-      # @param [Boolean] quiet When set to true, only fail messages are logged and reported.
-      # @return [Boolean] True if condition returns false within time limit.
-      def wait_until_ready_quiet(browser, how, what, desc = '', timeout = 45, quiet = true)
-        msg = "#{__method__.to_s.titleize}: element: #{how}='#{what}'"
-        msg << " #{desc}" if desc.length > 0
-        proc_exists  = Proc.new { browser.element(how, what).exists? }
-        proc_enabled = Proc.new { browser.element(how, what).enabled? }
-        case how
-          when :href
+          proc_exists  = Proc.new { browser.element(how, what).exists? }
+          proc_enabled = Proc.new { browser.element(how, what).enabled? }
+          if how == :href
             proc_exists  = Proc.new { browser.link(how, what).exists? }
             proc_enabled = Proc.new { browser.link(how, what).enabled? }
+          end
+          if Watir::Wait.until(timeout) { proc_exists.call(nil) }
+            if Watir::Wait.until(timeout) { proc_enabled.call(nil) }
+              ok = true
+            end
+          end
         end
-        start = Time.now.to_f
-        Watir::Wait.until { browser.exists? }
-        sleep_for(1)
-        if Watir::Wait.until(timeout) { proc_exists.call(nil) }
-          if Watir::Wait.until(timeout) { proc_enabled.call(nil) }
-            stop = Time.now.to_f
-            #debug_to_log("#{msg}: start:#{"%.5f" % start} stop:#{"%.5f" % stop}")
-            passed_to_log("#{msg} (#{"%.5f" % (stop - start)} seconds)") unless quiet
-            true
-          else
-            failed_to_log(msg)
+
+        if verbose
+          stop = Time.now.to_f
+          msg += " (#{"%.5f" % (stop - start)} seconds)"
+        end
+        if ok
+          unless quiet
+            passed_to_log(msg)
           end
         else
           failed_to_log(msg)
         end
+        ok
       rescue
-        failed_to_log("Unable to #{msg}. '#{$!}'")
+        failed_to_log(unable_to(msg))
+      end
+
+      # Wait _until_ element, identified by attribute *how* and its value *what*, exists.
+      # If it exists within *timeout* seconds then wait _until_ it is enabled. By default reports only failures.
+      # @param (see #wait_until_ready)
+      # @return [Boolean] True if  element is ready within time limit.
+      def wait_until_ready_quiet(browser, how, what, desc = '', timeout = 90, quiet = true, verbose = false)
+        wait_until_ready(browser, how, what, desc, timeout, verbose, quiet)
       end
 
       def wait_until_text(browser, strg, desc = '', timeout = 60)
         if not strg.class.to_s.match('String')
           raise "#{__method__} requires String for search target. #{strg.class} is not supported."
         end
+        if $using_webdriver
+          browser.wait(timeout)
+        end
         wait_until(browser, "'#{strg}' #{desc}", timeout) { browser.text.include? strg }
       end
 
       alias wait_until_by_text wait_until_text
 
-      def wait_until_enabled(browser, what, how, value, desc = '')
-        # TODO: This can be simplified
-        start = Time.now.to_f
-        Watir::Wait.until { browser.exists? }
-        sleep_for(1)
-        begin
-          case what
-            when :link
-              Watir::Wait.until { browser.link(how, value).enabled? }
-            when :button
-              Watir::Wait.until { browser.button(how, value).enabled? }
-            when :radio
-              Watir::Wait.until { browser.radio(how, value).enabled? }
-            when :checkbox
-              Watir::Wait.until { browser.checkbox(how, value).enabled? }
-            when :div
-              Watir::Wait.until { browser.div(how, value).enabled? }
-            when :select_list
-              Watir::Wait.until { browser.select_list(how, value).enabled? }
-            when :text_field
-              Watir::Wait.until { browser.text_field(how, value).enabled? }
-            when :table
-              Watir::Wait.until { browser.table(how, value).enabled? }
-            else
-              Watir::Wait.until { browser.element(how, value).enabled? }
-          end
-        rescue => e
-          if e.class.to_s =~ /TimeOutException/
-            failed_to_log("Wait until (#{what} :#{how}=>#{value}) enabled. #{desc}: '#{$!}' #{desc}")
-            return false
-          elsif not rescue_me(e, __method__, "#{block.to_s}", "#{browser.class}")
-            raise e
-          end
-        end
-        stop = Time.now.to_f
-        #debug_to_log("#{__method__}: start:#{start} stop:#{stop}")
-        #    sleep 1
-        passed_to_log("Wait until (#{what} :#{how}=>#{value}) enabled. #{desc} (#{stop - start} seconds)")
-        true
-      rescue
-        failed_to_log("Unable to complete wait until (#{what} :#{how}=>#{value}) enabled. #{desc}: '#{$!}'")
+      def wait_until_enabled(browser, element, how, what, desc = '')
+        wait_until_ready(browser, how, what, desc, timeout = 90, verbose = true, quiet = false)
       end
 
-      def wait_until_visible(browser, element, how, what, desc = '')
+      def wait_until_visible(browser, element, how, what, desc = '', timeout = 60)
+        msg = build_message("Wait until #{element} :#{how}=>'#{what}') is visible.", desc)
         start = Time.now.to_f
         Watir::Wait.until { browser.exists? }
         sleep_for(1)
-        Watir::Wait.until(20) { browser.element(how, what).exists? }
+        Watir::Wait.until(timeout) { browser.element(how, what).exists? }
         begin
           case element
             when :link
@@ -349,12 +280,11 @@ module Awetestlib
           end
         end
         stop = Time.now.to_f
-        #debug_to_log("#{__method__}: start:#{start} stop:#{stop}")
-        #    sleep 1
-        passed_to_log("Wait until (#{element} :#{how}=>#{what}) visible. #{desc} (#{stop - start} seconds)")
+        msg += " (#{"%.5f" % (stop - start)} seconds)"
+        passed_to_log(msg)
         true
       rescue
-        failed_to_log("Unable to complete wait until (#{element} :#{how}=>#{what}) visible. #{desc}: '#{$!}'")
+        failed_to_log(unable_to(msg))
       end
 
       # @!endgroup Core

@@ -1,8 +1,6 @@
-require 'pry'
 def awetestlib_driver_setup
 	current_dir = Dir.pwd
 	drivers_dir = File.expand_path(File.join(File.dirname(__FILE__), "..", "drivers"))
-	# binding.pry
 	ie_driver = File.join(drivers_dir,"IEDriverServer.exe")
 	chrome_driver = File.join(drivers_dir,"chromedriver.exe")
 	msg("Question") do

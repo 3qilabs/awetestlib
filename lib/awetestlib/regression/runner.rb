@@ -1,20 +1,20 @@
-require 'awetestlib/regression/browser'  #; load_time
-require 'awetestlib/regression/find'  #; load_time
-require 'awetestlib/regression/user_input'  #; load_time
-require 'awetestlib/regression/waits'  #; load_time
-require 'awetestlib/regression/tables'  #; load_time
-require 'awetestlib/regression/page_data'  #; load_time
-require 'awetestlib/regression/drag_and_drop'  #; load_time
-require 'awetestlib/regression/utilities'  #; load_time
-require 'awetestlib/regression/legacy'  #; load_time
-require 'awetestlib/logging'  #; load_time
-require 'awetestlib/regression/validations'  #; load_time
-require 'awetestlib/html_report'  #; load_time
-#require 'rbconfig'  #; load_time
-require 'ostruct'  #; load_time
-require 'active_support'  #; load_time
-require 'active_support/inflector'  #; load_time
-#require 'sys/uname'  #; load_time
+require 'awetestlib/regression/browser'; load_time
+require 'awetestlib/regression/find'; load_time
+require 'awetestlib/regression/user_input'; load_time
+require 'awetestlib/regression/waits'; load_time
+require 'awetestlib/regression/tables'; load_time
+require 'awetestlib/regression/page_data'; load_time
+require 'awetestlib/regression/drag_and_drop'; load_time
+require 'awetestlib/regression/utilities'; load_time
+require 'awetestlib/regression/legacy'; load_time
+require 'awetestlib/logging'; load_time
+require 'awetestlib/regression/validations'; load_time
+require 'awetestlib/html_report'; load_time
+#require 'rbconfig'; load_time
+require 'ostruct'; load_time
+require 'active_support'; load_time
+require 'active_support/inflector'; load_time
+#require 'sys/uname'; load_time
 
 module Awetestlib
   module Regression
@@ -35,6 +35,7 @@ module Awetestlib
       include Awetestlib::Regression::DragAndDrop  #; load_time('include Awetestlib::Regression::DragAndDrop')
       include Awetestlib::Regression::Validations  #; load_time('include Awetestlib::Regression::Validations')
       include Awetestlib::Regression::Legacy  #; load_time('include Awetestlib::Regression::Legacy')
+      load_time('includes')
 
       ::DEBUG   = 0
       ::INFO    = 1
@@ -59,7 +60,7 @@ module Awetestlib
                     :environment, :environment_name, :environment_url, :environment_nodename,
                     :cycle, :browser_sequence,
                     :output_to_log, :log_path_subdir, :report_all_test_refs,
-                    :timeout, :classic_watir, :capture_load_times
+                    :timeout, :classic_watir, :capture_load_times, :pry
 
       #def self.build(options)
       #  #build_class = "Awetestlib::#{script_module_for options[:script_type]}::Runner".constantize
@@ -94,7 +95,7 @@ module Awetestlib
           @runenv = options[:environment_name]
         end
 
-        @targetBrowser  = browser_to_use(options[:browser], options[:version])
+        @targetBrowser, @actualBrowser  = browser_to_use(options[:browser], options[:version])
         @targetVersion  = @targetBrowser.version
         @browserAbbrev  = @targetBrowser.abbrev
         @myRoot         = options[:root_path] || Dir.pwd  # NOTE: bug fix pmn 05dec2012
@@ -128,7 +129,7 @@ module Awetestlib
         #
         # @x_tolerance = 12
         # @y_tolerance = 12
-        require_gems
+        #require_gems
       end
 
       #def self.runner_class(options)
@@ -169,21 +170,28 @@ module Awetestlib
         options.each_pair do |k, v|
           self.send("#{k}=", v)
         end
+
+        if options[:pry]
+          require 'pry'; load_time
+        end
+
+        # load script file to get overrides
         script_file = options[:script_file]
-        load script_file
+        load script_file; load_time('Load script file', Time.now)
         setup_global_test_vars(options)
+        require_gems
 
         # load and extend with library module if it exists
         if options[:library]
           lib_file = options[:library]
-          load lib_file # force a fresh load
+          load lib_file; load_time('Load library file', Time.now) # force a fresh load
           lib_module = module_for lib_file
           self.extend(lib_module)
         end
 
         # load and extend with script
         script_file = options[:script_file]
-        load script_file # force a fresh load
+        load script_file; load_time('Reload script file', Time.now) # force a fresh load
         runner_module = module_for script_file
         self.extend(runner_module)
 
@@ -209,11 +217,18 @@ module Awetestlib
               browser_version = 10
           end
         end
-        return OpenStruct.new(
+        target = OpenStruct.new(
               :name => (Awetestlib::BROWSER_MAP[browser_abbrev]),
               :abbrev => browser_abbrev,
               :version => browser_version
         )
+        actual = OpenStruct.new(
+              :name => (Awetestlib::BROWSER_MAP[browser_abbrev]),
+              :abbrev => browser_abbrev,
+              :version => '',
+              :driver => ''
+        )
+        [target, actual]
       end
 
       def require_gems
@@ -222,31 +237,31 @@ module Awetestlib
 
           when 'IE'
             if $watir_script
-              require 'watir/ie'  #; load_time
-              require 'watir'  #; load_time
-              require 'watir/process'  #; load_time
-              require 'watirloo'  #; load_time
-              require 'patches/watir'  #; load_time
+              #require 'watir/ie'; load_time
+              require 'watir'; load_time
+              require 'watir/process'; load_time
+              require 'watirloo'; load_time
+              require 'patches/watir'; load_time
               Watir::IE.visible = true
             else
-              require 'watir-webdriver'  #; load_time
+              require 'watir-webdriver'; load_time
             end
           when 'FF'
-            require 'watir-webdriver'  #; load_time
+            require 'watir-webdriver'; load_time
           when 'S'
-            require 'watir-webdriver'  #; load_time
+            require 'watir-webdriver'; load_time
 
           when 'C', 'GC'
-            require 'watir-webdriver'  #; load_time
+            require 'watir-webdriver'; load_time
 
           # when 'CL'
-          #   require 'celerity'  #; load_time
-          #   require 'watir-webdriver'  #; load_timerequi
+          #   require 'celerity'; load_time
+          #   require 'watir-webdriver'; load_timerequi
 
         end
 
         if USING_WINDOWS
-          require 'watir/win32ole'  #; load_time
+          require 'win32ole'; load_time
           @ai = ::WIN32OLE.new('AutoItX3.Control')
         else
           # TODO: Need alternative for Mac?
@@ -254,7 +269,7 @@ module Awetestlib
         end
 
         if @xls_path
-          require 'roo'  #; load_time
+          require 'roo'; load_time
         end
 
       end
@@ -265,6 +280,7 @@ module Awetestlib
 
       def before_run
         initiate_html_report
+        load_time('Total load time', $begin_time)
         start_run
       end
 
@@ -296,11 +312,11 @@ module Awetestlib
       def open_report_file
         full_report_file = File.expand_path(@html_report_file)
         if USING_WINDOWS
-          system("explorer file:///#{full_report_file}")
+          system("start file:///#{full_report_file}")
         elsif USING_OSX
           system("open #{full_report_file}")
         else
-          puts "Can find report in #{full_report_file}"
+          puts "Report can be found in #{full_report_file}"
         end
 
       end

@@ -7,6 +7,30 @@ module Awetestlib
     #   Rdoc is work in progress
     module DragAndDrop
 
+      def viewport_size(browser)
+        if @targetBrowser.abbrev == 'IE' and  get_browser_version(browser).to_i < 9
+          insert_viewport_div(browser)
+        else
+          x = browser.execute_script("return window.innerWidth")
+          y = browser.execute_script("return window.innerHeight")
+          [x, y]
+        end
+      end
+
+      def insert_viewport_div(browser)
+        browser.execute_script(
+            'var test = document.createElement( "div" );' +
+                'test.style.cssText = "position: fixed;top: 0;left: 0;bottom: 0;right: 0;"; ' +
+                'test.id = "awetest-temp-viewport"; ' +
+                'document.documentElement.insertBefore( test, document.documentElement.firstChild ); '
+        )
+        viewport = browser.div(:id, 'awetest-temp-viewport')
+        x = browser.execute_script("return arguments[0].offsetWidth", viewport)
+        y = browser.execute_script("return arguments[0].offsetHeight", viewport)
+        browser.execute_script("document.documentElement.removeChild( arguments[0] )", viewport)
+        [x, y]
+      end
+
       # Verify that specified *inner_element* is fully enclosed by *outer_element*.
       # @param [Watir::Element] inner_element A reference to a DOM element
       # @param [Watir::Element] outer_element A reference to a DOM element

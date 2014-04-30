@@ -8,12 +8,12 @@ end
 def print_usage
   puts <<EOF
   Usage Options:
-  
+
     awetestlib regression_setup
       setup awetest regression and register autoitx3.dll in Windows
 
     awetestlib rubymine_setup <project_name>
-      setup a rubymine project 
+      setup a rubymine project
 
     awetestlib netbeans_setup <project_name>
       setup a netbeans project
@@ -30,10 +30,15 @@ def print_usage
 EOF
 end
 
-def check_script_type(options)
-  script_options = ['Regression', 'Cucumber']
+def parse_script_type(options)
+  script_options = ['Regression', 'Awetest', 'AwetestDSL', 'Awetestlib', 'Cucumber']
   if script_options.include? ARGV[0]
-    options[:script_type] = ARGV[0]
+    case ARGV[0]
+      when 'Regression', 'Awetest', 'AwetestDSL', 'Awetestlib'
+        options[:script_type] = 'Regression'
+      else
+        options[:script_type] = ARGV[0]
+    end
     options[:script_file] = ARGV[1]
   else
     options[:script_type] = 'Regression'
@@ -41,21 +46,28 @@ def check_script_type(options)
   end
 end
 
-def load_time(what = nil, time = Time.now)
+def load_time(what = nil, base = nil, time = Time.now)
   if $capture_load_times
     caller = Kernel.caller
     called = $"
     unless what
-      what = "#{caller[0]} => #{called[called.length - 1]}"
+      drv, file, line, meth = caller[0].split(':')
+      if drv.length > 2
+        meth = line
+        line = file
+        file = drv
+      end
+      what = "#{File.basename(file)} at #{line} #{meth} => #{called[called.length - 1]}"
+      #what = "#{File.basename(caller[0])} => #{called[called.length - 1]}"
     end
-    elapsed = time - $base_time
-    msg = "#{what} #{sprintf('%.4f', elapsed)}"
+    if base
+      elapsed = time - base
+    else
+      elapsed = time - $base_time
+    end
+    msg = "#{what} took #{sprintf('%.4f', elapsed)} seconds"
     $load_times[time.to_f] = msg
-    begin
-      debug_to_report("#{time.to_f}: #{msg}")
-    rescue
-      puts("#{time.to_f}: #{msg}")
-    end
-    $base_time = time
+    puts("#{time.to_f}: #{msg}")
+    $base_time = time unless base
   end
 end

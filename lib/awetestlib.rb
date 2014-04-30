@@ -1,5 +1,5 @@
-#require 'yaml'    #Couldn't find use anywhere
-require 'active_support/core_ext/hash'
+require 'yaml'    #Couldn't find use anywhere
+require 'active_support/all'
 
 module Awetestlib
   ::USING_WINDOWS = !!((RUBY_PLATFORM =~ /(win|w)(32|64)$/) || (RUBY_PLATFORM=~ /mswin|mingw/))
@@ -30,7 +30,7 @@ module Awetestlib
   require 'awetestlib/runner'  #; load_time
   require 'andand'  #; load_time
   require 'awetestlib/regression/runner'  #; load_time
-  require 'pry'  #; load_time
+  #require 'pry'  #moved to awetestlib runner
 
   if USING_OSX
     require 'appscript'  #; load_time

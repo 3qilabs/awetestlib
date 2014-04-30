@@ -1,17 +1,21 @@
 $: << "./lib"
 
+$begin_time = Time.now
 $base_time = Time.now
 $load_times = Hash.new
-$capture_load_times = true
+$capture_load_times = true if ENV['AWETESTLIB-LOAD-TIMES']
 
 require File.join(File.dirname(__FILE__),"awetestlib-helpers")
-require 'fileutils'  #: load_time
+require 'fileutils'; load_time
+if ENV['RUBY-PROF']
+  require 'ruby-prof'; load_time
+end
 
 cmd = ARGV[0]
 
 if cmd.nil?
   print_usage
-  
+
 elsif cmd == "regression_setup"
   require File.join(File.dirname(__FILE__),"awetestlib-regression-setup")
   awetestlib_regression_setup
@@ -35,8 +39,8 @@ elsif cmd == 'driver_setup'
   awetestlib_driver_setup
 else
 
-require 'optparse'  #; load_time('optparse')
-require 'awetestlib'  #; load_time
+require 'optparse' #; load_time('optparse')
+require 'awetestlib' #; load_time('awetestlib')
 
 options = { }
 OptionParser.new do |opts|
@@ -57,8 +61,8 @@ OptionParser.new do |opts|
   opts.on("-b BROWSER", "--browser BROWSER", "Specify a browser (IE, FF, S, C)") do |browser|
     options[:browser] = browser
   end
-  opts.on("-v VERSION", "--version VERSION", "Specify a browser version") do |v|
-    options[:version] = v
+  opts.on("-v VERSION", "--version VERSION", "Specify a browser version") do |version|
+    options[:version] = version
   end
   opts.on("-e", "--environment_url ENVIRONMENT_URL", "Specify the environment URL") do |environment_url|
     options[:environment_url] = environment_url
@@ -82,16 +86,19 @@ OptionParser.new do |opts|
   opts.on("-o", "--output_to_log", "Write to log file") do
     options[:output_to_log] = true
   end
+  opts.on("-p", "--pry", "Require Pry for debugging") do
+    options[:pry] = true
+  end
   opts.on("-c", "--classic_watir", "Use Classic Watir for IE instead of Watir-webdriver") do
     options[:classic_watir] = true
   end
   opts.on("", "--log_path_subdir LOG_PATH_SUBDIR", "Specify log path relative to root_path.") do |log_path_subdir|
     options[:log_path_subdir] = log_path_subdir
   end
-  opts.on("", "--report_all_test_refs REPORT_ALL_TEST_REFS", "Include list of all error/test case reference ids actually validated.") do
+  opts.on("", "--report_all_test_refs", "Include list of all error/test case reference ids actually validated.") do
     options[:report_all_test_refs] = true
   end
-  opts.on("", "--capture_load_times CAPTURE_LOAD_TIMES", "Capture load time for gem requires.") do
+  opts.on("-t", "--capture_load_times", "Capture load time for gem requires.") do
     options[:capture_load_times] = true
   end
 
@@ -101,7 +108,10 @@ options[:environment] ||= {}
 options[:environment]["name"] = options[:environment_name]
 options[:environment]["url"] = options[:environment_url]
 options[:environment]["nodename"] = options[:environment_nodename]
-check_script_type(options)
+
+options[:log_path_subdir] = 'logs' if options[:output_to_log] and not options[:log_path_subdir]
+
+parse_script_type(options)
 
 $watir_script       = options[:classic_watir]
 $capture_load_times = options[:capture_load_times] unless $capture_load_times

@@ -9,8 +9,10 @@ module Awetestlib
 
     def check_script_type(script_type)
       case script_type
-        when "Regression" ; "Regression" #Should this be regression? possible rename
-        else              ; script_type
+        when 'Regression', 'Awetest', 'AwetestDSL', 'Awetestlib'
+          'Regression'
+        else
+          script_type
       end
     end
   end
