@@ -28,7 +28,7 @@ Gem::Specification.new do |s|
   s.add_dependency('spreadsheet', '0.6.8')
   s.add_dependency('google-spreadsheet-ruby', '0.1.6')
   s.add_dependency('roo', '1.10.1')
-  s.add_dependency('selenium-webdriver','2.41.0')
+  s.add_dependency('selenium-webdriver','2.35.1')
   s.add_dependency('pry')
   s.add_dependency('rdoc', '~> 3.11')
   s.add_dependency('cucumber')
