@@ -274,8 +274,8 @@ module Awetestlib
         end
       end
       @log_spec = log_spec
-      logger               = ActiveSupport::Logger.new(log_spec)
-      logger.level         = ActiveSupport::Logger::DEBUG
+      logger               = ActiveSupport::BufferedLogger.new(log_spec)
+      logger.level         = ActiveSupport::BufferedLogger::DEBUG
       #logger.auto_flushing = (true)
       logger.add(INFO, "#{log_spec}\n#{ENV["OS"]}")
       logger
