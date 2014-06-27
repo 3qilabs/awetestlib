@@ -69,10 +69,10 @@ module Awetestlib
           @actualBrowser.driver = 'Watir Classic'
           $using_webdriver = false
         else
-          @actualBrowser.driver = "Watir-webdriver #{@myBrowser.driver.capabilities.browser_name.titleize}"
+          #@actualBrowser.driver = "Watir-webdriver #{@myBrowser.driver.capabilities.browser_name.titleize}"
           $using_webdriver = true
         end
-        message_to_report("Running with #{@actualBrowser.driver}")
+        #message_to_report("Running with #{@actualBrowser.driver}")
       end
 
       # Open IE (Internet Explorer) browser instance.
