@@ -3,7 +3,11 @@ require 'active_support/all'
 
 module Awetestlib
   ::USING_WINDOWS = !!((RUBY_PLATFORM =~ /(win|w)(32|64)$/) || (RUBY_PLATFORM=~ /mswin|mingw/))
-  ::USING_OSX     = RUBY_PLATFORM =~ /darwin/
+  if !defined?(JRUBY_VERSION).nil?
+    ::USING_OSX     = !defined?(JRUBY_VERSION).nil?
+  else
+    ::USING_OSX     = RUBY_PLATFORM =~ /darwin/
+  end
 
   # @private
   BROWSER_MAP = {
@@ -33,7 +37,8 @@ module Awetestlib
   #require 'pry'  #moved to awetestlib runner
 
   if USING_OSX
-    require 'appscript'  #; load_time
+    # Issue with jruby unable to compile
+    # require 'appscript'  #; load_time
   end
 
   #require 'roo' #moved to awetestlib runner

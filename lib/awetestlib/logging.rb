@@ -243,7 +243,7 @@ module Awetestlib
     # @private
     def get_caller(lnbr=nil, exception=nil)
       script_name ||= File.basename(script_file)
-      lib_name ||= File.basename(library)
+      # lib_name ||= File.basename(library)
       if lnbr && script_type.eql?("Selenium")
         [script_name, lnbr, 'in run()'].join(":")
       elsif lnbr && script_type.eql?("MobileNativeApp")
@@ -251,7 +251,8 @@ module Awetestlib
       else
         caller_object = exception ? exception.backtrace : Kernel.caller
         call_frame    = caller_object.detect do |frame|
-          frame.match(/#{script_name}/) or (library && frame.match(/#{lib_name}/))
+          # frame.match(/#{script_name}/) or (library && frame.match(/#{lib_name}/))
+          frame.match(/#{script_name}/) or (library && frame.match(/#{library}/))
         end
         unless call_frame.nil?
           call_frame.gsub!(/^C:/, '')

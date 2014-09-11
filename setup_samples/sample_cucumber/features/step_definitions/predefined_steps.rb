@@ -220,7 +220,8 @@ Then /^I check that the text field with "?(.*?)"? "(.*?)" contains the value for
   if index =~ /zipcode/
     value = @var[index].to_i.to_s
   else
-    value = @var[index]
+    # value = @var[index]
+    value = index
   end
   #what = Regexp.new(Regexp.escape(what)) unless how =~ /index|text/i or what.is_a?(Regexp)
   unless @browser.text_field(how.to_sym, what).value.include?(value)

@@ -200,7 +200,8 @@ module Awetestlib
       def browser_to_use(browser, browser_version = nil)
         platform = ''
         platform = 'Windows' if !!((RUBY_PLATFORM =~ /(win|w)(32|64)$/) || (RUBY_PLATFORM =~ /mswin|mingw/))
-        platform = 'OSX' if RUBY_PLATFORM =~ /darwin/
+        # platform = 'OSX' if RUBY_PLATFORM =~ /darwin/
+        platform = 'OSX' if defined?(JRUBY_VERSION)
 
         browser_abbrev =
             Awetestlib::BROWSER_ALTERNATES[platform][browser] ?
