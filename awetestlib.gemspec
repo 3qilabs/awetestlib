@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
   s.description = %q{Awetest DSL for automated testing of browser-based applications.}
 
   s.add_dependency('watir-webdriver')
+  s.add_dependency('watir-nokogiri')
   s.add_dependency('activesupport', '~> 3.2.17')
   s.add_dependency('andand')
   s.add_dependency('spreadsheet', '0.6.8')
