@@ -44,11 +44,12 @@ module Awetestlib
           when 'FF'
             @myBrowser = open_ff
           when 'S'
-            if USING_OSX
-              @myBrowser = open_safari
-            else
-              raise "Safari is not supported under this operating system #{RUBY_PLATFORM}"
-            end
+            @myBrowser = open_safari
+            # if USING_OSX
+              # @myBrowser = open_safari
+            # else
+              # raise "Safari is not supported under this operating system #{RUBY_PLATFORM}"
+            # end
           when 'C', 'GC'
             @myBrowser = open_chrome
           else
