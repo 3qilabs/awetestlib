@@ -24,9 +24,10 @@ module Awetestlib
       rpt_time        = "#{t.strftime("%Y%m%d_%H%M%S")}"
       rpt_nice_time   = "#{t.strftime("%m/%d/%Y @ %H:%M:%S")}"
       rpt_file_name   = "#{reportName}_#{rpt_time}.html"
-
-      # Create the HTML report
+      @rpt_json_file   = "#{reportName}_#{rpt_time}.json"
+      # Create the HTML & Json report
       rpt_file        = File.open(rpt_file_name, 'w')
+      rpt_json        = File.open(@rpt_json_file, 'w')
 
       # Format the header of the HTML report
       @reportContent1 = '<html>
@@ -104,8 +105,13 @@ module Awetestlib
         <td class=bborder_left width=' + @col_3_p + '><p>Result</p></td>
         </tr>' + "\n"
 
+      @jsonContent={}
+      @jsonContent["report_type"]="Awetestlib Report"
+      @jsonContent["Data_order"]="message, location, result, level, Time.now"
+      @line_no = 1
       # Close the report
       rpt_file.close
+      rpt_json.close
 
       return rpt_file_name
     end
@@ -146,7 +152,8 @@ module Awetestlib
         </tr>'
 
       @reportContent2 += row + "\n"
-
+      @jsonContent["line_no_#{@line_no}"]=[message, location, result, level, Time.now]
+      @line_no +=1
 
       #if (result == 'PASSED')
       #  @reportContent2 = @reportContent2 + '<tr>C'
@@ -169,7 +176,7 @@ module Awetestlib
     def finish_report(reportName)
       # Open the HTML report
       rpt_file = File.open(reportName, 'a')
-
+      rpt_json = File.open(@rpt_json_file, 'a')
       @reportContent2 = @reportContent2 + '<tr>
       <td class=bborder_left width=' + @col_1_p + '><p>&nbsp;</p></td>
       <td class=bborder_left width=' + @col_2_p + '><p>&nbsp;</p></td>
@@ -180,9 +187,10 @@ module Awetestlib
       rpt_file.puts(@reportContent1)
 
       rpt_file.puts(@reportContent2)
-
+      rpt_json.puts(@jsonContent)
       # Close the report
       rpt_file.close
+      rpt_json.close
     end
   end
 end

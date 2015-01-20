@@ -298,7 +298,7 @@ module Awetestlib
       def after_run
         finish_run
         @report_class.finish_report(@html_report_file)
-        open_report_file
+        open_report_file unless Dir.pwd.include? "shamisen/tmp"
         @myLog.close if @myLog
       end
 
