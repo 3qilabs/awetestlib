@@ -1,4 +1,4 @@
-require 'active_support/buffered_logger'
+require 'active_support/logger'
 module Awetestlib
   # Logging and reporting.
   module Logging
@@ -275,8 +275,8 @@ module Awetestlib
         end
       end
       @log_spec = log_spec
-      logger               = ActiveSupport::BufferedLogger.new(log_spec)
-      logger.level         = ActiveSupport::BufferedLogger::DEBUG
+      logger               = ActiveSupport::Logger.new(log_spec)
+      logger.level         = ActiveSupport::Logger::DEBUG
       #logger.auto_flushing = (true)
       logger.add(INFO, "#{log_spec}\n#{ENV["OS"]}")
       logger
