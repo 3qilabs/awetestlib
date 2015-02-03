@@ -36,8 +36,9 @@ module Awetestlib
       my_msg << get_debug_list(false, true, true)
       my_msg << ' '+message
       my_msg << " [#{lnbr}] " if lnbr
-
+      
       @myLog.add(severity, my_msg) if @myLog # add persistent logging for awetestlib. pmn 05jun2012
+
       puts my_msg+"\n"
 
       nil # so method doesn't return whole @output.
@@ -143,7 +144,7 @@ module Awetestlib
     # @return [void]
     def debug_to_log(message, lnbr = nil, dbg = false)
       message << "\n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
-      log_message(DEBUG, "#{message}", nil, lnbr)
+      log_message(DEBUG, "#{message}", lnbr, lnbr)
     end
 
     alias debug_tolog debug_to_log
@@ -152,7 +153,7 @@ module Awetestlib
     # @return [void]
     # @param [String] message The text to place in the log and report
     def error_to_log(message, lnbr = nil)
-      log_message(ERROR, message, nil, lnbr)
+      log_message(ERROR, message, lnbr, lnbr)
     end
 
     alias error_tolog error_to_log
@@ -216,28 +217,28 @@ module Awetestlib
     # @param [String] message The text to place in the log and report
     # @return [void]
     def debug_to_report(message, dbg = false)
-      mark_testlevel("(DEBUG): ", 0, "#{message}", dbg)
+      mark_testlevel('(DEBUG): ', 0, "#{message}", dbg)
     end
 
     # @private
-    # @return [Fixnum] required by logger.
+    # @severity [Fixnum] used by logger.
     def translate_severity(severity)
-      mySev = ''
-      case
-        when severity == 0
-          mySev = 'DEBUG'
-        when severity == 1
-          mySev = 'INFO'
-        when severity == 2
-          mySev = 'WARN'
-        when severity == 3
-          mySev = 'ERROR'
-        when severity == 4
-          mySev = 'FATAL'
-        when severity > 4
-          mySev = 'UNKNOWN'
+      case severity
+        when 0
+          'DEBUG'
+        when 1
+          'INFO'
+        when 2
+          'WARN'
+        when 3
+          'ERROR'
+        when 4
+          'FATAL'
+        when 4
+          'UNKNOWN'
+        else
+          ''
       end
-      mySev
     end
 
     # @private
@@ -265,13 +266,13 @@ module Awetestlib
     end
 
     # @private
-    def init_logger(log_spec, scriptName = nil)
+    def init_logger(log_spec, script_name = nil)
       if File.exist?(log_spec)
         puts "==> log_spec already exists: #{log_spec}. Replacing it."
         begin
           File.delete(log_spec)
         rescue
-          puts "#{scriptName}: init_logger RESCUE: #{$!}"
+          puts "#{script_name}: init_logger RESCUE: #{$!}"
         end
       end
       @log_spec = log_spec

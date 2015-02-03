@@ -206,7 +206,7 @@ module Awetestlib
         browser_abbrev =
             Awetestlib::BROWSER_ALTERNATES[platform][browser] ?
                 Awetestlib::BROWSER_ALTERNATES[platform][browser] : browser
-        if not browser_version
+        unless browser_version
           case browser_abbrev
             when 'IE'
               browser_version = 8
@@ -303,11 +303,11 @@ module Awetestlib
       end
 
       def initiate_html_report
-        @html_report_name = File.join(FileUtils.pwd, 'awetest_reports', @myName)
-        @html_report_dir = File.dirname(@html_report_name)
-        FileUtils.mkdir @html_report_dir unless File.directory? @html_report_dir
+        html_report_name = File.join(FileUtils.pwd, 'awetest_reports', @myName)
+        html_report_dir = File.dirname(html_report_name)
+        FileUtils.mkdir html_report_dir unless File.directory? html_report_dir
         @report_class = Awetestlib::HtmlReport.new(@myName)
-        @html_report_file = @report_class.create_report(@html_report_name)
+        @html_report_file = @report_class.create_report(html_report_name)[0]
       end
 
       def open_report_file
