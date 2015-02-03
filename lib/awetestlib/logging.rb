@@ -39,6 +39,8 @@ module Awetestlib
       
       @myLog.add(severity, my_msg) if @myLog # add persistent logging for awetestlib. pmn 05jun2012
 
+      @report_class.add_to_report(message, caller, text_for_level(tag)) unless Awetestlib::Runner.nil?
+
       puts my_msg+"\n"
 
       nil # so method doesn't return whole @output.
@@ -50,19 +52,21 @@ module Awetestlib
     # @private
     # @param [String, Fixnum] tag
     # @return [String] Single character
-    def pass_code_for(tag)
-      case
-        when tag =~ /PASS/
-          'P'
-        when tag =~ /FAIL/
-          'F'
+    def text_for_level(tag)
+      case tag
+        when /PASS/
+          'PASSED'
+        when /FAIL/
+          'FAILED'
         #when tag =~ /\d+/ # avoid having to require andand for awetestlib. pmn 05jun2012
-        when tag.andand.is_a?(Fixnum)
-          'H'
-        when tag =~ /DONE/
-          'D'
-        when tag =~ /role/
-          'R'
+        when /\d+/ and not '0'
+          tag.to_s
+        when /DONE/
+          'DONE'
+        when /role/
+          'ROLE'
+        else
+          ''
       end
     end
 
