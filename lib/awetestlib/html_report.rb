@@ -109,7 +109,7 @@ module Awetestlib
 
       @jsonContent={}
       @jsonContent["report_type"]="Awetestlib Report"
-      @jsonContent["Data_order"]="message, location, result, level, Time.now"
+      @jsonContent["Data_order"]="message, location, result, level, Time.now, line"
       @line_no = 1
       # Close the report
       rpt_file.close
@@ -154,7 +154,7 @@ module Awetestlib
         </tr>'
 
       @reportContent2 += row + "\n"
-      @jsonContent["line_no_#{@line_no}"]=[message, location, result, level, Time.now]
+      @jsonContent["line_no_#{@line_no}"]=[message, location, result, level, Time.now, @line_no]
       @line_no +=1
 
       #if (result == 'PASSED')
