@@ -1,3 +1,5 @@
+require 'json'
+
 module Awetestlib
   # Report generator for Awetestlib.
   class HtmlReport
@@ -187,7 +189,7 @@ module Awetestlib
       rpt_file.puts(@reportContent1)
 
       rpt_file.puts(@reportContent2)
-      rpt_json.puts(@jsonContent)
+      rpt_json.puts(@jsonContent.to_json)
       # Close the report
       rpt_file.close
       rpt_json.close
