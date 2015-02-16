@@ -68,7 +68,7 @@ module Awetestlib
         <tbody>
         <tr>
         <td style=width: 150px;>&nbsp;</td>
-        <td align=left><img src="https://raw.github.com/3qilabs/awetestlib/develop/images/logo.png"></img></td>
+        <td align=left><img src="http://awetest.com/images/awetest_logo.png"></img></td>
         <td align=right><p class=title>Test Report</p></td>
         </tr>
         </tbody>
@@ -109,7 +109,7 @@ module Awetestlib
 
       @json_content                = {}
       @json_content['report_type'] = 'Awetestlib Report'
-      @json_content['Data_order']  = 'message, location, result, level, Time.now, duration'
+      @json_content['Data_order']  = 'message, location, result, level, Time.now, line, duration'
       @line_no                     = 1
       # Close the report
       rpt_file.close
