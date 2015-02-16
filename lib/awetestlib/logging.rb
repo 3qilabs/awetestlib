@@ -255,7 +255,7 @@ module Awetestlib
           frame.match(/#{script_name}/) or (library && frame.match(/#{library}/))
         end
         unless call_frame.nil?
-          call_frame.gsub!(/^C:/, '')
+          call_frame.gsub!(/^.:/, '')
           file, line, method = call_frame.split(":")
           [File.basename(file), line, method].join(":")
         else
