@@ -1,6 +1,8 @@
-require 'active_support/logger'
+# require 'active_support/logger'
+
 module Awetestlib
   # Logging and reporting.
+
   module Logging
     include ActiveSupport
     # @deprecated
@@ -14,34 +16,43 @@ module Awetestlib
     # @param [String] message The message to be placed in the log.
     # @param [String, Fixnum] tag Indicates the type of message. Valid string values are 'FAIL' and 'PASS'.
     # Valid number values are 0 to 9.
-    # @param [Fixnum] lnbr the line number in the calling script
-    # @param [Fixnum] addts Obsolete, no longer used.
-    # @param [String] exception Obsolete, no longer used.
-    def log_message(severity, message, tag = '', lnbr = nil, addts = 1, exception = nil)
+    def log_message(severity, message, tag = '', who_called = nil)
+      level  = nil
+
       t        = Time.now.utc
       @last_t  ||= t
       duration = (t.to_f - @last_t.to_f)
-      @last_t  = t
+
       tstmp    = t.strftime("%H%M%S") + '.' + t.to_f.modulo(t.to_i).to_s.split('.')[1].slice(0, 5)
+
       my_sev    = translate_severity(severity)
-      my_msg = "%-8s" % my_sev
+      my_msg = '%-8s' % my_sev
       my_msg << '[' + tstmp + ']:'
-      my_msg << "[#{"%9.5f" % duration}]:"
+
+      my_msg << "[#{'%9.5f' % duration}]:"
+
       if tag
         if tag.is_a? Fixnum
           tag = '-LVL' + tag.to_s
+          level = tag.to_i
         end
       end
-      my_msg << "[%-5s]:" % tag
-      my_msg << get_debug_list(false, true, true)
-      my_msg << ' '+message
-      my_msg << " [#{lnbr}] " if lnbr
-      
+      my_msg << '[%-6s][:' % tag
+
+      unless who_called
+        who_called = get_debug_list(false, true, true)
+      end
+      my_msg << who_called
+
+      my_msg << ']: ' + message
+
       @myLog.add(severity, my_msg) if @myLog # add persistent logging for awetestlib. pmn 05jun2012
 
-      @report_class.add_to_report(message, caller, text_for_level(tag)) unless Awetestlib::Runner.nil?
+      puts my_msg + "\n"
 
-      puts my_msg+"\n"
+      @report_class.add_to_report(message, who_called, text_for_level(tag), duration, level) # unless Awetestlib::Runner.nil?
+
+      @last_t = t
 
       nil # so method doesn't return whole @output.
     end
@@ -59,8 +70,10 @@ module Awetestlib
         when /FAIL/
           'FAILED'
         #when tag =~ /\d+/ # avoid having to require andand for awetestlib. pmn 05jun2012
-        when /\d+/ and not '0'
-          tag.to_s
+        when /\d+/
+          unless tag == '0'
+            tag.to_s
+          end
         when /DONE/
           'DONE'
         when /role/
@@ -79,7 +92,7 @@ module Awetestlib
 
       log_messages = ['[log]', '[error]']
       output_lines = output_lines.select { |l| log_messages } #.detect{|msg| l.include?(msg)} }
-      while line = output_lines.shift do
+      while line == output_lines.shift do
         puts "line to be logged: #{line}"
         if line.include? '[log]'
           passed_to_log line
@@ -126,8 +139,8 @@ module Awetestlib
       strg << " (#{desc})" if desc.length > 0
       strg << " [#{call_line}]" if dbg or @debug_calls
       strg << "\n#{list.to_yaml}" if dbg or @debug_calls
-      @report_class.add_to_report(strg, "&nbsp", "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
-      log_message(INFO, strg, lvl, nil, 1)
+      # @report_class.add_to_report(strg, "&nbsp", "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
+      log_message(INFO, strg, lvl, call_arr[1])
     rescue
       failed_to_log("#{__method__}: #{$!}")
     end
@@ -137,7 +150,7 @@ module Awetestlib
     # @param [String] message The text to place in the log
     # @return [void]
     def info_to_log(message, lnbr = nil)
-      log_message(INFO, message, 0, lnbr)
+      log_message(INFO, message)
     end
 
     alias message_tolog info_to_log
@@ -148,7 +161,7 @@ module Awetestlib
     # @return [void]
     def debug_to_log(message, lnbr = nil, dbg = false)
       message << "\n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
-      log_message(DEBUG, "#{message}", lnbr, lnbr)
+      log_message(DEBUG, "#{message}")
     end
 
     alias debug_tolog debug_to_log
@@ -157,7 +170,7 @@ module Awetestlib
     # @return [void]
     # @param [String] message The text to place in the log and report
     def error_to_log(message, lnbr = nil)
-      log_message(ERROR, message, lnbr, lnbr)
+      log_message(ERROR, message)
     end
 
     alias error_tolog error_to_log
@@ -169,8 +182,8 @@ module Awetestlib
       @my_passed_count += 1 if @my_passed_count
       parse_error_references(message)
       caller = get_caller(lnbr)
-      @report_class.add_to_report(message, caller, "PASSED") unless Awetestlib::Runner.nil?
-      log_message(INFO, "#{message}", PASS, lnbr)
+      # @report_class.add_to_report(message, caller, "PASSED") unless Awetestlib::Runner.nil?
+      log_message(INFO, "#{message}", PASS)
     rescue
       failed_to_log(unable_to)
     end
@@ -188,8 +201,8 @@ module Awetestlib
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
       caller = get_caller(lnbr)
-      @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
-      log_message(WARN, "#{message}", FAIL, lnbr, nil, exception)
+      # @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
+      log_message(WARN, "#{message}", FAIL)
     end
 
     alias validate_failed_tolog failed_to_log
@@ -205,9 +218,9 @@ module Awetestlib
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
       caller = get_caller(lnbr)
-      @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
+      # @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
       debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
-      log_message(FATAL, "#{message} (#{lnbr})", FAIL, lnbr, nil, exception)
+      log_message(FATAL, "#{message}", FAIL)
     end
 
     alias fatal_tolog fatal_to_log
@@ -290,10 +303,9 @@ module Awetestlib
     #private init_logger
 
     # @private
-    def start_run(ts = nil)
-      @start_timestamp = Time.now unless ts
-      utc_ts = @start_timestamp.getutc
-      loc_tm = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
+    def start_run(ts = Time.now)
+      utc_ts = ts.getutc
+      loc_tm = "#{ts.strftime("%H:%M:%S")} #{ts.zone}"
       message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
       message_to_report(">> Logging to #{File.join(@myRoot, @log_spec)}") if @log_spec
       message_to_report(">> Running with #{`ruby --version`.chomp}}")

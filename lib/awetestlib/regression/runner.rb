@@ -14,7 +14,7 @@ require 'awetestlib/html_report'; load_time
 require 'ostruct'; load_time
 require 'active_support'; load_time
 require 'active_support/inflector'; load_time
-#require 'sys/uname'; load_time
+require 'sys/uname'; load_time
 
 module Awetestlib
   module Regression
@@ -117,19 +117,19 @@ module Awetestlib
           @xls_path = options[:xls_path]
         end
 
-        #TODO need to find way to calculate these on the fly
-        # window top border 30
-        # IE toolbars 86
-        @vertical_hack_ie   = 117
-        # FF toolbars 114
-        @vertical_hack_ff   = 144
-        # window left border 4
-        @horizontal_hack_ie = 5
-        @horizontal_hack_ff = 4
-        #
-        # @x_tolerance = 12
-        # @y_tolerance = 12
-        #require_gems
+        # #TODO need to find way to calculate these on the fly
+        # # window top border 30
+        # # IE toolbars 86
+        # @vertical_hack_ie   = 117
+        # # FF toolbars 114
+        # @vertical_hack_ff   = 144
+        # # window left border 4
+        # @horizontal_hack_ie = 5
+        # @horizontal_hack_ff = 4
+        # #
+        # # @x_tolerance = 12
+        # # @y_tolerance = 12
+        # #require_gems
       end
 
       #def self.runner_class(options)
@@ -281,7 +281,8 @@ module Awetestlib
 
       def before_run
         initiate_html_report
-        load_time('Total load time', $begin_time)
+        @start_timestamp = Time.now
+        load_time('Total load time', @start_timestamp)
         start_run
       end
 
@@ -297,7 +298,7 @@ module Awetestlib
 
       def after_run
         finish_run
-        @report_class.finish_report(@html_report_file)
+        @report_class.finish_report(@html_report_file, @json_report_file)
         open_report_file unless Dir.pwd.include? "shamisen/tmp"
         @myLog.close if @myLog
       end
@@ -307,7 +308,7 @@ module Awetestlib
         html_report_dir = File.dirname(html_report_name)
         FileUtils.mkdir html_report_dir unless File.directory? html_report_dir
         @report_class = Awetestlib::HtmlReport.new(@myName)
-        @html_report_file = @report_class.create_report(html_report_name)[0]
+        @html_report_file, @json_report_file = @report_class.create_report(html_report_name)[0]
       end
 
       def open_report_file

@@ -109,7 +109,7 @@ module Awetestlib
 
       @json_content                = {}
       @json_content['report_type'] = 'Awetestlib Report'
-      @json_content['Data_order']  = 'message, location, result, level, Time.now, line, duration'
+      @json_content['Data_order'] = 'message, location, result, level, Time.now, duration'
       @line_no                     = 1
       # Close the report
       rpt_file.close
@@ -124,10 +124,13 @@ module Awetestlib
     def add_to_report(message, location, result, duration, level = 1)
       # Format the body of the HTML report
 
+      fmt_duration = "[#{'%9.5f' % (duration)}]:"
+
       left_class   = 'border_left'
       right_class  = 'border_right'
       pgph_class   = 'normal_text'
       loc_class    = 'center_text'
+      dur_class    = 'center_text'
       rslt_class   = 'result_ok'
       middle_class = 'border_middle'
 
@@ -151,27 +154,13 @@ module Awetestlib
       row = '<tr>
         <td class=' + left_class + ' width=' + @col_1_p + '><p class=' + pgph_class + '>' + message + '</p></td>
         <td class=' + middle_class + ' width=' + @col_2_p + '><p class=' + loc_class + '>' + location + '</p></td>
-        <td class=' + middle_class + ' width=' + @col_3_p + '><p class=' + loc_class + '>' + duration + '</p></td>
+        <td class=' + middle_class + ' width=' + @col_3_p + '><p class=' + dur_class + '>' + fmt_duration + '</p></td>
         <td class=' + right_class + ' width=' + @col_4_p + '><p class=' + rslt_class + '>' + result + '</p></td>
         </tr>'
 
       @report_content_2                    += row + "\n"
-      @json_content["line_no_#{@line_no}"] = [message, location, result, level, Time.now, duration]
+      @json_content["line_no_#{@line_no}"] = [message, location, result, level, Time.now, duration, @line_no]
       @line_no                             += 1
-
-      #if (result == 'PASSED')
-      #  @report_content_2 = @report_content_2 + '<tr>C'
-      #  @report_content_2 = @report_content_2 + '<td class=border_right width=20%><p class=result_ok>' + result + '</p></td>'
-      #elsif (result == 'FAILED')
-      #  @report_content_2 = @report_content_2 + '<tr><td class=border_left width=80%><p class=normal_text>' + step + '</p></td>'
-      #  @report_content_2 = @report_content_2 + '<td class=border_right width=20%><p class=result_nok>' + result + '</p></td>'
-      #elsif level < 1
-      #  @report_content_2 = @report_content_2 + '<tr><td class=border_left width=80%><p class=normal_text>' + step + '</p></td>'
-      #  @report_content_2 = @report_content_2 + '<td class=border_right width=20%><p class=result_ok>' + result + '</p></td>'
-      #else
-      #  @report_content_2 = @report_content_2 + '<tr><td class=mark_testlevel_left width=80%><p class=bold_large_text>' + step + '</p></td>'
-      #  @report_content_2 = @report_content_2 + '<td class=mark_testlevel_right width=20%><p class=result_ok>' + result + '</p></td>'
-      #end
 
     end
 
@@ -185,6 +174,7 @@ module Awetestlib
       <td class=bborder_left width=' + @col_1_p + '><p>&nbsp;</p></td>
       <td class=bborder_left width=' + @col_2_p + '><p>&nbsp;</p></td>
       <td class=bborder_left width=' + @col_3_p + '><p>&nbsp;</p></td>
+      <td class=bborder_left width=' + @col_4_p + '><p>&nbsp;</p></td>
       </tr>
       </table>'
       rpt_file.puts(@report_content_1)

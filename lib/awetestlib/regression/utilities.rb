@@ -510,8 +510,9 @@ module Awetestlib
       end
 
       def get_debug_list(dbg = false, no_trace = false, last_only = false)
+        puts "#{__method__} Awetestlib ovrd" if @gaak
         calls = get_call_array(10)
-        puts "#{calls.to_yaml}" if dbg
+        puts "*** #{__LINE__}\n#{calls.to_yaml}\n***" if dbg
         arr = []
         calls.each_index do |ix|
           if ix > 1 # skip this method and the logging method
@@ -520,18 +521,27 @@ module Awetestlib
             end
           end
         end
-        puts "#{arr.to_yaml}" if dbg
+        puts "*** #{__LINE__}\n#{arr.to_yaml}\n***" if dbg
         if arr.length > 0
           list = ''
-          arr.reverse.each { |l| list << "=>#{l}"; break if last_only}
+          arr.reverse.each do |l|
+            if last_only
+              list = l
+              break
+            else
+              list << "=>#{l}"
+            end
+          end
           if no_trace
-            "[#{list}]"
+            "#{list}"
           else
-            " [[TRACE:#{list}]]"
+            " [TRACE:#{list}]"
           end
         else
-          '[]'
+          ''
         end
+      rescue
+        failed_to_log(unable_to)
       end
 
       def filter_call(call)
