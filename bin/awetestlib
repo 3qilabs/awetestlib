@@ -1,5 +1,4 @@
 $: << './lib'
-# $: << '../lib'
 
 $begin_time = Time.now
 $base_time  = Time.now
@@ -7,9 +6,10 @@ $load_times = Hash.new
 $capture_load_times = true if ENV['AWETESTLIB-LOAD-TIMES']
 
 require File.join(File.dirname(__FILE__), 'awetestlib-helpers')
-require 'fileutils'; load_time
+require 'fileutils' # ; load_time
+
 if ENV['RUBY-PROF']
-  require 'ruby-prof'; load_time
+  require 'ruby-prof' # ; load_time
 end
 
 case ARGV[0]
@@ -42,6 +42,9 @@ case ARGV[0]
     require 'awetestlib' #; load_time('awetestlib')
 
     options = {}
+
+    parse_script_type(options)
+
     OptionParser.new do |opts|
       opts.banner = "Usage: awetestlib <script_file> [options]"
 
@@ -121,11 +124,8 @@ case ARGV[0]
 
     options[:log_path_subdir]         = 'logs' if options[:output_to_log] and not options[:log_path_subdir]
 
-    parse_script_type(options)
-
-    # $watir_script       = options[:classic_watir]
+    $watir_script = options[:classic_watir]
     $capture_load_times = options[:capture_load_times] unless $capture_load_times
-
 
     IS_WIN_2008 = File.exists?('config/win2008.txt')
     Awetestlib::Runner.new(options)

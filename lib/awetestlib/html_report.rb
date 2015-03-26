@@ -159,7 +159,7 @@ module Awetestlib
         </tr>'
 
       @report_content_2                    += row + "\n"
-      @json_content["line_no_#{@line_no}"] = [message, location, result, level, Time.now, duration, @line_no]
+      @json_content["line_no_#{@line_no}"] = [message, location, result, level, Time.now, duration]
       @line_no                             += 1
 
     end
