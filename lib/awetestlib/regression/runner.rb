@@ -9,8 +9,8 @@ require 'awetestlib/regression/utilities' # ; load_time
 require 'awetestlib/regression/legacy' # ; load_time
 require 'awetestlib/logging' # ; load_time
 require 'awetestlib/regression/validations' # ; load_time
-require 'html_report' # ; load_time
-# require 'awetestlib/html_report'  # ; load_time
+# require 'html_report' # ; load_time
+require 'awetestlib/html_report' # ; load_time
 #require 'rbconfig'  # ; load_time
 require 'ostruct' # ; load_time
 require 'active_support' # ; load_time
@@ -246,6 +246,9 @@ module Awetestlib
 
           when 'C', 'GC'
             require 'watir-webdriver' # ; load_time
+          else
+            require 'appium_lib'
+            require 'watir-webdriver'
 
           # when 'CL'
           #   require 'celerity'  # ; load_time

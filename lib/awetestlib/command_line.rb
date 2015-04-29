@@ -11,6 +11,7 @@ module CommandLine
         :library              => '-l',
         :xls_path             => '-x',
         :root_path            => '-r',
+        :global_debug => '-D',
         :emulator             => '-E',
         :device_id            => '-I',
         :sdk                  => '-K',

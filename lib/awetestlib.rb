@@ -13,13 +13,18 @@ module Awetestlib
       'FF' => 'Firefox',
       'IE' => 'Internet Explorer',
       'S'  => 'Safari',
-      'MS' => 'Mobile Safari',
-      'MC' => 'Mobile Chrome',
-      'AB' => 'Android Browser',
-      'AM' => 'Android Chromium',
-      'AC' => 'Android Chrome',
+      'SP' => 'Spartan',
       'GC' => 'Google Chrome',
-      'C'  => 'Google Chrome'
+      'C'  => 'Google Chrome',
+      'ME' => 'Mobile Internet Explorer',
+      'MP' => 'Mobile Spartan',
+      'IS' => 'iOS Safari',
+      'MS' => 'iOS Safari',
+      'IC' => 'iOS Chrome',
+      'MC' => 'iOS Chrome',
+      'AC' => 'Android Chrome',
+      'AB' => 'Android Browser',
+      'AM' => 'Android Chromium'
   }
 
   # @private
@@ -186,5 +191,10 @@ module Awetestlib
   require 'w3c_validators'
   require 'roo'
   require 'pry'
+
+  if USING_OSX
+      # Issue with jruby unable to compile
+      # require 'appscript'  #; load_time
+  end
 
 end

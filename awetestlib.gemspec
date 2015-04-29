@@ -15,21 +15,21 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Anthony Woo", "Patrick Neve"]
+  s.authors     = ["Patrick Neve", "Anthony Woo"]
   s.email = %q{patrick@3qilabs.com}
   s.summary = %q{Awetest DSL for automated testing of browser-based applications.}
   s.homepage = %q{http://3qilabs.com}
-  s.description = %q{Awetest DSL for automated testing of browser-based applications.}
+  s.description = %q{Includes Cucumber, Calabash, and Awetest DSL.}
 
   s.add_dependency('watir-webdriver')
   s.add_dependency('watir-nokogiri')
   s.add_dependency('activesupport', '~> 4.2.0')
   s.add_dependency('andand')
-  s.add_dependency('spreadsheet', '0.6.8')
-  s.add_dependency('google-spreadsheet-ruby', '0.1.6')
-  s.add_dependency('roo', '1.13.2')
-  s.add_dependency('multipart-post', '2.0.0')
-  s.add_dependency('selenium-webdriver','2.43.0')
+  s.add_dependency('spreadsheet')
+  s.add_dependency('google-spreadsheet-ruby')
+  s.add_dependency('roo')
+  s.add_dependency('multipart-post')
+  s.add_dependency('selenium-webdriver')
   s.add_dependency('nokogiri')
   s.add_dependency('i18n')
   #s.add_dependency('rb-appscript')
