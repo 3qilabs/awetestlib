@@ -17,7 +17,7 @@ require 'etc'
 require 'yaml'
 require 'active_support'
 require 'active_support/inflector'
-#require 'sys/uname'
+# require 'sys/uname'
 
 require 'watir-webdriver'
 
@@ -168,17 +168,19 @@ module Awetestlib
         mobile           = false
         android_emulator = false
         ios_simulator    = false
+
         if options[:emulator] or options[:sdk] or options[:device_id] or
             options[:device_type] or options[:environment_nodename] =~ /W:|E:|T:|K:|I:/
           require 'appium_lib'
-          # require 'watir-webdriver'
           mobile = true
         end
+
         if options[:emulator]
           android_emulator = true
         elsif options[:sdk]
           ios_simulator = true
         end
+
         [mobile, android_emulator, ios_simulator]
       end
 
@@ -303,7 +305,7 @@ module Awetestlib
 
       def after_run
         finish_run
-        @report_class.finish_report(@html_report_file)
+        @report_class.finish_report(@html_report_file, @json_report_file)
         open_report_file
         @myLog.close if @myLog
       end
@@ -313,7 +315,7 @@ module Awetestlib
         @html_report_dir  = File.dirname(@html_report_name)
         FileUtils.mkdir @html_report_dir unless File.directory? @html_report_dir
         @report_class     = Awetestlib::HtmlReport.new(@myName)
-        @html_report_file = @report_class.create_report(@html_report_name)
+        @html_report_file, @json_report_file = @report_class.create_report(@html_report_name)
       end
 
       def open_report_file

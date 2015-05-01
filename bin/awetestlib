@@ -13,27 +13,27 @@ if ENV['RUBY-PROF']
 end
 
 case ARGV[0]
-  when 'regression_setup'
-    require File.join(File.dirname(__FILE__), "awetestlib-regression-setup")
-    awetestlib_regression_setup
-  when 'rubymine_setup'
-    require File.join(File.dirname(__FILE__), "awetestlib-rubymine-setup")
-    awetestlib_rubymine_setup
-  when 'netbeans_setup'
-    require File.join(File.dirname(__FILE__), "awetestlib-netbeans-setup")
-    awetestlib_netbeans_setup
-  when 'cucumber_setup'
-    require File.join(File.dirname(__FILE__), "awetestlib-cucumber-setup")
-    awetestlib_cucumber_setup
-  when 'mobile_app_setup'
-    require File.join(File.dirname(__FILE__), "awetestlib-mobile-app-setup")
-    awetestlib_mobile_app_setup
-  when 'android_setup'
-    require File.join(File.dirname(__FILE__), "awetestlib-android-setup")
-    awetestlib_android_setup
-  when 'driver_setup'
-    require File.join(File.dirname(__FILE__), "awetestlib-driver-setup")
-    awetestlib_driver_setup
+  # when 'regression_setup'
+  #   require File.join(File.dirname(__FILE__), "awetestlib-regression-setup")
+  #   awetestlib_regression_setup
+  # when 'rubymine_setup'
+  #   require File.join(File.dirname(__FILE__), "awetestlib-rubymine-setup")
+  #   awetestlib_rubymine_setup
+  # when 'netbeans_setup'
+  #   require File.join(File.dirname(__FILE__), "awetestlib-netbeans-setup")
+  #   awetestlib_netbeans_setup
+  # when 'cucumber_setup'
+  #   require File.join(File.dirname(__FILE__), "awetestlib-cucumber-setup")
+  #   awetestlib_cucumber_setup
+  # when 'mobile_app_setup'
+  #   require File.join(File.dirname(__FILE__), "awetestlib-mobile-app-setup")
+  #   awetestlib_mobile_app_setup
+  # when 'android_setup'
+  #   require File.join(File.dirname(__FILE__), "awetestlib-android-setup")
+  #   awetestlib_android_setup
+  # when 'driver_setup'
+  #   require File.join(File.dirname(__FILE__), "awetestlib-driver-setup")
+  #   awetestlib_driver_setup
   when nil?
     print_usage
   else
@@ -48,11 +48,8 @@ case ARGV[0]
     OptionParser.new do |opts|
       opts.banner = "Usage: awetestlib <script_file> [options]"
 
-      opts.on("-b BROWSER", "--browser BROWSER", "Specify a browser (IE, FF, S, C)") do |browser|
+      opts.on("-b", "--browser BROWSER", :required, "Specify a browser by abbreviation (IE, FF, S, C) Required.") do |browser|
         options[:browser] = browser
-      end
-      opts.on("-c", "--classic_watir", "Use Classic Watir for IE instead of Watir-webdriver") do
-        options[:classic_watir] = true
       end
       opts.on("-d", "--debug", "Run debugger on first script failure") do
         options[:debug_on_fail] = true
@@ -63,10 +60,10 @@ case ARGV[0]
       opts.on("-f", "--environment_node_name ENVIRONMENT_NODENAME", "Specify the environment node name") do |node_name|
         options[:environment_nodename] = node_name
       end
-      opts.on("-l LIBRARY", "--library LIBRARY", "Specify a library to be loaded") do |library|
+      opts.on("-l", "--library LIBRARY", "Specify a library to be loaded") do |library|
         options[:library] = library.to_s
       end
-      opts.on("-m RUN_MODE", "--run_mode RUN_MODE", "Specify the run mode: local, local_zip, remote_zip") do |run_mode|
+      opts.on("-m", "--run_mode RUN_MODE", "Specify the run mode: local, local_zip, remote_zip") do |run_mode|
         options[:run_mode] = run_mode
       end
       opts.on("-n", "--environment_name ENVIRONMENT_NAME", "Specify the environment name") do |environment_name|
@@ -78,22 +75,22 @@ case ARGV[0]
       opts.on("-p", "--pry", "Require Pry for debugging") do
         options[:pry] = true
       end
-      opts.on("-r ROOT_PATH", "--root_path ROOT_PATH", "Specify the root path") do |root_path|
+      opts.on("-r", "--root_path ROOT_PATH", "Specify the root path") do |root_path|
         options[:root_path] = root_path
       end
-      opts.on("-s SCREENCAP_PATH", "--screencap-path SCREENCAP_PATH", "Specify the path where screenshots will be saved") do |screencap_path|
+      opts.on("-s", "--screencap-path SCREENCAP_PATH", "Specify the path where screenshots will be saved") do |screencap_path|
         options[:screencap_path] = screencap_path
       end
-      opts.on("-t", "--capture_load_times", "Capture load time for gem requires.") do
-        options[:capture_load_times] = true
+      opts.on("-t", "--locate_timeout LOCATE_TIMEOUT", "Set timeout for locating DOM elements.") do |seconds|
+        options[:locate_timeout] = seconds
       end
-      opts.on("-u SELENIUM_REMOTE_URL", "--selenium_remote_url SELENIUM_REMOTE_URL", "Specify the device's remote url and port") do |remote_url|
+      opts.on("-u", "--selenium_remote_url SELENIUM_REMOTE_URL", "Specify the device's remote url and port") do |remote_url|
         options[:remote_url] = remote_url
       end
-      opts.on("-v VERSION", "--version VERSION", "Specify a browser version") do |version|
+      opts.on("-v", "--version VERSION", "Specify a browser version") do |version|
         options[:version] = version
       end
-      opts.on("-x EXCEL_FILE", "--excel EXCEL_FILE", "Specify an excel file containing variables to be loaded") do |xls_path|
+      opts.on("-x", "--excel EXCEL_FILE", "Specify an excel file containing variables to be loaded") do |xls_path|
         options[:xls_path] = xls_path
       end
       opts.on("-E", "--emulator EMULATOR", "Mobile emulator image (avd)") do |emulator|
@@ -108,11 +105,27 @@ case ARGV[0]
       opts.on("-K", "--sdk SDK", "Mobile native sdk") do |sdk|
         options[:sdk] = sdk
       end
-      opts.on("", "--log_path_subdir LOG_PATH_SUBDIR", "Specify log path relative to root_path.") do |log_path_subdir|
+      opts.on("-S", "--log_path_subdir LOG_PATH_SUBDIR", "Specify log path relative to root_path.") do |log_path_subdir|
         options[:log_path_subdir] = log_path_subdir
       end
-      opts.on("", "--report_all_test_refs", "Include list of all error/test case reference ids actually validated.") do
+      opts.on("-R", "--report_all_test_refs", "Include report of all error/test case reference ids actually validated.") do
         options[:report_all_test_refs] = true
+      end
+      opts.on("-D", "--global_debug", "Set all global debug variables to true. ($DEBUG, $debug, $Debug") do
+        options[:global_debug] = true
+      end
+      opts.on("-L", "--capture_load_times", "Capture load time for gem requires.") do
+        options[:capture_load_times] = true
+      end
+      opts.on("-h", "--help", "Awetestlib options:") do
+        puts opts
+        exit
+      end
+
+      unless options[:browser]
+        puts "Missing -b/--browser option.  We can't test a browser without knowing which one..."
+        puts opts
+        exit
       end
 
     end.parse!

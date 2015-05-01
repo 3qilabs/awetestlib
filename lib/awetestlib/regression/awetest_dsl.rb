@@ -594,6 +594,12 @@ module Awetestlib
               elsif self.device_id
                 self.device_type           = 'Android Device'
                 self.options[:device_type] = 'Android Device'
+                if self.sdk
+                  self.options[:sdk] = self.sdk
+                else
+                  failed_to_log(with_caller("Must supply sdk for Android device."))
+                  ok = false
+                end
               else
                 failed_to_log(with_caller("Must supply either emulator or device id for Android."))
                 ok = false
@@ -2987,10 +2993,11 @@ module Awetestlib
       def get_element_colors(element, colors = [], desc = '', refs = '')
         msg    = build_message(desc, "Get colors for #{element.tag_name.upcase}.", refs)
 
-        colors = [
+        colors =
+            [
             'color', 'background-color', 'border-bottom-color', 'border-left-color', 'border-right-color',
             'border-top-color'
-        ] unless colors.size > 0
+            ] unless colors.size > 0
 
         hash = {}
         colors.each do |color|

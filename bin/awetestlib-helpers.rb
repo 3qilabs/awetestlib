@@ -1,33 +1,34 @@
 def msg(title, &block)
   puts "\n" + "-"*10 + title + "-"*10
   block.call
-  puts "-"*10 + "-------" + "-"*10 + "\n"
+  puts "-"*10 + "-"*title.length + "-"*10 + "\n"
 end
 
 
 def print_usage
   puts <<EOF
-  Usage Options:
-
-    awetestlib regression_setup
-      setup awetest regression and register autoitx3.dll in Windows
-
-    awetestlib rubymine_setup <project_name>
-      setup a rubymine project
-
-    awetestlib netbeans_setup <project_name>
-      setup a netbeans project
-
-    awetestlib mobile_app_setup <project_name>
-      setup a mobile app project
-
-    awetestlib cucumber_setup <project_name>
-      setup cucumber regression and provide skeleton folder structure
+  Usage:
 
     awetestlib <script_file> [parameters]
       run an awetest regression script
 
 EOF
+
+  # awetestlib regression_setup
+  # setup awetest regression and register autoitx3.dll in Windows
+  #
+  # awetestlib rubymine_setup <project_name>
+  #                setup a rubymine project
+  #
+  # awetestlib netbeans_setup <project_name>
+  #                setup a netbeans project
+  #
+  # awetestlib mobile_app_setup <project_name>
+  #                setup a mobile app project
+  #
+  # awetestlib cucumber_setup <project_name>
+  #                setup cucumber regression and provide skeleton folder structure
+
 end
 
 def parse_script_type(options)
