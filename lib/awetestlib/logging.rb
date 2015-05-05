@@ -121,7 +121,8 @@ module Awetestlib
       strg << " (#{desc})" if desc.length > 0
       strg << " [#{call_line}]" if dbg or @debug_calls
       strg << "\n#{list.to_yaml}" if dbg or @debug_calls
-      @report_class.add_to_report(strg, "&nbsp", "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
+      caller = get_caller
+      @report_class.add_to_report(strg, caller, "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
       log_message(INFO, strg, lvl, nil, 1)
     rescue
       failed_to_log("#{__method__}: #{$!}")
