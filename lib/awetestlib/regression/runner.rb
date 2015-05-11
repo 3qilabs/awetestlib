@@ -1,42 +1,46 @@
-require 'awetestlib/regression/browser' # ; load_time
-require 'awetestlib/regression/find' # ; load_time
-require 'awetestlib/regression/user_input' # ; load_time
-require 'awetestlib/regression/waits' # ; load_time
-require 'awetestlib/regression/tables' # ; load_time
-require 'awetestlib/regression/page_data' # ; load_time
-require 'awetestlib/regression/drag_and_drop' # ; load_time
-require 'awetestlib/regression/utilities' # ; load_time
-require 'awetestlib/regression/legacy' # ; load_time
-require 'awetestlib/logging' # ; load_time
-require 'awetestlib/regression/validations' # ; load_time
-# require 'html_report' # ; load_time
-require 'awetestlib/html_report' # ; load_time
-#require 'rbconfig'  # ; load_time
-require 'ostruct' # ; load_time
-require 'active_support' # ; load_time
-require 'active_support/inflector' # ; load_time
-require 'sys/uname' # ; load_time
+require 'awetestlib/regression/browser'
+require 'awetestlib/regression/find'
+require 'awetestlib/regression/user_input'
+require 'awetestlib/regression/waits'
+require 'awetestlib/regression/tables'
+require 'awetestlib/regression/page_data'
+require 'awetestlib/regression/drag_and_drop'
+require 'awetestlib/regression/utilities'
+require 'awetestlib/regression/legacy'
+require 'awetestlib/logging'
+require 'awetestlib/regression/validations'
+require 'awetestlib/html_report'
+#require 'rbconfig'
+require 'ostruct'
+require 'csv'
+require 'etc'
+require 'yaml'
+require 'active_support'
+require 'active_support/inflector'
+# require 'sys/uname'
+
+# require 'watir-webdriver'
 
 module Awetestlib
   module Regression
     # Collects all the components needed to run the script and executes it.
     class Runner < Awetestlib::Runner
 
-    # order matters here
-    #  include Sys  #  # ; load_time('include Sys')
-      include ActiveSupport::Inflector #  # ; load_time('include ActiveSupport::Inflector')
-      include Awetestlib::Logging #  # ; load_time('include Awetestlib::Logging')
-      include Awetestlib::Regression::Utilities #  # ; load_time('include Awetestlib::Regression::Utilities')
-      include Awetestlib::Regression::Browser #  # ; load_time('include Awetestlib::Regression::Browser')
-      include Awetestlib::Regression::Find #  # ; load_time('include Awetestlib::Regression::Find')
-      include Awetestlib::Regression::UserInput #  # ; load_time('include Awetestlib::Regression::UserInput')
-      include Awetestlib::Regression::Waits #  # ; load_time('include Awetestlib::Regression::Waits')
-      include Awetestlib::Regression::Tables #  # ; load_time('include Awetestlib::Regression::Tables')
-      include Awetestlib::Regression::PageData #  # ; load_time('include Awetestlib::Regression::PageData')
-      include Awetestlib::Regression::DragAndDrop #  # ; load_time('include Awetestlib::Regression::DragAndDrop')
-      include Awetestlib::Regression::Validations #  # ; load_time('include Awetestlib::Regression::Validations')
-      include Awetestlib::Regression::Legacy #  # ; load_time('include Awetestlib::Regression::Legacy')
-      load_time('includes')
+      # order matters here
+      #  include Sys  #; load_time('include Sys')
+      include ActiveSupport::Inflector #; load_time('include ActiveSupport::Inflector')
+      include Awetestlib::Logging #; load_time('include Awetestlib::Logging')
+      include Awetestlib::Regression::Utilities #; load_time('include Awetestlib::Regression::Utilities')
+      include Awetestlib::Regression::Browser #; load_time('include Awetestlib::Regression::Browser')
+      include Awetestlib::Regression::Find #; load_time('include Awetestlib::Regression::Find')
+      include Awetestlib::Regression::UserInput #; load_time('include Awetestlib::Regression::UserInput')
+      include Awetestlib::Regression::Waits #; load_time('include Awetestlib::Regression::Waits')
+      include Awetestlib::Regression::Tables #; load_time('include Awetestlib::Regression::Tables')
+      include Awetestlib::Regression::PageData #; load_time('include Awetestlib::Regression::PageData')
+      include Awetestlib::Regression::DragAndDrop #; load_time('include Awetestlib::Regression::DragAndDrop')
+      include Awetestlib::Regression::Validations #; load_time('include Awetestlib::Regression::Validations')
+      include Awetestlib::Regression::Legacy #; load_time('include Awetestlib::Regression::Legacy')
+      # load_time('includes')
 
       ::DEBUG   = 0
       ::INFO    = 1
@@ -54,26 +58,25 @@ module Awetestlib
 
       attr_accessor :browser, :browser_abbrev, :version, :env,
                     :library, :script_type, :script_file, :script_name,
-                    :log_properties, :log_queue, :log_class,
-                    :notify_queue, :notify_class, :notify_id,
+                    # :log_properties, :log_queue, :log_class,
+                    # :notify_queue, :notify_class, :notify_id,
                     :screencap_path, :xls_path, :script_path, :user_token, :root_path,
                     :debug_on_fail,
                     :environment, :environment_name, :environment_url, :environment_nodename,
                     :cycle, :browser_sequence,
                     :output_to_log, :log_path_subdir, :report_all_test_refs,
-                    :timeout, :classic_watir, :capture_load_times, :pry,
-                    :emulator, :device_type, :device_id, :sdk
-
+                    :timeout, :classic_watir, :capture_load_times, :platform, :pry,
+                    :emulator, :device_type, :device_id, :sdk, :options
 
       # TODO: Encapsulate in some kind of config
       ###################################
       def setup_global_test_vars(options)
-        @my_failed_count = 0
-        @my_passed_count = 0
-        @my_error_references         = Hash.new
-        @my_error_hits     = Hash.new
+        @my_failed_count     = 0
+        @my_passed_count     = 0
+        @my_error_references = Hash.new
+        @my_error_hits       = Hash.new
 
-        @report_all_refs  = options[:report_all_test_refs]
+        @report_all_refs = options[:report_all_test_refs]
 
         if options[:environment]
           @myAppEnv = OpenStruct.new(
@@ -87,11 +90,12 @@ module Awetestlib
           @runenv = options[:environment_name]
         end
 
-        @targetBrowser, @actualBrowser  = browser_to_use(options[:browser], options[:version])
-        @targetVersion  = @targetBrowser.version
-        @browserAbbrev  = @targetBrowser.abbrev
-        @myRoot         = options[:root_path] || Dir.pwd  # NOTE: bug fix pmn 05dec2012
-        @myName         = File.basename(options[:script_file]).sub(/\.rb$/, '')
+        @targetBrowser, @actualBrowser = browser_to_use(options[:browser], options[:version])
+        @targetVersion                 = @targetBrowser.version
+        @browserAbbrev                 = @targetBrowser.abbrev
+        @myRoot                        = options[:root_path] || Dir.pwd # NOTE: bug fix pmn 05dec2012
+        @myName                        = File.basename(options[:script_file]).sub(/\.rb$/, '')
+        self.script_name               = File.basename(options[:script_file]).sub(/\.rb$/, '')
 
         if options[:output_to_log]
           log_name = "#{@myName}_#{Time.now.strftime("%Y%m%d%H%M%S")}.log"
@@ -109,66 +113,27 @@ module Awetestlib
           @xls_path = options[:xls_path]
         end
 
-        # #TODO need to find way to calculate these on the fly
-        # # window top border 30
-        # # IE toolbars 86
-        # @vertical_hack_ie   = 117
-        # # FF toolbars 114
-        # @vertical_hack_ff   = 144
-        # # window left border 4
-        # @horizontal_hack_ie = 5
-        # @horizontal_hack_ff = 4
-        # #
-        # # @x_tolerance = 12
-        # # @y_tolerance = 12
-        # #require_gems
       end
 
-      #def self.runner_class(options)
-      #  script_file = options[:script_file]
-      #  load script_file # force a load
-      #
-      #  runner_module = self.module_for script_file
-      #  klass_name    = "#{runner_module.to_s}::Runner"
-      #
-      #  # Define a Runner class in the test script's module inheriting from AwetestLegacy::Runner
-      #  runner_module.module_eval do
-      #    eval <<-RUBY
-      #  class #{klass_name} < Awetestlib::Runner
-      #    def initialize(options)
-      #      #super(options)
-      #      setup_global_test_vars(options)
-      #    end
-      #  end
-      #    RUBY
-      #  end
-      #
-      #  runner = runner_module::Runner.new(options)
-      #
-      #  if options[:library]
-      #    lib_file = options[:library]
-      #    load lib_file
-      #    lib_module = self.module_for lib_file
-      #    runner.extend(lib_module)
-      #  end
-      #
-      #  # Add in the methods defined in the script's module
-      #  runner.extend(runner_module)
-      #  runner
-      #end
-
       def initialize(options)
+
+        puts("#{__method__}:#{__LINE__}\n#{self.options.to_yaml}")
+        self.options = options
 
         options.each_pair do |k, v|
           self.send("#{k}=", v)
         end
 
         if options[:pry]
-          require 'pry' # ; load_time
+          require 'pry'
         end
 
+        $mobile, $emulator, $simulator, $platform = mobile_browser?(options)
+
+        # if verify_browser_options
+
         # load script file to get overrides
-        script_file = options[:script_file]
+        script_file                               = options[:script_file]
         load script_file # ; load_time('Load script file', Time.now)
         setup_global_test_vars(options)
         require_gems
@@ -184,49 +149,51 @@ module Awetestlib
         # load and extend with script to allow overrides in script
         script_file = options[:script_file]
         load script_file # ; load_time('Reload script file', Time.now) # force a fresh load
-        runner_module = module_for script_file
-        self.extend(runner_module)
+        script_module                             = module_for script_file
+        self.extend(script_module)
+      end
 
+      def mobile_browser?(options)
+        puts("#{__method__}:#{__LINE__}\n#{self.options.to_yaml}")
+        mobile           = false
+        android_emulator = false
+        ios_simulator    = false
+
+        if options[:emulator] or options[:sdk] or options[:device_id] or
+            options[:device_type] or options[:environment_nodename] =~ /W:|E:|T:|K:|I:/
+          require 'appium_lib'
+          mobile = true
+        end
+
+        if options[:emulator]
+          android_emulator = true
+        elsif options[:sdk]
+          ios_simulator = true
+        end
+
+        [mobile, android_emulator, ios_simulator, options[:platform]]
       end
 
       def browser_to_use(browser, browser_version = nil)
-        platform = ''
-        platform = 'Windows' if !!((RUBY_PLATFORM =~ /(win|w)(32|64)$/) || (RUBY_PLATFORM =~ /mswin|mingw/))
-        # platform = 'OSX' if RUBY_PLATFORM =~ /darwin/
-        platform = 'OSX' if defined?(JRUBY_VERSION)
 
-        browser_abbrev =
-            Awetestlib::BROWSER_ALTERNATES[platform][browser] ?
-                Awetestlib::BROWSER_ALTERNATES[platform][browser] : browser
-        unless browser_version
-          case browser_abbrev
-            when 'IE'
-              browser_version = 8
-            when 'FF'
-              browser_version = 11
-            when 'C', 'GC'
-              browser_version = 10
-            when 'S'
-              browser_version = 10
-          end
-        end
         target = OpenStruct.new(
-              :name => (Awetestlib::BROWSER_MAP[browser_abbrev]),
-              :abbrev => browser_abbrev,
-              :version => browser_version
+            :name    => (Awetestlib::BROWSER_MAP[self.browser]),
+            :abbrev  => self.browser,
+            :version => browser_version
         )
+
         actual = OpenStruct.new(
-              :name => (Awetestlib::BROWSER_MAP[browser_abbrev]),
-              :abbrev => browser_abbrev,
-              :version => '',
-              :driver => ''
+            :name    => (Awetestlib::BROWSER_MAP[self.browser]),
+            :abbrev  => self.browser,
+            :version => '',
+            :driver  => ''
         )
         [target, actual]
       end
 
       def require_gems
 
-        case @targetBrowser.abbrev
+        case @browserAbbrev
 
           when 'IE'
             if $watir_script
@@ -239,20 +206,9 @@ module Awetestlib
             else
               require 'watir-webdriver' # ; load_time
             end
-          when 'FF'
-            require 'watir-webdriver' # ; load_time
-          when 'S'
-            require 'watir-webdriver' # ; load_time
 
-          when 'C', 'GC'
-            require 'watir-webdriver' # ; load_time
           else
-            require 'appium_lib'
-            require 'watir-webdriver'
-
-          # when 'CL'
-          #   require 'celerity'  # ; load_time
-          #   require 'watir-webdriver'; load_timerequi
+            require 'watir-webdriver' #; load_time
 
         end
 
@@ -276,8 +232,7 @@ module Awetestlib
 
       def before_run
         initiate_html_report
-        @start_timestamp = Time.now
-        load_time('Total load time', @start_timestamp)
+        load_time('Total load time', $begin_time)
         start_run
       end
 
@@ -294,7 +249,7 @@ module Awetestlib
       def after_run
         finish_run
         @report_class.finish_report(@html_report_file, @json_report_file)
-        open_report_file unless Dir.pwd.include? "shamisen/tmp"
+        open_report_file
         @myLog.close if @myLog
       end
 
@@ -302,7 +257,7 @@ module Awetestlib
         html_report_name = File.join(FileUtils.pwd, 'awetest_reports', @myName)
         html_report_dir = File.dirname(html_report_name)
         FileUtils.mkdir html_report_dir unless File.directory? html_report_dir
-        @report_class = Awetestlib::HtmlReport.new(@myName)
+        @report_class   = Awetestlib::HtmlReport.new(@myName)
         @html_report_file, @json_report_file = @report_class.create_report(html_report_name)[0]
       end
 

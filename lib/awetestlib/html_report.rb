@@ -2,6 +2,7 @@ module Awetestlib
   # Report generator for Awetestlib.
   class HtmlReport
 
+    # TODO: split the json and html reports to separate classes
     # Initialize the report class
     # @private
     def initialize(report_name)
@@ -109,8 +110,9 @@ module Awetestlib
 
       @json_content                = {}
       @json_content['report_type'] = 'Awetestlib Report'
-      @json_content['Data_order'] = 'message, location, result, level, Time.now, duration'
+      @json_content['Data_order'] = 'message, location, result, level, Time.now, line, duration'
       @line_no                     = 1
+
       # Close the report
       rpt_file.close
       rpt_json.close
@@ -159,7 +161,7 @@ module Awetestlib
         </tr>'
 
       @report_content_2                    += row + "\n"
-      @json_content["line_no_#{@line_no}"] = [message, location, result, level, Time.now, duration]
+      @json_content["line_no_#{@line_no}"] = [message, location, result, level, Time.now, @line_no, duration]
       @line_no                             += 1
 
     end

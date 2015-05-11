@@ -65,7 +65,7 @@ module Awetestlib
                     :environment, :environment_name, :environment_url, :environment_nodename,
                     :cycle, :browser_sequence,
                     :output_to_log, :log_path_subdir, :report_all_test_refs,
-                    :timeout, :classic_watir, :capture_load_times, :pry,
+                    :timeout, :classic_watir, :capture_load_times, :platform, :pry,
                     :emulator, :device_type, :device_id, :sdk, :options
 
       # TODO: Encapsulate in some kind of config

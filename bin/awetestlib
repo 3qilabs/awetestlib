@@ -13,27 +13,6 @@ if ENV['RUBY-PROF']
 end
 
 case ARGV[0]
-  # when 'regression_setup'
-  #   require File.join(File.dirname(__FILE__), "awetestlib-regression-setup")
-  #   awetestlib_regression_setup
-  # when 'rubymine_setup'
-  #   require File.join(File.dirname(__FILE__), "awetestlib-rubymine-setup")
-  #   awetestlib_rubymine_setup
-  # when 'netbeans_setup'
-  #   require File.join(File.dirname(__FILE__), "awetestlib-netbeans-setup")
-  #   awetestlib_netbeans_setup
-  # when 'cucumber_setup'
-  #   require File.join(File.dirname(__FILE__), "awetestlib-cucumber-setup")
-  #   awetestlib_cucumber_setup
-  # when 'mobile_app_setup'
-  #   require File.join(File.dirname(__FILE__), "awetestlib-mobile-app-setup")
-  #   awetestlib_mobile_app_setup
-  # when 'android_setup'
-  #   require File.join(File.dirname(__FILE__), "awetestlib-android-setup")
-  #   awetestlib_android_setup
-  # when 'driver_setup'
-  #   require File.join(File.dirname(__FILE__), "awetestlib-driver-setup")
-  #   awetestlib_driver_setup
   when nil?
     print_usage
   else
@@ -104,6 +83,9 @@ case ARGV[0]
       end
       opts.on("-K", "--sdk SDK", "Mobile native sdk") do |sdk|
         options[:sdk] = sdk
+      end
+      opts.on("-P", "--platform PLATFORM", "Mobile or desktop platform: Android, iOS, Windows, or Mac") do |platform|
+        options[:platform] = platform
       end
       opts.on("-S", "--log_path_subdir LOG_PATH_SUBDIR", "Specify log path relative to root_path.") do |log_path_subdir|
         options[:log_path_subdir] = log_path_subdir

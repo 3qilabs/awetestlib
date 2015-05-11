@@ -16,6 +16,7 @@ module CommandLine
         :library              => '-l',
         :log_path_subdir      => '-S',
         :output_to_log        => '-o',
+        :platform => '-P',
         :pry                  => '-p',
         :remote_url           => '-u',
         :report_all_test_refs => '-R',
