@@ -110,7 +110,7 @@ module Awetestlib
 
       @json_content                = {}
       @json_content['report_type'] = 'Awetestlib Report'
-      @json_content['Data_order'] = 'message, location, result, level, Time.now, line, duration'
+      @json_content['Data_order'] = 'message, location, result, level, Time.now, line' #, duration'
       @line_no                     = 1
 
       # Close the report
@@ -161,7 +161,7 @@ module Awetestlib
         </tr>'
 
       @report_content_2                    += row + "\n"
-      @json_content["line_no_#{@line_no}"] = [message, location, result, level, Time.now, @line_no, duration]
+      @json_content["line_no_#{@line_no}"] = [message, location, result, level, Time.now, @line_no] #, duration]
       @line_no                             += 1
 
     end
