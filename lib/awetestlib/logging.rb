@@ -1,4 +1,4 @@
-# require 'active_support/logger'
+require 'active_support/logger
 
 module Awetestlib
   # Logging and reporting.
@@ -24,7 +24,6 @@ module Awetestlib
       duration = (t.to_f - @last_t.to_f)
 
       tstmp    = t.strftime("%H%M%S") + '.' + t.to_f.modulo(t.to_i).to_s.split('.')[1].slice(0, 5)
-
       my_sev    = translate_severity(severity)
       my_msg = '%-8s' % my_sev
       my_msg << '[' + tstmp + ']:'
@@ -33,8 +32,8 @@ module Awetestlib
 
       if tag
         if tag.is_a? Fixnum
+          level = tag.to_i   #????
           tag = '-LVL' + tag.to_s
-          level = tag.to_i
         end
       end
       my_msg << '[%-6s][:' % tag
@@ -139,8 +138,9 @@ module Awetestlib
       strg << " (#{desc})" if desc.length > 0
       strg << " [#{call_line}]" if dbg or @debug_calls
       strg << "\n#{list.to_yaml}" if dbg or @debug_calls
-      # @report_class.add_to_report(strg, "&nbsp", "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
-      log_message(INFO, strg, lvl, call_arr[1])
+      caller = get_caller
+      @report_class.add_to_report(strg, caller, "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
+      log_message(INFO, strg, lvl, nil, 1)
     rescue
       failed_to_log("#{__method__}: #{$!}")
     end
@@ -182,7 +182,7 @@ module Awetestlib
       @my_passed_count += 1 if @my_passed_count
       parse_error_references(message)
       caller = get_caller(lnbr)
-      # @report_class.add_to_report(message, caller, "PASSED") unless Awetestlib::Runner.nil?
+      @report_class.add_to_report(message, caller, "PASSED") unless Awetestlib::Runner.nil?
       log_message(INFO, "#{message}", PASS)
     rescue
       failed_to_log(unable_to)
@@ -201,7 +201,7 @@ module Awetestlib
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
       caller = get_caller(lnbr)
-      # @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
+      @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
       log_message(WARN, "#{message}", FAIL)
     end
 
@@ -218,7 +218,7 @@ module Awetestlib
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
       caller = get_caller(lnbr)
-      # @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
+      @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
       debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
       log_message(FATAL, "#{message}", FAIL)
     end
@@ -238,7 +238,7 @@ module Awetestlib
     end
 
     # @private
-    # @severity [Fixnum] used by logger.
+    # @return [Fixnum] required by logger.
     def translate_severity(severity)
       case severity
         when 0
