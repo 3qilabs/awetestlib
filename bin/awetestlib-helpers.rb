@@ -32,7 +32,7 @@ EOF
 end
 
 def parse_script_type(options)
-  script_options = ['Regression', 'Awetest', 'AwetestDSL', 'Awetestlib', 'Cucumber']
+  script_options = ['Regression', 'Awetest', 'AwetestDsl', 'Awetest_DSL', 'Awetestlib']
   if script_options.include? ARGV[0]
     case ARGV[0]
       when 'Regression', 'Awetest', 'AwetestDSL', 'Awetestlib'

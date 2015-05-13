@@ -26,10 +26,10 @@ module Awetestlib
       rpt_time          = "#{t.strftime("%Y%m%d_%H%M%S")}"
       rpt_nice_time     = "#{t.strftime("%m/%d/%Y @ %H:%M:%S")}"
       rpt_file_name     = "#{report_name}_#{rpt_time}.html"
-      rpt_json_file     = "#{report_name}_#{rpt_time}.json"
+      rpt_json_name = "#{report_name}_#{rpt_time}.json"
       # Create the HTML & Json report
       rpt_file          = File.open(rpt_file_name, 'w')
-      rpt_json          = File.open(rpt_json_file, 'w')
+      rpt_json      = File.open(rpt_json_name, 'w')
 
       # Format the header of the HTML report
       @report_content_1 = '<html>
@@ -117,7 +117,7 @@ module Awetestlib
       rpt_file.close
       rpt_json.close
 
-      [rpt_file_name, rpt_json_file]
+      [rpt_file_name, rpt_json_name]
 
     end
 

@@ -117,7 +117,7 @@ module Awetestlib
 
       def initialize(options)
 
-        puts("#{__method__}:#{__LINE__}\n#{self.options.to_yaml}")
+        puts("#{__method__}:#{__LINE__}\n#{options.to_yaml}")
         self.options = options
 
         options.each_pair do |k, v|

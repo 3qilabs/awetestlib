@@ -5,10 +5,6 @@ module Awetestlib
 
   module Logging
     include ActiveSupport
-    # @deprecated
-    def self.included(mod)
-      # puts "RegressionSupport::Logging extended by #{mod}"
-    end
 
     # Format log message and write to STDOUT.  Write to physical log if indicated.
     # @private
@@ -16,40 +12,38 @@ module Awetestlib
     # @param [String] message The message to be placed in the log.
     # @param [String, Fixnum] tag Indicates the type of message. Valid string values are 'FAIL' and 'PASS'.
     # Valid number values are 0 to 9.
-    def log_message(severity, message, tag = '', who_called = nil)
-      level  = nil
+    # @param [String] who_called File, line, and method to override heuristic choice of best place in stack for debugging
+    def log_message(severity, message, tag = '', who_called = nil, exception = nil)
 
-      t        = Time.now.utc
-      @last_t  ||= t
-      duration = (t.to_f - @last_t.to_f)
+      if tag and tag.is_a? Fixnum
+        level = tag
+        tag   = '-LVL' + tag.to_s
+      end
 
-      tstmp    = t.strftime("%H%M%S") + '.' + t.to_f.modulo(t.to_i).to_s.split('.')[1].slice(0, 5)
-      my_sev    = translate_severity(severity)
+      t       = Time.now.utc
+      @last_t ||= t
+
+      durations = calculate_durations(tag, t = Time.now.utc)
+      duration  = (t.to_f - @last_t.to_f)
+
+      tstmp  = t.strftime("%H%M%S") + '.' + t.to_f.modulo(t.to_i).to_s.split('.')[1].slice(0, 5)
+      my_sev = translate_severity(severity)
       my_msg = '%-8s' % my_sev
       my_msg << '[' + tstmp + ']:'
-
-      my_msg << "[#{'%9.5f' % duration}]:"
-
-      if tag
-        if tag.is_a? Fixnum
-          level = tag.to_i   #????
-          tag = '-LVL' + tag.to_s
-        end
-      end
+      my_msg << "[#{'%9.5f' % (t.to_f-@last_t.to_f)}]:"
       my_msg << '[%-6s][:' % tag
 
       unless who_called
         who_called = get_debug_list(false, true, true)
       end
       my_msg << who_called
-
       my_msg << ']: ' + message
 
-      @myLog.add(severity, my_msg) if @myLog # add persistent logging for awetestlib. pmn 05jun2012
-
-      puts my_msg + "\n"
+      @myLog.add(severity, my_msg) if @myLog
 
       @report_class.add_to_report(message, who_called, text_for_level(tag), duration, level) # unless Awetestlib::Runner.nil?
+
+      puts my_msg + "\n"
 
       @last_t = t
 
@@ -57,6 +51,27 @@ module Awetestlib
     end
 
     #private log_message
+
+    def calculate_durations(tag, t = Time.now.utc)
+      last_log_ts ||= t
+      last_lvl_ts ||= t
+      last_val_ts ||= t
+      log_dur     = "%9.5f" % (t.to_f - last_log_ts.to_f)
+      lvl_dur     = "%9.5f" % (t.to_f - last_lvl_ts.to_f)
+      val_dur     = "%9.5f" % (t.to_f - last_val_ts.to_f)
+      last_log_ts = t
+      case tag
+        when /LVL/i
+          last_lvl_ts = t
+          dur         = lvl_dur
+        when /PASS|FAIL/i
+          last_val_ts = t
+          dur         = val_dur
+        else
+          dur = log_dur
+      end
+      [dur, log_dur, lvl_dur, val_dur]
+    end
 
     # Translates tag value to corresponding value for +pass+ column in database.
     # @private
@@ -87,7 +102,7 @@ module Awetestlib
       output_lines = File.open(output_file, 'r') { |f| f.readlines }
       puts "IM FAILING?! #{passed}"
 
-                                                              # if passed
+      # if passed
 
       log_messages = ['[log]', '[error]']
       output_lines = output_lines.select { |l| log_messages } #.detect{|msg| l.include?(msg)} }
@@ -112,7 +127,6 @@ module Awetestlib
       return { :result => passed, :msg => output_lines }
     end
 
-
     # Write a status message to the log and report indicating location or activity
     # in the script. mark_test_level automatically determines the call hierarchy level
     # of the calling method within the script and project utility methods.  The top level
@@ -123,26 +137,36 @@ module Awetestlib
     # @param [Fixnum] lvl '0' forces a message to the report without a specific level
     # attached. Any other integer is ignored in favor of the calculated level
     # @param [String] desc Any additional information to add to the message.
+    # @param [Fixnum] caller Depth in filtered call list to pull caller from.
+    # @param [Fixnum] wai_lvl where_am_i level. Use for overriding calling location for reporting
     # @param [Boolean] dbg When set to true adds a trace to the message.
-    # @return [void]
-    def mark_test_level(message = '', lvl = nil, desc = '', dbg = nil)
-      call_arr = get_call_array()
-      #debug_to_log("#{call_arr.to_yaml}")
-      strg = ''
-      call_script, call_line, call_meth = parse_caller(call_arr[1])
+    # @return [true]
+    def mark_test_level(message = '', lvl = nil, desc = '', caller = 1, wai_lvl = 4, dbg = nil)
+      puts "#{__method__} Awetestlib ovrd" if @gaak
+      call_arr = get_call_array
+      debug_to_log("#{call_arr.to_yaml}") if dbg
+      strg                              = ''
+      call_script, call_line, call_meth = parse_caller(call_arr[caller])
+
       if not lvl or lvl > 1
         lvl, list = get_test_level
-        strg << "#{call_meth.titleize}"
+        strg << "#{call_meth.titleize}: "
       end
+
+      if lvl == 0
+        parse_error_references(message)
+      end
+
       strg << "#{message}" if message.length > 0
       strg << " (#{desc})" if desc.length > 0
       strg << " [#{call_line}]" if dbg or @debug_calls
       strg << "\n#{list.to_yaml}" if dbg or @debug_calls
-      caller = get_caller
-      @report_class.add_to_report(strg, caller, "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
-      log_message(INFO, strg, lvl)
+      @report_class.add_to_report(strg, get_caller, '&nbsp', lvl || 1) if @report_class
+
+      log_message(INFO, strg, lvl, where_am_i?(wai_lvl))
+      true
     rescue
-      failed_to_log("#{__method__}: #{$!}")
+      failed_to_log(unable_to)
     end
 
     alias mark_testlevel mark_test_level
@@ -158,34 +182,34 @@ module Awetestlib
     alias info_tolog info_to_log
 
     # @param [String] message The text to place in the log and report
-    # @return [void]
-    def debug_to_log(message, lnbr = nil, dbg = false)
+    # @return [true]
+    def debug_to_log(message, wai_lvl = 3, dbg = false)
       message << "\n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
-      log_message(DEBUG, "#{message}")
+      log_message(DEBUG, "#{message}", nil, where_am_i?(wai_lvl))
+      true
     end
 
     alias debug_tolog debug_to_log
 
     # @note Do not use for failed validations. Use only for serious error conditions.
-    # @return [void]
+    # @return [false]
     # @param [String] message The text to place in the log and report
-    def error_to_log(message, lnbr = nil)
-      log_message(ERROR, message)
+    def error_to_log(message, wai_lvl = 3, exception = nil)
+      log_message(ERROR, message, nil, where_am_i?(wai_lvl), exception)
+      false
     end
 
     alias error_tolog error_to_log
 
     # @param [String] message The text to place in the log and report
     # @return [void]
-    def passed_to_log(message, lnbr = nil, dbg = false)
+    def passed_to_log(message, wai_lvl = 3, dbg = false)
       message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
       @my_passed_count += 1 if @my_passed_count
       parse_error_references(message)
-      caller = get_caller(lnbr)
-      @report_class.add_to_report(message, caller, "PASSED") unless Awetestlib::Runner.nil?
-      log_message(INFO, "#{message}", PASS)
-    rescue
-      failed_to_log(unable_to)
+      @report_class.add_to_report(message, where_am_i?(wai_lvl), "PASSED") if @report_class
+      log_message(INFO, "#{message}", PASS, where_am_i?(wai_lvl))
+      true
     end
 
     alias validate_passed_tolog passed_to_log
@@ -196,13 +220,13 @@ module Awetestlib
 
     # @param [String] message The text to place in the log and report
     # @return [void]
-    def failed_to_log(message, lnbr = nil, dbg = false, exception = nil)
+    def failed_to_log(message, wai_lvl = 3, dbg = false, exception = nil)
       message << " \n#{get_debug_list}" if dbg.to_s == 'true' or @debug_calls or @debug_calls_fail_only
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
-      caller = get_caller(lnbr)
-      @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
-      log_message(WARN, "#{message}", FAIL)
+      @report_class.add_to_report("#{message}", where_am_i?(wai_lvl), "FAILED") if @report_class
+      log_message(WARN, "#{message}", FAIL, where_am_i?(wai_lvl), exception)
+      false
     end
 
     alias validate_failed_tolog failed_to_log
@@ -213,28 +237,30 @@ module Awetestlib
 
     # @param [String] message The text to place in the log and report
     # @return [void]
-    def fatal_to_log(message, lnbr = nil, dbg = false, exception = nil)
-      message << " \n#{get_debug_list}" if dbg.to_s == 'true' or (@debug_calls and not @debug_calls_fail_only)
+    def fatal_to_log(message, wai_lvl = 3, dbg = false, exception = nil)
+      message << " #{get_debug_list}"
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
-      caller = get_caller(lnbr)
-      @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
-      debug_to_report("#{__method__}:\n#{dump_caller(lnbr)}")
-      log_message(FATAL, "#{message}", FAIL)
+      @report_class.add_to_report("#{message}", where_am_i?(wai_lvl), "FATAL") if @report_class
+      debug_to_report("#{__method__}:\n#{dump_caller(nil)}")
+      log_message(FATAL, "#{message} '#{$!}'", FAIL, where_am_i?(wai_lvl), exception)
+      false
     end
 
     alias fatal_tolog fatal_to_log
 
     # @param [String] message The text to place in the log and report
-    # @return [void]
-    def message_to_report(message, dbg = false)
-      mark_testlevel(message, 0, '', dbg)
+    # @return [true]
+    def message_to_report(message, wai_lvl = 4, dbg = false)
+      mark_test_level(message, 0, '', 1, wai_lvl, dbg)
+      true
     end
 
     # @param [String] message The text to place in the log and report
-    # @return [void]
-    def debug_to_report(message, dbg = false)
-      mark_testlevel('(DEBUG): ', 0, "#{message}", dbg)
+    # @return [true]
+    def debug_to_report(message, wai_lvl = 4, dbg = false)
+      mark_test_level("(DEBUG): ", 0, "#{message}", 1, wai_lvl, dbg)
+      true
     end
 
     # @private
@@ -259,9 +285,24 @@ module Awetestlib
     end
 
     # @private
+    def where_am_i?(index = 2)
+      puts "#{__method__} Awetestlib ovrd. index = #{index}" if @gaak
+      calls = get_call_list #_new
+      puts "=== #{__LINE__}\n#{calls.to_yaml}\n===" if @gaak
+      if calls[index]
+        where = calls[index].dup.to_s
+        here  = where.gsub(/^\[/, '').gsub(/\]\s*$/, '')
+      else
+        here = 'unknown'
+      end
+      here
+    rescue
+      failed_to_log(unable_to)
+    end
+
+    # @private
     def get_caller(lnbr=nil, exception=nil)
-      script_name ||= File.basename(script_file)
-      # lib_name ||= File.basename(library)
+      script_name ||= File.basename(@myName)
       if lnbr && script_type.eql?("Selenium")
         [script_name, lnbr, 'in run()'].join(":")
       elsif lnbr && script_type.eql?("MobileNativeApp")
@@ -269,15 +310,16 @@ module Awetestlib
       else
         caller_object = exception ? exception.backtrace : Kernel.caller
         call_frame    = caller_object.detect do |frame|
-          # frame.match(/#{script_name}/) or (library && frame.match(/#{lib_name}/))
-          frame.match(/#{script_name}/) or (library && frame.match(/#{library}/))
+          frame.match(/#{script_name}/) or
+              (library && frame.match(/#{library}/)) or
+              (@library2 && frame.match(/#{@library2}/))
         end
-        unless call_frame.nil?
-          call_frame.gsub!(/^.:/, '')
+        if call_frame.nil?
+          'unknown'
+        else
+          call_frame.gsub!(/^C:/, '')
           file, line, method = call_frame.split(":")
           [File.basename(file), line, method].join(":")
-        else
-          'unknown'
         end
       end
     end
@@ -292,9 +334,9 @@ module Awetestlib
           puts "#{script_name}: init_logger RESCUE: #{$!}"
         end
       end
-      @log_spec = log_spec
-      logger               = ActiveSupport::Logger.new(log_spec)
-      logger.level         = ActiveSupport::Logger::DEBUG
+      @log_spec    = log_spec
+      logger       = ActiveSupport::Logger.new(log_spec)
+      logger.level = ActiveSupport::Logger::DEBUG
       #logger.auto_flushing = (true)
       logger.add(INFO, "#{log_spec}\n#{ENV["OS"]}")
       logger
@@ -303,68 +345,91 @@ module Awetestlib
     #private init_logger
 
     # @private
-    def start_run(ts = Time.now)
-      utc_ts = ts.getutc
-      loc_tm = "#{ts.strftime("%H:%M:%S")} #{ts.zone}"
-      message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
-      message_to_report(">> Logging to #{File.join(@myRoot, @log_spec)}") if @log_spec
-      message_to_report(">> Running with #{`ruby --version`.chomp}}")
+    def start_run(ts = nil)
+      @start_timestamp = Time.now unless ts
+      @my_failed_count = 0 unless @my_failed_count
+      @my_passed_count = 0 unless @my_passed_count
+      utc_ts           = @start_timestamp.getutc
+      loc_tm           = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
+      message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm}) (Awetestlib)")
+    rescue
+      failed_to_log(unable_to)
     end
-
-    alias start_to_log start_run
 
     # @private
     # Tally and report duration, validation and failure counts, and end time for the script.
     # @param [DateTime] ts Time stamp indicating the time the script completed.
     def finish_run(ts = Time.now)
       tally_error_references
+
       message_to_report(
           ">> #{@myName.titleize} duration: #{sec2hms(ts - @start_timestamp)}")
+
       message_to_report(">> #{@myName.titleize} validations: #{@my_passed_count + @my_failed_count} "+
-                         "fail: #{@my_failed_count}]") if @my_passed_count and @my_failed_count
+                            "fail: #{@my_failed_count}]") if @my_passed_count and @my_failed_count
+
       utc_ts = ts.getutc
       loc_tm = "#{ts.strftime("%H:%M:%S")} #{ts.zone}"
-      message_to_report(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm})")
+      message_to_report(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm}) (Awetestlib)")
+    rescue
+      failed_to_log(unable_to)
     end
-
-    alias finish_to_log finish_run
 
     # @private
     def tally_error_references(list_tags = @report_all_refs)
       tags_tested = 0
       tags_hit    = 0
       if @my_error_hits and @my_error_hits.length > 0
-        message_to_report(">> Failed Defect or Test Case references:")
+        mark_test_level(">> Failed Defect or Test Case instances:") #, -1)
+        #message_to_report(">> Failed Defect or Test Case instances:")
         tags_hit = @my_error_hits.length
-        @my_error_hits.each_key do |ref|
-          message_to_report("#{ref} - #{@my_error_hits[ref]}")
+        @my_error_hits.keys.sort.each do |ref|
+          msg = "#{ref} (#{@my_error_hits[ref]})"
+          msg << " -- #{@refs_desc[ref]}" if @refs_desc
+          message_to_report(msg)
         end
       end
-      if list_tags
-        if @my_error_references and @my_error_references.length > 0
-          message_to_report(">> All tested Defect or Test Case references")
-          tags_tested = @my_error_references.length
-          @my_error_references.each_key do |ref|
-            message_to_report("#{ref} - #{@my_error_references[ref]}")
+      if @my_error_references and @my_error_references.length > 0
+        mark_test_level(">> All tested Defect or Test Case instances:") #, -1)
+        #message_to_report(">> All tested Defect or Test Case instances:")
+        tags_tested = @my_error_references.length
+        if list_tags
+          @my_error_references.keys.sort.each do |ref|
+            msg = "#{ref} (#{@my_error_references[ref]})"
+            msg << " -- #{@refs_desc[ref]}" if @refs_desc
+            message_to_report(msg)
           end
-          message_to_report(">> Fails on tested Defect or Test Case references: #{tags_hit} of #{tags_tested}")
-        else
-          message_to_report(">> No Defect or Test Case references found.")
         end
-      end
-    end
-
-  # @private
-    def parse_error_references(message, fail = false)
-      msg = message.dup
-      while msg =~ /(\*\*\*\s+[\w\d_\s,-:;\?]+\s+\*\*\*)/
-        capture_error_reference($1, fail)
-        msg.sub!($1, '')
+        message_to_report(">> Fails on tested Defect or Test Case references: #{tags_hit} of #{tags_tested}")
+      else
+        message_to_report(">> No Defect or Test Case references found.")
       end
     end
 
     # @private
+    def initialize_reference_regexp
+      puts "#{__method__} Awetestlib ovrd" if @gaak
+      unless @reference_regexp.is_a?(Regexp)
+        @reference_template = '(\*\*\*\s+@@@@\s+\*\*\*)'
+        @reference_pattern  = @reference_template.sub('@@@@', '([\w\d_\s,-:;\?]+)')
+        @reference_regexp   = Regexp.new(@reference_pattern)
+      end
+    end
+
+    def parse_error_references(message, fail = false)
+      puts "#{__method__} Awetestlib ovrd" if @gaak
+      initialize_reference_regexp unless @reference_regexp
+      msg = message.dup
+      while msg.match(@reference_regexp)
+        capture_error_reference($2, fail)
+        msg.sub!($1, '')
+      end
+    rescue
+      failed_to_log(unable_to)
+    end
+
     def capture_error_reference(ref, fail)
+      puts "#{__method__} Awetestlib ovrd" if @gaak
       if fail
         @my_error_hits = Hash.new unless @my_error_hits
         if @my_error_hits[ref]
@@ -380,6 +445,8 @@ module Awetestlib
       else
         @my_error_references[ref] = 1
       end
+    rescue
+      failed_to_log(unable_to)
     end
 
   end

@@ -11,7 +11,7 @@ module GoogleSearch2
   def run_test(browser)
     mark_testlevel("Search for 3qilabs in News", 8)
     # click_text(browser, 'News')
-    set_textfield_by_id(browser, 'gbqfq', '3qi labs')
+    set_textfield_by_id(browser, 'lst-ib', '3qi labs')
     validate_text(browser, '3qi labs', '*** gs2 001 ***')
     validate_text(browser, 'Careers', '*** gs2 002 ***')
     close_browser
