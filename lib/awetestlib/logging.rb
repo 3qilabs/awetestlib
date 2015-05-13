@@ -1,4 +1,4 @@
-require 'active_support/logger
+require 'active_support/logger'
 
 module Awetestlib
   # Logging and reporting.
@@ -140,7 +140,7 @@ module Awetestlib
       strg << "\n#{list.to_yaml}" if dbg or @debug_calls
       caller = get_caller
       @report_class.add_to_report(strg, caller, "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
-      log_message(INFO, strg, lvl, nil, 1)
+      log_message(INFO, strg, lvl)
     rescue
       failed_to_log("#{__method__}: #{$!}")
     end
