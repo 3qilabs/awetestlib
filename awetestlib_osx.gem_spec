@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency('google-spreadsheet-ruby', '0.1.6')
   s.add_dependency('roo', '1.13.2')
   s.add_dependency('multipart-post', '2.0.0')
-  s.add_dependency('selenium-webdriver','2.43.0')
+  s.add_dependency('selenium-webdriver','2.45.0')
   s.add_dependency('nokogiri')
   s.add_dependency('i18n')
   #s.add_dependency('rb-appscript')

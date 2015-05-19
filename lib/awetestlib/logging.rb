@@ -16,7 +16,7 @@ module Awetestlib
     # @param [String] message The message to be placed in the log.
     # @param [String, Fixnum] tag Indicates the type of message. Valid string values are 'FAIL' and 'PASS'.
     # Valid number values are 0 to 9.
-    def log_message(severity, message, tag = '', who_called = nil)
+    def log_message(severity, message, tag = '', who_called = nil, exception = nil)
       level  = nil
 
       t        = Time.now.utc
@@ -40,7 +40,7 @@ module Awetestlib
       my_msg << '[%-6s][:' % tag
 
       unless who_called
-        who_called = get_debug_list(false, true, true)
+        who_called = exception.nil? ? get_caller : get_caller(nil, exception)
       end
       my_msg << who_called
 
@@ -141,7 +141,8 @@ module Awetestlib
       strg << "\n#{list.to_yaml}" if dbg or @debug_calls
 
       # @report_class.add_to_report(strg, "&nbsp", "&nbsp", lvl || 1) unless Awetestlib::Runner.nil?
-      log_message(INFO, strg, lvl, call_arr[1])
+      caller = get_caller
+      log_message(INFO, strg, lvl, caller)
     rescue
       failed_to_log("#{__method__}: #{$!}")
     end
@@ -203,7 +204,7 @@ module Awetestlib
       parse_error_references(message, true)
       caller = get_caller(lnbr)
       # @report_class.add_to_report("#{message}", caller, "FAILED") unless Awetestlib::Runner.nil?
-      log_message(WARN, "#{message}", FAIL)
+      log_message(WARN, "#{message}", FAIL,nil,exception)
     end
 
     alias validate_failed_tolog failed_to_log
@@ -305,6 +306,7 @@ module Awetestlib
 
     # @private
     def start_run(ts = Time.now)
+      @start_timestamp = ts
       utc_ts = ts.getutc
       loc_tm = "#{ts.strftime("%H:%M:%S")} #{ts.zone}"
       message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")

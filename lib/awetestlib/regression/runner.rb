@@ -241,7 +241,7 @@ module Awetestlib
         before_run
         run
       rescue Exception => e
-        failed_to_log(e.to_s)
+        failed_to_log(e.to_s, nil, nil, e)
       ensure
         after_run
       end
@@ -258,7 +258,7 @@ module Awetestlib
         html_report_dir = File.dirname(html_report_name)
         FileUtils.mkdir html_report_dir unless File.directory? html_report_dir
         @report_class   = Awetestlib::HtmlReport.new(@myName)
-        @html_report_file, @json_report_file = @report_class.create_report(html_report_name)[0]
+        @html_report_file, @json_report_file = @report_class.create_report(html_report_name)
       end
 
       def open_report_file

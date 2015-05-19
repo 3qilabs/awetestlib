@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.add_dependency('activesupport', '~> 4.2.0')
   s.add_dependency('andand')
   s.add_dependency('roo')
-  s.add_dependency('selenium-webdriver')
+  s.add_dependency('selenium-webdriver','2.45.0')
   s.add_dependency('nokogiri')
   s.add_dependency('i18n')
   s.add_dependency('appium_lib', '~> 6.0')

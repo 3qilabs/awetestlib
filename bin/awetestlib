@@ -104,13 +104,13 @@ case ARGV[0]
         exit
       end
 
+    end.parse!
+
       unless options[:browser]
         puts "Missing -b/--browser option.  We can't test a browser without knowing which one..."
         puts opts
         exit
       end
-
-    end.parse!
 
     options[:environment]             ||= {}
     options[:environment]['name']     = options[:environment_name]
