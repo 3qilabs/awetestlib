@@ -15,17 +15,17 @@ Gem::Specification.new do |s|
   s.homepage                  = %q{http://3qilabs.com}
   s.description               = %q{Features robust and flexible reporting.}
 
-  s.add_dependency('watir-webdriver', '~> 0')
-  s.add_dependency('watir-nokogiri', '~> 0')
+  s.add_dependency('watir-webdriver')
+  s.add_dependency('watir-nokogiri')
   s.add_dependency('activesupport', '~> 4.2', '>= 4.2.0')
-  s.add_dependency('andand', '~> 0')
+  s.add_dependency('andand')
   s.add_dependency('roo')
   s.add_dependency('selenium-webdriver')
   s.add_dependency('nokogiri')
-  s.add_dependency('i18n', '~> 0')
+  s.add_dependency('i18n')
   s.add_dependency('appium_lib', '~> 6.0')
-  s.add_dependency('pry', '~> 0')
-  s.add_dependency('sys-uname', '~> 0')
+  s.add_dependency('pry')
+  s.add_dependency('sys-uname')
 
   #s.add_dependency('rb-appscript')
 
