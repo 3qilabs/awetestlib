@@ -1,166 +1,4 @@
 module Awetestlib
-  require 'net/telnet'
-
-  # BROWSER_MAP = {
-  #     'FF' => 'Firefox',
-  #     'IE' => 'Internet Explorer',
-  #     'S'  => 'Safari',
-  #     'IS' => 'iOS Safari',
-  #     'MS' => 'iOS Safari',
-  #     'IC' => 'iOS Chrome',
-  #     'MC' => 'iOS Chrome',
-  #     'AB' => 'Android Browser',
-  #     'AM' => 'Android Chromium',
-  #     'AC' => 'Android Chrome',
-  #     'GC' => 'Google Chrome',
-  #     'C'  => 'Google Chrome'
-  # }
-
-  HTML_COLORS = {
-      "#{'Black'.downcase}"                => '#000000',
-      "#{'Navy'.downcase}"                 => '#000080',
-      "#{'DarkBlue'.downcase}"             => '#00008B',
-      "#{'MediumBlue'.downcase}"           => '#0000CD',
-      "#{'Blue'.downcase}"                 => '#0000FF',
-      "#{'DarkGreen'.downcase}"            => '#006400',
-      "#{'Green'.downcase}"                => '#008000',
-      "#{'Teal'.downcase}"                 => '#008080',
-      "#{'DarkCyan'.downcase}"             => '#008B8B',
-      "#{'DeepSkyBlue'.downcase}"          => '#00BFFF',
-      "#{'DarkTurquoise'.downcase}"        => '#00CED1',
-      "#{'MediumSpringGreen'.downcase}"    => '#00FA9A',
-      "#{'Lime'.downcase}"                 => '#00FF00',
-      "#{'SpringGreen'.downcase}"          => '#00FF7F',
-      "#{'Aqua'.downcase}"                 => '#00FFFF',
-      "#{'Cyan'.downcase}"                 => '#00FFFF',
-      "#{'MidnightBlue'.downcase}"         => '#191970',
-      "#{'DodgerBlue'.downcase}"           => '#1E90FF',
-      "#{'LightSeaGreen'.downcase}"        => '#20B2AA',
-      "#{'ForestGreen'.downcase}"          => '#228B22',
-      "#{'SeaGreen'.downcase}"             => '#2E8B57',
-      "#{'DarkSlateGray'.downcase}"        => '#2F4F4F',
-      "#{'LimeGreen'.downcase}"            => '#32CD32',
-      "#{'MediumSeaGreen'.downcase}"       => '#3CB371',
-      "#{'Turquoise'.downcase}"            => '#40E0D0',
-      "#{'RoyalBlue'.downcase}"            => '#4169E1',
-      "#{'SteelBlue'.downcase}"            => '#4682B4',
-      "#{'DarkSlateBlue'.downcase}"        => '#483D8B',
-      "#{'MediumTurquoise'.downcase}"      => '#48D1CC',
-      "#{'Indigo'.downcase}"               => '#4B0082',
-      "#{'DarkOliveGreen'.downcase}"       => '#556B2F',
-      "#{'CadetBlue'.downcase}"            => '#5F9EA0',
-      "#{'CornflowerBlue'.downcase}"       => '#6495ED',
-      "#{'MediumAquaMarine'.downcase}"     => '#66CDAA',
-      "#{'DimGray'.downcase}"              => '#696969',
-      "#{'SlateBlue'.downcase}"            => '#6A5ACD',
-      "#{'OliveDrab'.downcase}"            => '#6B8E23',
-      "#{'SlateGray'.downcase}"            => '#708090',
-      "#{'LightSlateGray'.downcase}"       => '#778899',
-      "#{'MediumSlateBlue'.downcase}"      => '#7B68EE',
-      "#{'LawnGreen'.downcase}"            => '#7CFC00',
-      "#{'Chartreuse'.downcase}"           => '#7FFF00',
-      "#{'Aquamarine'.downcase}"           => '#7FFFD4',
-      "#{'Maroon'.downcase}"               => '#800000',
-      "#{'Purple'.downcase}"               => '#800080',
-      "#{'Olive'.downcase}"                => '#808000',
-      "#{'Gray'.downcase}"                 => '#808080',
-      "#{'SkyBlue'.downcase}"              => '#87CEEB',
-      "#{'LightSkyBlue'.downcase}"         => '#87CEFA',
-      "#{'BlueViolet'.downcase}"           => '#8A2BE2',
-      "#{'DarkRed'.downcase}"              => '#8B0000',
-      "#{'DarkMagenta'.downcase}"          => '#8B008B',
-      "#{'SaddleBrown'.downcase}"          => '#8B4513',
-      "#{'DarkSeaGreen'.downcase}"         => '#8FBC8F',
-      "#{'LightGreen'.downcase}"           => '#90EE90',
-      "#{'MediumPurple'.downcase}"         => '#9370DB',
-      "#{'DarkViolet'.downcase}"           => '#9400D3',
-      "#{'PaleGreen'.downcase}"            => '#98FB98',
-      "#{'DarkOrchid'.downcase}"           => '#9932CC',
-      "#{'YellowGreen'.downcase}"          => '#9ACD32',
-      "#{'Sienna'.downcase}"               => '#A0522D',
-      "#{'Brown'.downcase}"                => '#A52A2A',
-      "#{'DarkGray'.downcase}"             => '#A9A9A9',
-      "#{'LightBlue'.downcase}"            => '#ADD8E6',
-      "#{'GreenYellow'.downcase}"          => '#ADFF2F',
-      "#{'PaleTurquoise'.downcase}"        => '#AFEEEE',
-      "#{'LightSteelBlue'.downcase}"       => '#B0C4DE',
-      "#{'PowderBlue'.downcase}"           => '#B0E0E6',
-      "#{'FireBrick'.downcase}"            => '#B22222',
-      "#{'DarkGoldenRod'.downcase}"        => '#B8860B',
-      "#{'MediumOrchid'.downcase}"         => '#BA55D3',
-      "#{'RosyBrown'.downcase}"            => '#BC8F8F',
-      "#{'DarkKhaki'.downcase}"            => '#BDB76B',
-      "#{'Silver'.downcase}"               => '#C0C0C0',
-      "#{'MediumVioletRed'.downcase}"      => '#C71585',
-      "#{'IndianRed'.downcase}"            => '#CD5C5C',
-      "#{'Peru'.downcase}"                 => '#CD853F',
-      "#{'Chocolate'.downcase}"            => '#D2691E',
-      "#{'Tan'.downcase}"                  => '#D2B48C',
-      "#{'LightGray'.downcase}"            => '#D3D3D3',
-      "#{'Thistle'.downcase}"              => '#D8BFD8',
-      "#{'Orchid'.downcase}"               => '#DA70D6',
-      "#{'GoldenRod'.downcase}"            => '#DAA520',
-      "#{'PaleVioletRed'.downcase}"        => '#DB7093',
-      "#{'Crimson'.downcase}"              => '#DC143C',
-      "#{'Gainsboro'.downcase}"            => '#DCDCDC',
-      "#{'Plum'.downcase}"                 => '#DDA0DD',
-      "#{'BurlyWood'.downcase}"            => '#DEB887',
-      "#{'LightCyan'.downcase}"            => '#E0FFFF',
-      "#{'Lavender'.downcase}"             => '#E6E6FA',
-      "#{'DarkSalmon'.downcase}"           => '#E9967A',
-      "#{'Violet'.downcase}"               => '#EE82EE',
-      "#{'PaleGoldenRod'.downcase}"        => '#EEE8AA',
-      "#{'LightCoral'.downcase}"           => '#F08080',
-      "#{'Khaki'.downcase}"                => '#F0E68C',
-      "#{'AliceBlue'.downcase}"            => '#F0F8FF',
-      "#{'HoneyDew'.downcase}"             => '#F0FFF0',
-      "#{'Azure'.downcase}"                => '#F0FFFF',
-      "#{'SandyBrown'.downcase}"           => '#F4A460',
-      "#{'Wheat'.downcase}"                => '#F5DEB3',
-      "#{'Beige'.downcase}"                => '#F5F5DC',
-      "#{'WhiteSmoke'.downcase}"           => '#F5F5F5',
-      "#{'MintCream'.downcase}"            => '#F5FFFA',
-      "#{'GhostWhite'.downcase}"           => '#F8F8FF',
-      "#{'Salmon'.downcase}"               => '#FA8072',
-      "#{'AntiqueWhite'.downcase}"         => '#FAEBD7',
-      "#{'Linen'.downcase}"                => '#FAF0E6',
-      "#{'LightGoldenRodYellow'.downcase}" => '#FAFAD2',
-      "#{'OldLace'.downcase}"              => '#FDF5E6',
-      "#{'Red'.downcase}"                  => '#FF0000',
-      "#{'Fuchsia'.downcase}"              => '#FF00FF',
-      "#{'Magenta'.downcase}"              => '#FF00FF',
-      "#{'DeepPink'.downcase}"             => '#FF1493',
-      "#{'OrangeRed'.downcase}"            => '#FF4500',
-      "#{'Tomato'.downcase}"               => '#FF6347',
-      "#{'HotPink'.downcase}"              => '#FF69B4',
-      "#{'Coral'.downcase}"                => '#FF7F50',
-      "#{'DarkOrange'.downcase}"           => '#FF8C00',
-      "#{'LightSalmon'.downcase}"          => '#FFA07A',
-      "#{'Orange'.downcase}"               => '#FFA500',
-      "#{'LightPink'.downcase}"            => '#FFB6C1',
-      "#{'Pink'.downcase}"                 => '#FFC0CB',
-      "#{'Gold'.downcase}"                 => '#FFD700',
-      "#{'PeachPuff'.downcase}"            => '#FFDAB9',
-      "#{'NavajoWhite'.downcase}"          => '#FFDEAD',
-      "#{'Moccasin'.downcase}"             => '#FFE4B5',
-      "#{'Bisque'.downcase}"               => '#FFE4C4',
-      "#{'MistyRose'.downcase}"            => '#FFE4E1',
-      "#{'BlanchedAlmond'.downcase}"       => '#FFEBCD',
-      "#{'PapayaWhip'.downcase}"           => '#FFEFD5',
-      "#{'LavenderBlush'.downcase}"        => '#FFF0F5',
-      "#{'SeaShell'.downcase}"             => '#FFF5EE',
-      "#{'Cornsilk'.downcase}"             => '#FFF8DC',
-      "#{'LemonChiffon'.downcase}"         => '#FFFACD',
-      "#{'FloralWhite'.downcase}"          => '#FFFAF0',
-      "#{'Snow'.downcase}"                 => '#FFFAFA',
-      "#{'Yellow'.downcase}"               => '#FFFF00',
-      "#{'LightYellow'.downcase}"          => '#FFFFE0',
-      "#{'Ivory'.downcase}"                => '#FFFFF0',
-      "#{'White'.downcase}"                => '#FFFFFF',
-  }
-
-  VERIFY_MSG     = true
-  NO_DOLLAR_BANG = false
 
   require 'date'
   require 'active_support/all'
@@ -186,325 +24,6 @@ module Awetestlib
 
   def using_jruby?
     defined?(JRUBY_VERSION)
-  end
-
-  module Logging
-
-    def log_message(severity, message, tag = '', lnbr = nil, who_called = nil, exception = nil)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      tag     = '-LVL' + tag.to_s if tag and tag.is_a? Fixnum
-      t       = Time.now.utc
-      @last_t ||= t
-
-      durations = calculate_durations(tag, t = Time.now.utc)
-
-      tstmp  = t.strftime("%H%M%S") + '.' + t.to_f.modulo(t.to_i).to_s.split('.')[1].slice(0, 5)
-      my_sev = translate_severity(severity)
-      my_msg = "%-8s" % my_sev
-      my_msg << '[' + tstmp + ']:'
-      my_msg << "[#{"%9.5f" % (t.to_f-@last_t.to_f)}]:"
-      # my_msg << "[#{durations[0]}]:"
-      my_msg << "[%-6s][" % tag
-      if who_called
-        my_msg << who_called
-      else
-        my_msg << get_debug_list(false, true, true)
-      end
-      my_msg << ']: ' + message
-
-      @myLog.add(severity, my_msg) if @myLog
-
-      @last_t = t
-      puts my_msg + "\n"
-
-      nil # so method doesn't return whole @output.
-    end
-
-    def get_caller(lnbr=nil, exception=nil)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      script_name ||= File.basename(@myName)
-      if lnbr && script_type.eql?("Selenium")
-        [script_name, lnbr, 'in run()'].join(":")
-      elsif lnbr && script_type.eql?("MobileNativeApp")
-        [script_name, lnbr, 'in scenario()'].join(":")
-      else
-        caller_object = exception ? exception.backtrace : Kernel.caller
-        call_frame    = caller_object.detect do |frame|
-          frame.match(/#{script_name}/) or
-              (library && frame.match(/#{library}/)) or
-              (@library2 && frame.match(/#{@library2}/))
-        end
-        if call_frame.nil?
-          'unknown'
-        else
-          call_frame.gsub!(/^C:/, '')
-          file, line, method = call_frame.split(":")
-          [File.basename(file), line, method].join(":")
-        end
-      end
-    end
-
-    def calculate_durations(tag, t = Time.now.utc)
-      last_log_ts ||= t
-      last_lvl_ts ||= t
-      last_val_ts ||= t
-      log_dur     = "%9.5f" % (t.to_f - last_log_ts.to_f)
-      lvl_dur     = "%9.5f" % (t.to_f - last_lvl_ts.to_f)
-      val_dur     = "%9.5f" % (t.to_f - last_val_ts.to_f)
-      last_log_ts = t
-      case tag
-        when /LVL/i
-          last_lvl_ts = t
-          dur         = lvl_dur
-        when /PASS|FAIL/i
-          last_val_ts = t
-          dur         = val_dur
-        else
-          dur = log_dur
-      end
-      [dur, log_dur, lvl_dur, val_dur]
-    end
-
-    def start_run(ts = nil)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      @start_timestamp = Time.now unless ts
-      @my_failed_count = 0 unless @my_failed_count
-      @my_passed_count = 0 unless @my_passed_count
-      utc_ts           = @start_timestamp.getutc
-      loc_tm           = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
-      message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm}) (Awetestlib)")
-    rescue
-      failed_to_log(unable_to)
-    end
-
-    def finish_run(ts = Time.now)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      tally_error_references
-
-      message_to_report(
-          ">> #{@myName.titleize} duration: #{sec2hms(ts - @start_timestamp)}")
-
-      message_to_report(">> #{@myName.titleize} validations: #{@my_passed_count + @my_failed_count} "+
-                            "fail: #{@my_failed_count}]") if @my_passed_count and @my_failed_count
-
-      utc_ts = ts.getutc
-      loc_tm = "#{ts.strftime("%H:%M:%S")} #{ts.zone}"
-      message_to_report(">> End #{@myName.titleize} #{utc_ts} (#{loc_tm}) (Awetestlib)")
-    rescue
-      failed_to_log(unable_to)
-    end
-
-    def tally_error_references(list_tags = @report_all_refs)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      tags_tested = 0
-      tags_hit    = 0
-      if @my_error_hits and @my_error_hits.length > 0
-        mark_test_level(">> Failed Defect or Test Case instances:") #, -1)
-        #message_to_report(">> Failed Defect or Test Case instances:")
-        tags_hit = @my_error_hits.length
-        @my_error_hits.keys.sort.each do |ref|
-          msg = "#{ref} (#{@my_error_hits[ref]})"
-          msg << " -- #{@refs_desc[ref]}" if @refs_desc
-          message_to_report(msg)
-        end
-      end
-      if @my_error_references and @my_error_references.length > 0
-        mark_test_level(">> All tested Defect or Test Case instances:") #, -1)
-        #message_to_report(">> All tested Defect or Test Case instances:")
-        tags_tested = @my_error_references.length
-        if list_tags
-          @my_error_references.keys.sort.each do |ref|
-            msg = "#{ref} (#{@my_error_references[ref]})"
-            msg << " -- #{@refs_desc[ref]}" if @refs_desc
-            message_to_report(msg)
-          end
-        end
-        message_to_report(">> Fails on tested Defect or Test Case references: #{tags_hit} of #{tags_tested}")
-      else
-        message_to_report(">> No Defect or Test Case references found.")
-      end
-    end
-
-    def initialize_reference_regexp
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      unless @reference_regexp.is_a?(Regexp)
-        @reference_template = '(\*\*\*\s+@@@@\s+\*\*\*)'
-        @reference_pattern  = @reference_template.sub('@@@@', '([\w\d_\s,-:;\?]+)')
-        @reference_regexp   = Regexp.new(@reference_pattern)
-      end
-    end
-
-    def parse_error_references(message, fail = false)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      initialize_reference_regexp unless @reference_regexp
-      msg = message.dup
-      while msg.match(@reference_regexp)
-        capture_error_reference($2, fail)
-        msg.sub!($1, '')
-      end
-    rescue
-      failed_to_log(unable_to)
-    end
-
-    def capture_error_reference(ref, fail)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      if fail
-        @my_error_hits = Hash.new unless @my_error_hits
-        if @my_error_hits[ref]
-          @my_error_hits[ref] += 1
-        else
-          @my_error_hits[ref] = 1
-        end
-        #debug_to_report("#{__method__}: error hits:\n#{@my_error_hits.to_yaml}")
-      end
-      @my_error_references = Hash.new unless @my_error_references
-      if @my_error_references[ref]
-        @my_error_references[ref] += 1
-      else
-        @my_error_references[ref] = 1
-      end
-    rescue
-      failed_to_log(unable_to)
-    end
-
-    # def unable_to(message = '', no_dolbang = false, verify_that = false, caller_index = 1)
-    #   call_arr = get_call_array()
-    #   puts call_arr
-    #   call_script, call_line, call_meth = parse_caller(call_arr[caller_index])
-    #   strg                              = "Unable to"
-    #   strg << " verify" if verify_that
-    #   strg << " #{call_meth.titleize}:"
-    #   strg << '?' if call_meth =~ /\?/
-    #   strg << ':'
-    #   strg << " #{message}" if message.length > 0
-    #   strg << " '#{$!}'" unless no_dolbang
-    #   strg
-    # end
-
-    def mark_test_level(message = '', lvl = nil, desc = '', caller = 1, wai_lvl = 4, dbg = nil)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      call_arr = get_call_array
-      debug_to_log("#{call_arr.to_yaml}") if dbg
-      strg                              = ''
-      call_script, call_line, call_meth = parse_caller(call_arr[caller])
-
-      if not lvl or lvl > 1
-        lvl, list = get_test_level
-        strg << "#{call_meth.titleize}: "
-      end
-
-      if lvl == 0
-        parse_error_references(message)
-      end
-
-      strg << "#{message}" if message.length > 0
-      strg << " (#{desc})" if desc.length > 0
-      strg << " [#{call_line}]" if dbg or @debug_calls
-      strg << "\n#{list.to_yaml}" if dbg or @debug_calls
-      @report_class.add_to_report(strg, get_caller, '&nbsp', lvl || 1) if @report_class
-
-      log_message(INFO, strg, lvl, nil, where_am_i?(wai_lvl))
-      true
-    rescue
-      failed_to_log(unable_to)
-    end
-
-    alias mark_testlevel mark_test_level
-
-    def message_to_report(message, wai_lvl = 4, dbg = false)
-      mark_test_level(message, 0, '', 1, wai_lvl, dbg)
-      true
-    end
-
-    def debug_to_report(message, wai_lvl = 4, dbg = false)
-      mark_test_level("(DEBUG): ", 0, "#{message}", 1, wai_lvl, dbg)
-      true
-    end
-
-    def debug_to_log(message, wai_lvl = 3, dbg = false)
-      message << "\n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
-      log_message(DEBUG, "#{message}", nil, nil, where_am_i?(wai_lvl))
-      true
-    end
-
-    def passed_to_log(message, wai_lvl = 3, dbg = false)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      message << " \n#{get_debug_list}" if dbg or @debug_calls # and not @debug_calls_fail_only)
-      @my_passed_count += 1 if @my_passed_count
-      parse_error_references(message)
-      @report_class.add_to_report(message, where_am_i?(wai_lvl), "PASSED") if @report_class
-      log_message(INFO, "#{message}", PASS, nil, where_am_i?(wai_lvl))
-      true
-    end
-
-    def failed_to_log(message, wai_lvl = 3, dbg = false, exception = nil)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      message << " \n#{get_debug_list}" if dbg.to_s == 'true' or @debug_calls or @debug_calls_fail_only
-      @my_failed_count += 1 if @my_failed_count
-      parse_error_references(message, true)
-      @report_class.add_to_report("#{message}", where_am_i?(wai_lvl), "FAILED") if @report_class
-      log_message(WARN, "#{message}", FAIL, nil, where_am_i?(wai_lvl), exception)
-      false
-    end
-
-    def fatal_to_log(message, wai_lvl = 3, dbg = false, exception = nil)
-      puts "#{__method__} Awetestlib ovrd" if @gaak
-      message << " #{get_debug_list}"
-      @my_failed_count += 1 if @my_failed_count
-      parse_error_references(message, true)
-      @report_class.add_to_report("#{message}", where_am_i?(wai_lvl), "FATAL") if @report_class
-      debug_to_report("#{__method__}:\n#{dump_caller(nil)}")
-      log_message(FATAL, "#{message} '#{$!}'", FAIL, nil, where_am_i?(wai_lvl), exception)
-      false
-    end
-
-    def error_to_log(message, wai_lvl = 3, exception = nil)
-      log_message(ERROR, message, nil, nil, where_am_i?(wai_lvl), exception)
-      false
-    end
-
-    # def get_call_list_new(depth = 10, dbg = false)
-    #   puts "#{__method__} Awetestlib ovrd" if @gaak
-    #   a_list    = ['[unknown]']
-    #   proj_name = File.basename(@library)
-    #   call_list = Kernel.caller
-    #   puts call_list if dbg
-    #   call_list.each_index do |x|
-    #     a_caller = call_list[x].to_s
-    #     a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-    #     caller = $1
-    #     if caller =~ /#{@myName}/
-    #       a_list << "[#{caller.gsub(/\(eval\)/, "(#{@myName})")}] "
-    #     elsif proj_name and caller =~ /#{proj_name}/
-    #       a_list << "[#{caller.gsub(/\(eval\)/, "(#{proj_name})")}] " if proj_name
-    #     elsif @library2 and caller =~ /#{@library2}/
-    #       a_list << "[#{caller.gsub(/\(eval\)/, "(#{@library2})")}] " if @library2
-    #     else
-    #       a_list << "[#{caller}]"
-    #     end
-    #     next if a_caller =~ /:in .run.$/
-    #     break if x > depth
-    #   end
-    #   a_list
-    # rescue
-    #   failed_to_log(unable_to)
-    # end
-
-    def where_am_i?(index = 2)
-      puts "#{__method__} Awetestlib ovrd. index = #{index}" if @gaak
-      calls = get_call_list #_new
-      puts "=== #{__LINE__}\n#{calls.to_yaml}\n===" if @gaak
-      if calls[index]
-        where = calls[index].dup.to_s
-        here  = where.gsub(/^\[/, '').gsub(/\]\s*$/, '')
-      else
-        here = 'unknown'
-      end
-      here
-    rescue
-      failed_to_log(unable_to)
-    end
-
   end
 
   module Regression
@@ -661,9 +180,6 @@ module Awetestlib
         browser = nil
 
         if $mobile
-          end_android_processes if $platform == :android
-          clean_up_android_temp unless $device
-          sleep_for(3)
           browser = open_mobile_browser
         else
           case @targetBrowser.abbrev
@@ -702,75 +218,106 @@ module Awetestlib
         failed_to_log(unable_to)
       end
 
-      def set_mobile_capabilities(device_id, device_type, sdk, emulator, http_client, server_url = "http://127.0.0.1:4723/wd/hub")
-        mark_test_level
+      def start_appium
 
-        case device_type
+        debug_to_log("#{Dir.pwd.chomp}")
+        log_file = File.join(Dir.pwd.chomp, 'log', "#{@myName}_appium_#{@start_timestamp.strftime("%Y%m%d%H%M%S")}.log")
+        command  = "appium --log #{log_file} "
+        # command = "appium --log-no-colors --log-timestamp --local-timezone --log #{log_file}"
+        # command = "appium --log-no-colors --log-timestamp --local-timezone --log #{log_file}"
+        # command = "appium --log-no-colors --log-timestamp --local-timezone --log #{log_file}"
+        debug_to_log(command)
+        appium = IO.popen(command)
+        debug_to_log("Appium PID: #{appium.pid}")
+        3.times { debug_to_log(appium.readline.chomp) }
+        appium
+
+      rescue => e
+        fatal_to_log(unable_to)
+        raise(e)
+      end
+
+      # def stop_appium
+      #   if USING_OSX
+      #     system("ps aux | grep appium | grep 'device-name #{self.device_id}' | awk '{print $2}' | xargs kill -9")
+      #     # system("kill -9 #{webkit_proxy_id}") if webkit_proxy_id
+      #   else
+      #     system("taskkill /F /t /pid #{@appium_pid}")
+      #     # system("taskkill /F /t /pid #{webkit_proxy_id}") if webkit_proxy_id
+      #   end
+      # end
+
+      # def stop_adb
+      #   if USING_OSX
+      #     system("ps aux | grep adb | awk '{print $2}' | xargs kill -9")
+      #   else
+      #     system("taskkill /IM adb.exe")
+      #   end
+      # end
+
+      # def stop_android_emulator
+      #   system("adb -s emulator-5554 emu help")
+      #   #  system("adb -s emulator-5554 emu kill")
+      #   begin
+      #     telnet = Net::Telnet.new("Host" => "127.0.0.1", "Port" => 5554)
+      #     telnet.cmd("kill")
+      #   rescue
+      #   end
+      #
+      # end
+
+      def set_mobile_capabilities
+        device_type = self.device_type
+        device_id   = self.device_id
+        ios_version = self.sdk ? self.sdk : '8.1'
+        mark_test_level(": #{device_type.titleize}")
+
+        case self.device_type
 
           when /android device/i
             desired_caps = {
-                :caps       => {
-                    :newCommandTimeout         => 600,
-                    :androidDeviceReadyTimeout => 420,
-                    :avdLaunchTimeout          => 240000,
-                    :avdReadyTimeout           => 240000,
-                    :deviceName                => "Android Device",
-                    :automationName            => "Appium",
-                    :platformName              => "Android",
-                    :browserName               => "Chrome",
-                    :platformVersion           => sdk,
-                    'app'                      => "chrome",
-                    # 'appPackage'                => "com.android.chrome",
-                    :udid                      => device_id,
-                    :http_client               => http_client,
-                    :chromeOptions             => { "args" => ['--ignore-certificate-errors', '--verbose'] } #ignore-certificate-errors=true homepage=about:blank test_type=true' }
-                },
-                :appium_lib => {
-                    :server_url => server_url
-                }
-            }
+                'deviceName'   => "My_device",
+                'platformName' => "Android",
+                'app'          => "Chrome",
+                'appPackage'   => "com.android.chrome",
+                'udid'         => device_id }
 
           when /android emulator/i
 
-            # NOTE: avd cannot start from snapshot?.
+            # NOTE: appium cannot start avd from snapshot.
 
             desired_caps = {
-                :caps       => {
-                    :newCommandTimeout         => 1200,
-                    :androidDeviceReadyTimeout => 420,
-                    :avdLaunchTimeout          => 240000,
-                    :avdReadyTimeout           => 240000,
-                    :debug                     => true,
-                    :deviceName                => "Android Emulator",
-                    :platformName              => "Android",
-                    :avd                       => emulator,
-                    :browserName               => "Browser",
-                    :avdArgs                   => '-no-audio -http-proxy 151.151.15.250:8080 -dns-server 10.27.206.11:55,10.27.206.101:55,10.91.218.197:55',
-                    :http_client               => http_client,
-                    :chromeOptions             => { 'args' => ['--ignore-certificate-errors', '--verbose'] }
-                },
-                :appium_lib => {
-                    :server_url => server_url
-                }
+                'newCommandTimeout'         => 600,
+                'androidDeviceReadyTimeout' => 420,
+                'avdLaunchTimeout'          => 240000,
+                'avdReadyTimeout'           => 240000,
+                'deviceName'                => "My_device",
+                'platformName'              => "Android",
+                'avd'                       => "poc-x86",
+                'browserName'               => "Browser",
+                'avdArgs'                   => '-no-audio -http-proxy 151.151.15.250:8080 -dns-server 10.27.206.11:55,10.27.206.101:55,10.91.218.197:55',
+                # TODO: these lines trigger EPIPE write error because a pipe involving stdout is closed before the write completes
+                # TODO: Need to check if epipebomb is included in most recent node release
+                'chromeOptions'             => { 'args' => ['ignore-certificate-errors=true', 'homepage=about:blank', 'test_type=true'] }
             }
 
           when /ios device/i
             desired_caps = {
-                'platformVersion' => sdk,
+                'platformVersion' => ios_version,
                 'deviceName'      => "My_device",
                 'platformName'    => "iOS",
                 'browserName'     => 'Safari',
                 'udid'            => device_id }
 
-          when /ios simulator/i
+          else #iOS simulator
             desired_caps = {
                 'deviceName'      => device_type,
-                'platformVersion' => sdk,
+                'platformVersion' => ios_version,
                 'browserName'     => 'Safari',
                 'platformName'    => "iOS" }
-          else
-            raise "Unrecognized mobile device type: '#{device_type}'"
         end
+
+        debug_to_log(with_caller("\n#{desired_caps.to_yaml}"))
 
         desired_caps
       rescue
@@ -781,35 +328,51 @@ module Awetestlib
 
         mark_test_level(": #{self.device_type.titleize}")
 
-        debug_to_log(with_caller("$debug => #{$debug}, $DEBUG => #{$DEBUG}"))
-        log_level = $debug ? 'debug:debug' : 'info:debug'
+        if self.device_type =~ /android emulator/i
+          end_processes('adb.exe', 'node.exe', 'emulator-arm.exe', 'emulator-x86.exe', 'chromedriver.exe')
+
+          # debug_to_log("Regular Boot sequence for Android Emulator")
+          # emulator_command = 'emulator -avd poc -no-audio -http-proxy 151.151.15.250:8080 -dns-server 10.27.206.11,10.27.206.101,10.91.218.197 -no-boot-anim'
+          # debug_to_log("[#{emulator_command}]")
+          # system("#{emulator_command} &")
+          # system("adb wait-for-device")
+          # sleep 40
+          # unlock_emulator
+
+        end
 
         debug_to_log("#{Dir.pwd.chomp}")
-        log_file = File.join(Dir.pwd.chomp, 'log', "#{File.basename(__FILE__, '.rb')}_appium_lib_#{Time.now.strftime("%Y%m%d%H%M%S")}.log")
-        command  = "start \"appium server\" appium --log-timestamp --log-level #{log_level} -g #{log_file} &"
+        log_file = File.join(Dir.pwd.chomp, 'log', "#{@myName}_appium_#{@start_timestamp.strftime("%Y%m%d%H%M%S")}.log")
+        command  = "appium --log-timestamp --local-timezone --log #{log_file} &"
         debug_to_log(command)
-        appium      = IO.popen(command, :err => :out)
-        @appium_pid = appium.pid
-        debug_to_log("Appium PID: #{@appium_pid}")
+        appium   = IO.popen(command)
+        debug_to_log("Appium PID: #{appium.pid}")
+        5.times { debug_to_log(appium.readline.chomp) }
 
-        debug_to_log("nodejs version: #{`"C:\\Program Files (x86)\\Appium\\node" --version`.chomp}")
-        sleep_for(10)
+        capabilities = set_mobile_capabilities
 
+        server_url     = "http://127.0.0.1:4723/wd/hub"
         client         = Selenium::WebDriver::Remote::Http::Default.new
-        client.timeout = 300
-        desired_caps = set_mobile_capabilities(self.device_id, self.device_type, self.sdk, self.emulator, client)
+        client.timeout = 360
 
-        debug_to_log(desired_caps.to_yaml)
+        debug_to_log(with_caller("Calling Watir::Browser.new (through Appium)"))
 
-        Appium::Driver.new(desired_caps)
-        $driver.start_driver
-        # who_is_there?(__LINE__)
+        begin
+          browser = Watir::Browser.new(:chrome, #:android, #:remote, #:chrome,    #:remote,
+                                       :url                  => server_url,
+                                       :desired_capabilities => capabilities,
+                                       :http_client          => client)
+          browser.goto('wf.com')
+          sleep_for(5)
+        rescue => e
+          failed_to_log(with_caller(e))
+        end
 
-        debug_to_log('Getting Watir Browser from driver...')
-        browser = Watir::Browser.new($driver.driver)
-        # who_is_there?(__LINE__, browser)
-
-        # browser.goto('wf.com')
+        begin
+          debug_to_log(with_caller(browser.driver.capabilities.to_yaml))
+        rescue
+          puts 'oops browser.driver.capabilities.to_yaml'
+        end
 
         browser
       rescue
@@ -1031,7 +594,7 @@ module Awetestlib
       alias get_browser_version browser_version
 
       def close_browser(browser, where = @myName, lnbr = __LINE__)
-        debug_to_log("Closing browser in #{where} at line #{lnbr}.", lnbr, true)
+        debug_to_log("Closing browser in #{where} at line #{lnbr}.")
         debug_to_log("#{__method__}: browser: #{browser.inspect} (#{__LINE__})")
 
         url   = browser.url
@@ -1042,8 +605,7 @@ module Awetestlib
         if $mobile
           browser.close
           sleep(1)
-          end_android_processes if $platform == :android
-          clean_up_android_temp unless $device
+          end_processes('adb.exe', 'node.exe', 'emulator-arm.exe')
 
         elsif ['FF', 'S'].include?(@browserAbbrev) || browser.exists?
           case @browserAbbrev
@@ -1807,9 +1369,9 @@ module Awetestlib
       end
 
       def get_debug_list(dbg = false, no_trace = false, last_only = false)
-        puts "#{__method__} Awetestlib ovrd" if @gaak
+        debug_to_log(with_caller("awetest_dsl override")) if $debug
         calls = get_call_array(10)
-        puts "*** #{__LINE__}\n#{calls.to_yaml}\n***" if dbg
+        debug_to_log(with_caller("*** #{__LINE__}\n#{calls.to_yaml}\n***")) if dbg
         arr = []
         calls.each_index do |ix|
           if ix > 1 # skip this method and the logging method
@@ -1818,7 +1380,7 @@ module Awetestlib
             end
           end
         end
-        puts "*** #{__LINE__}\n#{arr.to_yaml}\n***" if dbg
+        debug_to_log(with_caller("*** #{__LINE__}\n#{arr.to_yaml}\n***")) if dbg
         if arr.length > 0
           list = ''
           arr.reverse.each do |l|
@@ -1842,10 +1404,10 @@ module Awetestlib
       end
 
       def get_call_list(depth = 9, dbg = false)
-        puts "#{__method__} Awetestlib ovrd" if @gaak
+        debug_to_log(with_caller("awetest_dsl override")) if $debug
         my_list   = []
         call_list = Kernel.caller
-        puts call_list if dbg
+        debug_to_log(with_caller(call_list)) if dbg
         call_list.each_index do |x|
           my_caller = call_list[x].to_s
           my_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
@@ -1858,11 +1420,11 @@ module Awetestlib
       end
 
       def get_call_list_new(depth = 15, dbg = false)
-        puts "#{__method__} Awetestlib ovrd" if @gaak
+        debug_to_log(with_caller("awetest_dsl override")) if $debug
         a_list    = ['[unknown]']
         proj_name = File.basename(@library)
         call_list = Kernel.caller
-        puts call_list if dbg
+        debug_to_log(with_caller(call_list)) if dbg
         call_list.each_index do |x|
           a_caller = call_list[x].to_s
           a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
@@ -1885,7 +1447,7 @@ module Awetestlib
       end
 
       def get_call_array(depth = 9)
-        puts "#{__method__} Awetestlib ovrd" if @gaak
+        debug_to_log(with_caller("awetest_dsl override")) if $debug
         arr       = []
         call_list = Kernel.caller
         call_list.each_index do |x|
@@ -2487,37 +2049,30 @@ module Awetestlib
         failed_to_log(unable_to("'#{target}'"))
       end
 
-      def clean_up_android_temp
+      def end_processes(*names)
+        pattern = ''
+        names.each { |n| pattern << "#{n}|" }
+        pattern.chop!
+        # puts pattern
+        targets = {}
 
-        debug_to_log 'Here we will clean up emulator TMP files...'
-        user              = Etc::getlogin
-        # debug_to_log user
-        android_temp_path = 'C:\\Users\\'+user+'\\AppData\\Local\\Temp\\AndroidEmulator'
-        debug_to_log android_temp_path
-        dir = Dir.new(android_temp_path)
-        dir.each do |file|
-          debug_to_log file if file =~ /^TMP.+\.tmp/
+        if USING_OSX
+          p_io = IO.popen("ps axo comm,pid,sess,fname")
+        else
+          p_io = IO.popen("tasklist /nh")
         end
-        tmp_ptrn = '\\TMP*.tmp'
-        dir_cmd  = "dir #{android_temp_path}#{tmp_ptrn} 2>&1"
-        del_cmd  = "del #{android_temp_path}#{tmp_ptrn} 2>&1"
-        debug_to_log "#{__LINE__}: #{dir_cmd}"
-        dir_out = `#{dir_cmd}`
-        unless dir_out =~ /file not found/i
-          debug_to_log "#{__LINE__}: #{del_cmd}"
-          debug_to_log `#{del_cmd}`.chomp
-          if `#{dir_cmd}` =~ /file not found/i
-            debug_to_log 'Emulator TMP files deleted successfully'
+
+        p_io.readlines.each do |prc|
+          # puts prc.chop
+          if prc =~ /#{pattern}/
+            name, pid    = prc.split(/\s+/)[0, 2]
+            # puts "#{name} #{pid}"
+            base         = File.basename(name)
+            targets[pid] = base
           end
         end
 
-      end
-
-      def end_android_processes
-
-        processes = ['node.exe', 'emulator-arm.exe', 'emulator-x86.exe', 'adb.exe', 'chromedriver.exe', 'cmd.exe']
-        tasks     = get_process_list
-        targets   = []
+        debug_to_log("End these processes:\n#{targets.to_yaml}")
 
         if USING_OSX
           kill_cmd = 'kill -9 @@@@@'
@@ -2525,73 +2080,16 @@ module Awetestlib
           kill_cmd = 'taskkill /f /pid @@@@@'
         end
 
-        processes.each do |image_name|
-          if image_name == 'cmd.exe'
-            hit = tasks.detect { |t| t[:window_title] =~ /^appium server/i }
-          else
-            hit = tasks.detect { |t| t[:image_name] =~ /^#{image_name}/i }
-          end
-
-          if hit and hit.length > 0
-            targets << hit
-          end
-        end
-
-        ['node.exe', 'emulator', 'cmd.exe', 'adb.exe', 'chromedriver'].each do |process|
-          hit = targets.detect { |t| t[:image_name] =~ /^#{process}/i }
-          if hit and hit.length > 0
-            pid   = hit[:pid]
-            name  = hit[:image_name]
-            title = hit[:window_title]
+        targets.each do |pid, name|
             cmd   = kill_cmd.sub('@@@@@', pid)
-            debug_to_log("[#{cmd}] #{name} #{title}")
+            debug_to_log("[#{cmd}]")
             kill_io = IO.popen(cmd, :err => :out)
             debug_to_log(kill_io.read.chomp)
-            kill_io.close
           end
 
+        if targets.length > 0
+          sleep_for(10)
         end
-      rescue
-        failed_to_log(unable_to)
-      end
-
-      def get_process_list
-
-        if USING_OSX
-          cmd = "ps axo comm,pid,sess,fname"
-        else
-          cmd = 'tasklist /v -fo csv 2>&1'
-        end
-
-        debug_to_log(cmd)
-        raw  = `#{cmd}`
-        list = raw.force_encoding(Encoding::UTF_8)
-        debug_to_log(list)
-        if list =~ /No tasks are running which match the specified criteria/i
-          tasks = nil
-        else
-          begin
-            csv = CSV.new(list, :headers => true, :header_converters => :symbol)
-            debug_to_log(with_caller(__LINE__, "\n", "#{csv}"))
-          rescue => e
-            raise e
-          end
-          begin
-            arr = csv.to_a
-            debug_to_log(with_caller(__LINE__, "\n", "#{arr}"))
-          rescue => e
-            raise e
-          end
-          begin
-            tasks = arr.map { |row| row.to_hash }
-            debug_to_log(tasks)
-          rescue => e
-            raise e
-          end
-        end
-        tasks
-      rescue
-        failed_to_log(unable_to)
       end
 
       def escape_stuff(strg)
@@ -2735,7 +2233,7 @@ module Awetestlib
       end
 
       def set_env_name(xls = @xls_path, fix = :prefix, strg = 'toad')
-        puts "#{__method__} Awetestlib ovrd" if @gaak
+        debug_to_log(with_caller("awetest_dsl override")) if $debug
         if fix == :prefix
           pattern = /#{strg}_([\w\d]+)\.xls$/
         else
@@ -2762,7 +2260,7 @@ module Awetestlib
       end
 
       def set_xls_spec(proj_acro = 'unknown', env = @env_name.downcase.underscore, fix = :prefix, xlsx = @xlsx)
-        puts "#{__method__} Awetestlib ovrd" if @gaak
+        debug_to_log(with_caller("awetest_dsl override")) if $debug
         env = env.split(/:[\s_]*/)[1] if env =~ /:/
         case fix
           when :prefix
@@ -3127,7 +2625,7 @@ module Awetestlib
         failed_to_log(unable_to, false, true)
       end
 
-      def get_ancestor(descendant, element, how, what, desc = '', refs = '', dbg = $DEBUG)
+      def get_ancestor(descendant, element, how, what, desc = '', refs = '', dbg = $debug)
         found = false
         how   = 'class_name' if how.to_s == 'class'
         tag   = element.to_s.downcase
@@ -3891,6 +3389,28 @@ module Awetestlib
         rescue_msg_for_validation(desc, refs)
       end
 
+      def attribute_exists?(container, how, what, attribute, desc = '', refs = '')
+        target = container.element(how, what)
+        element_attribute_exists?(target, attribute, desc, refs, how, what)
+      rescue
+        rescue_msg_for_validation(desc, refs)
+      end
+
+      def element_attribute_exists?(element, attribute, desc = '', refs = '', how = nil, what = nil)
+        msg  = element_query_message(element, "attribute '#{attribute}' exists?", how, what, nil, desc, refs)
+        # element_wait(element)
+        ptrn = /(?:<|\s)#{attribute}(?:\s|>|=|$)/
+        if element.html =~ ptrn
+          value = element.attribute_value(attribute)
+          passed_to_log("#{msg} '#{attribute}' found with value '#{value}'.")
+          true
+        else
+          failed_to_log(msg)
+        end
+      rescue
+        rescue_msg_for_validation(desc, refs)
+      end
+
       def attribute_does_not_exist?(container, how, what, attribute, desc = '', refs = '')
         target = container.element(how, what)
         element_attribute_does_not_exist?(target, attribute, desc, refs, how, what)
@@ -4295,14 +3815,14 @@ module Awetestlib
       alias string_not_equal? string_does_not_equal?
 
       def text_equals?(container, ptrn, desc = '', refs = '', skip_fail = false, skip_sleep = false)
-        name = 'name' #container.respond_to?(:tag_name) ? container.tag_name.titleize : 'DOM'
+        name = container.respond_to?(:tag_name) ? container.tag_name.titleize : 'DOM'
         msg  = build_message(desc, "#{name} text contains '#{ptrn}'?", refs)
         if ptrn.is_a?(Regexp)
           target = ptrn
         else
           target = Regexp.new(Regexp.escape(ptrn))
         end
-        debug_to_log(with_caller(__LINE__))
+        # debug_to_log(with_caller(__LINE__))
         # if container.respond_to?(:wait)
         #   container.wait
         # elsif container.respond_to?(:wait_until_present)
@@ -4950,7 +4470,7 @@ module Awetestlib
         rescue_msg_for_validation(desc, refs)
       end
 
-      def element_exists?(element, value = nil, desc = '', refs = '', how = nil, what = nil)
+      def element_exists?(element, desc = '', refs = '', how = nil, what = nil, value = nil)
         msg = element_query_message(element, 'exists?', how, what, value, desc, refs)
         if element.exists?
           passed_to_log(msg)
@@ -6549,26 +6069,6 @@ module Awetestlib
       end
 
     end
-
-    module Waits
-
-      def wait_until_text(browser, strg, desc = '', refs = '', timeout = 60)
-        if not strg.class.to_s.match('String')
-          raise "#{__method__} requires String for search target. #{strg.class} is not supported."
-        end
-        wait_until(browser, "'#{strg}' #{desc} #{refs}", timeout) { browser.text.include? strg }
-      end
-
-    end
-
-    def sleep_for(seconds, dbg = false, desc = '')
-      trace = dbg ? "\n#{get_debug_list}" : ''
-      msg   = build_message("Sleeping for #{seconds} seconds.", desc, trace)
-      info_to_log(msg)
-      sleep(seconds)
-    end
-
-
   end
 end
 

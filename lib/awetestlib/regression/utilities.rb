@@ -510,7 +510,6 @@ module Awetestlib
       end
 
       def get_debug_list(dbg = false, no_trace = false, last_only = false)
-        puts "#{__method__} Awetestlib ovrd" if @gaak
         calls = get_call_array(10)
         puts "*** #{__LINE__}\n#{calls.to_yaml}\n***" if dbg
         arr = []

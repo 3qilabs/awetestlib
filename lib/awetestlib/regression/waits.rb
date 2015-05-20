@@ -13,8 +13,8 @@ module Awetestlib
       # @param [Fixnum] seconds The number of seconds to wait.
       # @param [Boolean] dbg If true, includes a trace in the message
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output.
-      def sleep_for(seconds, dbg = true, desc = '')
-        trace = "\n#{get_debug_list}" if dbg
+      def sleep_for(seconds, desc = '')
+        trace = $debug ? "\n#{get_debug_list}" : ''
         msg = build_message("Sleeping for #{seconds} seconds.", desc, trace)
         info_to_log(msg)
         sleep(seconds)
@@ -229,14 +229,11 @@ module Awetestlib
         wait_until_ready(browser, how, what, desc, timeout, verbose, quiet)
       end
 
-      def wait_until_text(browser, strg, desc = '', timeout = 60)
-        if not strg.class.to_s.match('String')
+      def wait_until_text(browser, strg, desc = '', refs = '', timeout = 60)
+        unless strg.class.to_s.match('String')
           raise "#{__method__} requires String for search target. #{strg.class} is not supported."
         end
-        if $using_webdriver
-          browser.wait(timeout)
-        end
-        wait_until(browser, "'#{strg}' #{desc}", timeout) { browser.text.include? strg }
+        wait_until(browser, "'#{strg}' #{desc} #{refs}", timeout) { browser.text.include? strg }
       end
 
       alias wait_until_by_text wait_until_text

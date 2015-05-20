@@ -61,7 +61,7 @@ module Awetestlib
                     # :log_properties, :log_queue, :log_class,
                     # :notify_queue, :notify_class, :notify_id,
                     :screencap_path, :xls_path, :script_path, :user_token, :root_path,
-                    :debug_on_fail,
+                    :debug_dsl,
                     :environment, :environment_name, :environment_url, :environment_nodename,
                     :cycle, :browser_sequence,
                     :output_to_log, :log_path_subdir, :report_all_test_refs,
@@ -126,6 +126,10 @@ module Awetestlib
 
         if options[:pry]
           require 'pry'
+        end
+
+        if options[:debug_dsl]
+          $debug = true
         end
 
         $mobile, $emulator, $simulator, $platform = mobile_browser?(options)
@@ -231,9 +235,9 @@ module Awetestlib
       end
 
       def before_run
-        initiate_html_report
+        initiate_html_report($begin_time)
         load_time('Total load time', $begin_time)
-        start_run
+        log_begin_run($begin_time)
       end
 
       def start
@@ -247,28 +251,26 @@ module Awetestlib
       end
 
       def after_run
-        finish_run
-        @report_class.finish_report(@html_report_file, @json_report_file)
-        open_report_file
+        log_finish_run
+        full_html_path = @report_class.finish_report
+        open_report_file(full_html_path)
         @myLog.close if @myLog
       end
 
-      def initiate_html_report
-        html_report_name = File.join(FileUtils.pwd, 'awetest_reports', @myName)
-        html_report_dir = File.dirname(html_report_name)
+      def initiate_html_report(ts)
+        html_report_dir = File.join(FileUtils.pwd, 'awetest_report')
         FileUtils.mkdir html_report_dir unless File.directory? html_report_dir
-        @report_class   = Awetestlib::HtmlReport.new(@myName)
-        @html_report_file, @json_report_file = @report_class.create_report(html_report_name)[0]
+        @report_class   = Awetestlib::HtmlReport.new(@myName, html_report_dir, ts)
+        @report_class.create_report(@myName)
       end
 
-      def open_report_file
-        full_report_file = File.expand_path(@html_report_file)
+      def open_report_file(full_html_path)
         if USING_WINDOWS
-          system("start file:///#{full_report_file}")
+          system("start file:///#{full_html_path}")
         elsif USING_OSX
-          system("open #{full_report_file}")
+          system("open #{full_html_path}")
         else
-          puts "Report can be found in #{full_report_file}"
+          puts "Report can be found in #{full_html_path}"
         end
 
       end

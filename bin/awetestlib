@@ -30,8 +30,8 @@ case ARGV[0]
       opts.on("-b", "--browser BROWSER", :required, "Specify a browser by abbreviation (IE, FF, S, C) Required.") do |browser|
         options[:browser] = browser
       end
-      opts.on("-d", "--debug", "Run debugger on first script failure") do
-        options[:debug_on_fail] = true
+      opts.on("-d", "--debug", "Turn on dsl debug messaging") do
+        options[:debug_dsl] = true
       end
       opts.on("-e", "--environment_url ENVIRONMENT_URL", "Specify the environment URL") do |environment_url|
         options[:environment_url] = environment_url
@@ -104,13 +104,13 @@ case ARGV[0]
         exit
       end
 
-      unless options[:browser]
+    end.parse!
+
+    unless options[:browser]
         puts "Missing -b/--browser option.  We can't test a browser without knowing which one..."
         puts opts
         exit
       end
-
-    end.parse!
 
     options[:environment]             ||= {}
     options[:environment]['name']     = options[:environment_name]

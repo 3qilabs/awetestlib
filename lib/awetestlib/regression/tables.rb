@@ -157,7 +157,7 @@ module Awetestlib
       # after the row indicated by this argument. When omitted, the first hit is accepted.
       # @return [Fixnum] the index of the row containing *strg*
       def get_index_of_row_with_text(table, strg, column_index = nil, fail_if_found = false, after_index = nil)
-        debug_to_log("#{__method__}: #{get_callers(5)}")
+        debug_to_log(with_caller("#{get_callers(5)}")) if $debug
         if fail_if_found
           msg = 'No '
         else
