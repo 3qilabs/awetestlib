@@ -296,9 +296,9 @@ module Awetestlib
       end
 
       def close_log(scriptName, lnbr = '')
-        cmplTS = Time.now.to_f.to_s
-        puts ("#{scriptName} finished.  Closing log. #{lnbr.to_s}")
-        passed_to_log("#{scriptName} run complete [#{cmplTS}]")
+        complete_ts = Time.now.to_f.to_s
+        log_message(DEBUG, "#{scriptName} finished.  Closing log. #{lnbr.to_s}")
+        passed_to_log("#{scriptName} run complete [#{complete_ts}]")
         @myLog.close()
         sleep(2)
       end
@@ -428,10 +428,10 @@ module Awetestlib
         line
       end
 
-      def get_call_list(depth = 9, dbg = false)
+      def get_call_list(depth = 9, dbg = $debug)
         myList    = []
         call_list = Kernel.caller
-        puts call_list if dbg
+        log_message(DEBUG, call_list) if dbg
         call_list.each_index do |x|
           myCaller = call_list[x].to_s
           myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
@@ -443,31 +443,26 @@ module Awetestlib
 
       alias get_callers get_call_list
 
-      def get_call_list_new(depth = 9, dbg = false)
-        a_list    = []
+      def get_call_list_new(depth = 15, dbg = $debug)
+        a_list    = ['[unknown]']
+        proj_name = File.basename(@library) if @library
         call_list = Kernel.caller
-        puts call_list if dbg
+        log_message(DEBUG, with_caller(call_list)) if dbg
         call_list.each_index do |x|
           a_caller = call_list[x].to_s
-          if a_caller.include? @myName
-            a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-            a_list << "[#{$1.gsub(/eval/, @myName)}] "
-            break
+          a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
+          caller = $1
+          if caller =~ /#{@myName}/
+            a_list << "#{caller.gsub(/\(eval\)/, "(#{@myName})")}"
+          elsif proj_name and caller =~ /#{proj_name}/
+            a_list << "#{caller.gsub(/\(eval\)/, "(#{proj_name})")}" if proj_name
+          elsif @library2 and caller =~ /#{@library2}/
+            a_list << "#{caller.gsub(/\(eval\)/, "(#{@library2})")}" if @library2
+          else
+            a_list << "#{caller}"
           end
-          next if a_caller =~ /:in .run.$/
-          break if x > depth # or a_caller =~ /:in .run.$/ # this break causes error in Ruby 1.9.x
-        end
-        if @projName
-          call_list.each_index do |x|
-            a_caller = call_list[x].to_s
-            if a_caller.include? @projName
-              a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-              a_list << "[#{$1.gsub(/eval/, @projName)}] "
-              break
-            end
-            next if a_caller =~ /:in .run.$/
-            break if x > depth # or a_caller =~ /:in .run.$/ # this break causes error in Ruby 1.9.
-          end
+          next if a_caller =~ /:in .run.$/ and not a_caller.include?(@myName)
+          break if x > depth
         end
         a_list
       rescue
@@ -480,7 +475,7 @@ module Awetestlib
         call_list.each_index do |x|
           myCaller = call_list[x].to_s
           myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-          arr << $1.gsub(/eval/, @myName)
+          arr << $1.gsub(/eval/, @myName) if $1
           break if x > depth or myCaller =~ /:in .run.$/
         end
         arr
@@ -509,9 +504,9 @@ module Awetestlib
         File.read(script_file).match(/^module\s+(\w+)/)[1].constantize
       end
 
-      def get_debug_list(dbg = false, no_trace = false, last_only = false)
+      def get_debug_list(dbg = $debug, no_trace = false, last_only = false)
         calls = get_call_array(10)
-        puts "*** #{__LINE__}\n#{calls.to_yaml}\n***" if dbg
+        log_message(DEBUG, "*** #{__LINE__}\n#{calls.to_yaml}\n***") if dbg
         arr = []
         calls.each_index do |ix|
           if ix > 1 # skip this method and the logging method
@@ -520,7 +515,7 @@ module Awetestlib
             end
           end
         end
-        puts "*** #{__LINE__}\n#{arr.to_yaml}\n***" if dbg
+        log_message(DEBUG, "*** #{__LINE__}\n#{arr.to_yaml}\n***") if dbg
         if arr.length > 0
           list = ''
           arr.reverse.each do |l|
@@ -1267,9 +1262,9 @@ module Awetestlib
         debug_to_log(unable_to("#{where_am_i?(2)}: #{e.inspect}"))
       end
 
-      def where_am_i?(index = 1)
-        get_call_list_new[index].to_s
-      end
+      # def where_am_i?(index = 1)
+      #   get_call_list_new[index].to_s
+      # end
 
       def get_windows_version
         ver          = `ver`.gsub("\n", '')
