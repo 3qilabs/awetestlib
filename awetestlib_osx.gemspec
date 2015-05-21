@@ -28,6 +28,7 @@ Gem::Specification.new do |s|
   s.add_dependency('sys-uname')
   s.add_dependency('w3c_validators')
   s.add_dependency('html_validation')
+  s.add_dependency('git')
 
   #s.add_dependency('rb-appscript')
 

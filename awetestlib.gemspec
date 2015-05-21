@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
   s.add_dependency('sys-uname')
   s.add_dependency('w3c_validators')
   s.add_dependency('html_validation')
+  s.add_dependency('git')
 
   s.require_paths = ["lib"]
   s.files         = `git ls-files`.split("\n")
