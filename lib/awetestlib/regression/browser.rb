@@ -364,7 +364,7 @@ module Awetestlib
       # @!group Error Handling
 
       # Exit more or less gracefully from script when errors are too severe to continue.
-      # Normally not called in a test script or project library.
+      # Normally _not_ called in a test script or project library.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Fixnum] lnbr Line number in calling script.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
