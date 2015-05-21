@@ -27,6 +27,8 @@ Gem::Specification.new do |s|
   s.add_dependency('appium_lib', '~> 6.0')
   s.add_dependency('pry')
   s.add_dependency('sys-uname')
+  s.add_dependency('w3c_validators')
+  s.add_dependency('html_validation')
 
   s.require_paths = ["lib"]
   s.files         = `git ls-files`.split("\n")
