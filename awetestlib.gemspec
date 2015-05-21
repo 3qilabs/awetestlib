@@ -14,11 +14,11 @@ Gem::Specification.new do |s|
   s.email       = %q{patrick@3qilabs.com}
   s.summary     = %q{Awetest DSL for automated testing desktop and mobile browser-based applications.}
   s.homepage    = %q{http://3qilabs.com}
-  s.description = %q{Provides robust, actionable reporting.}
+  s.description = %q{Features robust and flexible reporting.}
 
   s.add_dependency('watir-webdriver')
   s.add_dependency('watir-nokogiri')
-  s.add_dependency('activesupport', '~> 4.2.0')
+  s.add_dependency('activesupport', '~> 4.2', '>= 4.2.0')
   s.add_dependency('andand')
   s.add_dependency('roo')
   s.add_dependency('selenium-webdriver')
@@ -28,7 +28,7 @@ Gem::Specification.new do |s|
   s.add_dependency('pry')
   s.add_dependency('sys-uname')
 
-  s.require_paths = ["lib"] #,"ext"]
+  s.require_paths = ["lib"]
   s.files         = `git ls-files`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
 

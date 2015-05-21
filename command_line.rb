@@ -5,7 +5,7 @@ module CommandLine
     option_keys = {
         :browser              => '-b',
         :capture_load_times   => '-L',
-        :debug_on_fail        => '-d',
+        :debug_dsl => '-d',
         :device_id            => '-I',
         :device_type          => '-T',
         :emulator             => '-E',
