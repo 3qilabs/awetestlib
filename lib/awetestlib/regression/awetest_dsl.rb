@@ -1419,33 +1419,6 @@ module Awetestlib
         failed_to_log(unable_to)
       end
 
-      def get_call_list_new(depth = 15, dbg = false)
-        debug_to_log(with_caller("awetest_dsl override")) if $debug
-        a_list    = ['[unknown]']
-        proj_name = File.basename(@library)
-        call_list = Kernel.caller
-        debug_to_log(with_caller(call_list)) if dbg
-        call_list.each_index do |x|
-          a_caller = call_list[x].to_s
-          a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-          caller = $1
-          if caller =~ /#{@myName}/
-            a_list << "#{caller.gsub(/\(eval\)/, "(#{@myName})")}"
-          elsif proj_name and caller =~ /#{proj_name}/
-            a_list << "#{caller.gsub(/\(eval\)/, "(#{proj_name})")}" if proj_name
-          elsif @library2 and caller =~ /#{@library2}/
-            a_list << "#{caller.gsub(/\(eval\)/, "(#{@library2})")}" if @library2
-          else
-            a_list << "#{caller}"
-          end
-          next if a_caller =~ /:in .run.$/
-          break if x > depth
-        end
-        a_list
-      rescue
-        failed_to_log(unable_to)
-      end
-
       def get_call_array(depth = 9)
         debug_to_log(with_caller("awetest_dsl override")) if $debug
         arr       = []
@@ -2419,19 +2392,6 @@ module Awetestlib
       rescue
         failed_to_log(unable_to)
       end
-
-      def with_caller(message = '', *strings)
-        call_arr                          = get_call_array
-        call_script, call_line, call_meth = parse_caller(call_arr[1])
-        strg                              = "#{call_meth.titleize}"
-        strg << ':' # if strings.size > 0
-        strg << ' '
-        strg << build_message(message, *strings)
-        strg
-      end
-
-      alias message_with_caller with_caller
-      alias msg_with_caller with_caller
 
       def unable_to(message = '', no_dolbang = false, verify_that = false, caller_index = 1)
         call_arr = get_call_array

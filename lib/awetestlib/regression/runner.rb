@@ -94,7 +94,6 @@ module Awetestlib
         @targetVersion                 = @targetBrowser.version
         @browserAbbrev                 = @targetBrowser.abbrev
         @myRoot                        = options[:root_path] || Dir.pwd # NOTE: bug fix pmn 05dec2012
-        @myName                        = File.basename(options[:script_file]).sub(/\.rb$/, '')
         self.script_name               = File.basename(options[:script_file]).sub(/\.rb$/, '')
 
         if options[:output_to_log]
@@ -117,8 +116,15 @@ module Awetestlib
 
       def initialize(options)
 
-        puts("#{__method__}:#{__LINE__}\n#{self.options.to_yaml}")
         self.options = options
+
+        @myName = File.basename(options[:script_file]).sub(/\.rb$/, '')
+
+        if options[:debug_dsl]
+          $debug = true
+        end
+
+        log_message(DEBUG, with_caller("#{__LINE__}\n#{options.to_yaml}")) if $debug
 
         options.each_pair do |k, v|
           self.send("#{k}=", v)
@@ -126,10 +132,6 @@ module Awetestlib
 
         if options[:pry]
           require 'pry'
-        end
-
-        if options[:debug_dsl]
-          $debug = true
         end
 
         $mobile, $emulator, $simulator, $platform = mobile_browser?(options)
@@ -153,12 +155,12 @@ module Awetestlib
         # load and extend with script to allow overrides in script
         script_file = options[:script_file]
         load script_file # ; load_time('Reload script file', Time.now) # force a fresh load
-        script_module                             = module_for script_file
+        script_module = module_for script_file
         self.extend(script_module)
       end
 
       def mobile_browser?(options)
-        puts("#{__method__}:#{__LINE__}\n#{self.options.to_yaml}")
+        debug_to_log(with_caller("#{__LINE__}\n#{self.options.to_yaml}"))
         mobile           = false
         android_emulator = false
         ios_simulator    = false
@@ -253,14 +255,14 @@ module Awetestlib
       def after_run
         log_finish_run
         full_html_path = @report_class.finish_report
-        open_report_file(full_html_path)
+        open_report_file(full_html_path) unless Dir.pwd.include?("shamisen/tmp")
         @myLog.close if @myLog
       end
 
       def initiate_html_report(ts)
         html_report_dir = File.join(FileUtils.pwd, 'awetest_report')
         FileUtils.mkdir html_report_dir unless File.directory? html_report_dir
-        @report_class   = Awetestlib::HtmlReport.new(@myName, html_report_dir, ts)
+        @report_class = Awetestlib::HtmlReport.new(@myName, html_report_dir, ts)
         @report_class.create_report(@myName)
       end
 
@@ -270,7 +272,7 @@ module Awetestlib
         elsif USING_OSX
           system("open #{full_html_path}")
         else
-          puts "Report can be found in #{full_html_path}"
+          log_message(DEBUG, "Report can be found in #{full_html_path}")
         end
 
       end
