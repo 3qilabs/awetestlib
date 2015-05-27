@@ -173,8 +173,10 @@ module Awetestlib
 
         if options[:emulator]
           android_emulator = true
+          options[:platform] ||= :android
         elsif options[:sdk]
           ios_simulator = true
+          options[:platform] ||= :ios
         end
 
         [mobile, android_emulator, ios_simulator, options[:platform]]
