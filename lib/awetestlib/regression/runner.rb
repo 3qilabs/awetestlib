@@ -247,7 +247,7 @@ module Awetestlib
         before_run
         run
       rescue Exception => e
-        failed_to_log(e.to_s)
+        failed_to_log(e.to_s, nil, e)
       ensure
         after_run
       end

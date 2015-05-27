@@ -39,7 +39,7 @@ module Awetestlib
       my_msg << '[%-6s][:' % tag
 
       unless who_called
-        who_called = get_debug_list(false, true, true)
+        who_called = exception.nil? ? get_debug_list(false, true, true) : get_caller(exception)
       end
       my_msg << who_called
 
@@ -278,17 +278,19 @@ module Awetestlib
     end
 
     # @private
-    def get_caller(lnbr=nil, exception=nil)
+    def get_caller(exception = nil)
+      # TODO: Awetestlib no longer supports script types 'Selenium' or 'MobileNativeApp'.
+      # Those are supported directly by Shamisen and Awetest
       script_name ||= File.basename(@myName)
-      if lnbr && script_type.eql?("Selenium")
-        [script_name, lnbr, 'in run()'].join(":")
-      elsif lnbr && script_type.eql?("MobileNativeApp")
-        [script_name, lnbr, 'in scenario()'].join(":")
-      else
+      # if lnbr && script_type.eql?("Selenium")
+      #   [script_name, lnbr, 'in run()'].join(":")
+      # elsif lnbr && script_type.eql?("MobileNativeApp")
+      #   [script_name, lnbr, 'in scenario()'].join(":")
+      # else
         caller_object = exception ? exception.backtrace : Kernel.caller
         call_frame    = caller_object.detect do |frame|
           frame.match(/#{script_name}/) or
-              (library && frame.match(/#{library}/)) or
+              (@library && frame.match(/#{@library}/)) or
               (@library2 && frame.match(/#{@library2}/))
         end
         if call_frame.nil?
@@ -298,7 +300,7 @@ module Awetestlib
           file, line, method = call_frame.split(":")
           [File.basename(file), line, method].join(":")
         end
-      end
+      # end
     end
 
     # @private
@@ -314,7 +316,7 @@ module Awetestlib
       @log_spec    = log_spec
       logger       = ActiveSupport::Logger.new(log_spec)
       logger.level = ActiveSupport::Logger::DEBUG
-      #logger.auto_flushing = (true)
+      # logger.auto_flushing = (true)
       logger.add(INFO, "#{log_spec}\n#{ENV["OS"]}")
       logger
     end
