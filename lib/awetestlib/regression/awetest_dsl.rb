@@ -4557,16 +4557,40 @@ module Awetestlib
         rescue_msg_for_validation(msg)
       end
 
-      def is_focused?(container, element, how, what, value = nil, desc = '', refs = '', options = {})
+      def is_not_focused?(container, element, how, what, value = nil, desc = '', refs = '', options = {})
         value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
         code                       = build_webdriver_fetch(element, how, what, options)
         target                     = eval(code)
-        element_is_focused?(target, how, what, value, desc, refs)
+        element_not_focused?(target, how, what, value, desc, refs)
       rescue
         rescue_msg_for_validation(build_msg(element, how, what), refs)
       end
 
-      def element_is_focused?(element, how, what, value = nil, desc = '', refs = '')
+      def element_not_focused?(element, how, what, value = nil, desc = '', refs = '')
+        msg = element_query_message(element, 'does not have focus?', how, what, value, desc, refs)
+        current = element.browser.execute_script("return document.activeElement")
+        if element == current
+          failed_to_log(msg)
+        else
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        rescue_msg_for_validation(msg)
+      end
+
+      alias element_is_not_focused? element_not_focused?
+
+      def is_focused?(container, element, how, what, value = nil, desc = '', refs = '', options = {})
+        value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
+        code                       = build_webdriver_fetch(element, how, what, options)
+        target                     = eval(code)
+        element_focused?(target, how, what, value, desc, refs)
+      rescue
+        rescue_msg_for_validation(build_msg(element, how, what), refs)
+      end
+
+      def element_focused?(element, how, what, value = nil, desc = '', refs = '')
         msg     = element_query_message(element, 'has focus?', how, what, value, desc, refs)
         current = element.browser.execute_script("return document.activeElement")
         if element == current
@@ -4579,7 +4603,7 @@ module Awetestlib
         rescue_msg_for_validation(msg)
       end
 
-      alias element_focused? element_is_focused?
+      alias element_is_focused? element_focused?
 
       def visibility(container, boolean, element, how, what, desc = '', refs = '')
         should_be = force_boolean(boolean)
