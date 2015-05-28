@@ -18,8 +18,8 @@ module Awetestlib
       level  = nil
 
       t        = Time.now.utc
-      @last_t  ||= t
-      duration = (t.to_f - @last_t.to_f)
+      last_ts  ||= t
+      duration = (t.to_f - last_ts.to_f)
 
       # durations = calculate_durations(tag, t = Time.now.utc)
 
@@ -45,13 +45,13 @@ module Awetestlib
 
       my_msg << ']: ' + message
 
-      @myLog.add(severity, my_msg) if @myLog # add persistent logging for awetestlib. pmn 05jun2012
+      @logger.add(severity, my_msg) if @logger
 
       puts my_msg + "\n"
 
       @report_class.add_to_report(message, who_called, text_for_level(tag), duration, level) if tag and tag.length > 0
 
-      @last_t = t
+      last_ts = t
 
       nil # so method doesn't return whole @output.
     end
@@ -101,7 +101,7 @@ module Awetestlib
           failed_to_log output_lines.join("\n")
           break
         else
-          debug_tolog line
+          debug_to_log line
         end
       end
 
@@ -122,14 +122,14 @@ module Awetestlib
     # @param [Fixnum] lvl '0' forces a message to the report without a specific level
     # attached. Any other integer is ignored in favor of the calculated level
     # @param [String] desc Any additional information to add to the message.
-    # @param [Boolean] dbg When set to true adds a trace to the message.
-    # @return [void]
-    def mark_test_level(message = '', lvl = nil, desc = '', caller = 1, wai_lvl = 4, dbg = nil)
+    # @param [Boolean] trc When set to true adds a trace to the message.
+    # @return [Boolean] Always returns true
+    def mark_test_level(message = '', lvl = nil, desc = '', caller = 1, wai_lvl = 4, trc = $debug)
       strg = ''
       list = nil
       call_arr = get_call_array
 
-      debug_to_log("#{call_arr.to_yaml}") if $debug
+      debug_to_log("#{call_arr.to_yaml}") if trc
       call_script, call_line, call_meth = parse_caller(call_arr[caller])
 
       if not lvl or lvl > 1
@@ -142,8 +142,8 @@ module Awetestlib
       end
       strg << "#{message}" if message.length > 0
       strg << " (#{desc})" if desc.length > 0
-      strg << " [#{call_line}]" if $debug
-      strg << "\n#{list.to_yaml}" if list and $debug
+      strg << " [#{call_line}]" if trc
+      strg << "\n#{list.to_yaml}" if list and trc
 
       log_message(INFO, strg, lvl, where_am_i?(wai_lvl))
       true
@@ -155,8 +155,8 @@ module Awetestlib
 
     # @param [String] message The text to place in the log
     # @return [void]
-    def info_to_log(message)
-      log_message(INFO, message)
+    def info_to_log(message, wai_lvl = 1)
+      log_message(INFO, message, '', where_am_i?(wai_lvl))
     end
 
     alias message_tolog info_to_log
@@ -168,7 +168,7 @@ module Awetestlib
     def debug_to_log(message, wai_lvl = 3)
       message << "\n#{get_debug_list}" if $debug
       scr_lvl = first_script_index
-      lvl     = scr_lvl ? scr_lvl : wai_lvl
+      lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
       log_message(DEBUG, "#{message}", nil, where_am_i?(lvl))
       true
     end
@@ -180,7 +180,7 @@ module Awetestlib
     # @param [String] message The text to place in the log and report
     def error_to_log(message, wai_lvl = 3, exception = nil)
       scr_lvl = first_script_index
-      lvl     = scr_lvl ? scr_lvl : wai_lvl
+      lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
       log_message(ERROR, message, nil, where_am_i?(lvl), exception)
       false
     end
@@ -194,7 +194,7 @@ module Awetestlib
       @my_passed_count += 1 if @my_passed_count
       parse_error_references(message)
       scr_lvl = first_script_index
-      lvl     = scr_lvl ? scr_lvl : wai_lvl
+      lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
       log_message(INFO, "#{message}", PASS, where_am_i?(lvl))
       true
     end
@@ -212,7 +212,7 @@ module Awetestlib
       @my_failed_count += 1 if @my_failed_count
       parse_error_references(message, true)
       scr_lvl = first_script_index
-      lvl     = scr_lvl ? scr_lvl : wai_lvl
+      lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
       log_message(WARN, "#{message}", FAIL, where_am_i?(lvl), exception)
       false
     end
@@ -231,7 +231,7 @@ module Awetestlib
       parse_error_references(message, true)
       debug_to_report("#{__method__}:\n#{dump_caller(nil)}")
       scr_lvl = first_script_index
-      lvl     = scr_lvl ? scr_lvl : wai_lvl
+      lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
       log_message(FATAL, "#{message} '#{$!}'", FAIL, where_am_i?(lvl), exception)
       false
     end
@@ -242,7 +242,7 @@ module Awetestlib
     # @return [Boolean] Always returns true
     def message_to_report(message, wai_lvl = 4)
       scr_lvl = first_script_index
-      lvl     = scr_lvl ? scr_lvl : wai_lvl
+      lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
       mark_test_level(message, 0, '', 1, lvl)
       true
     end
@@ -251,7 +251,7 @@ module Awetestlib
     # @return [void]
     def debug_to_report(message, wai_lvl = 4)
       scr_lvl = first_script_index
-      lvl     = scr_lvl ? scr_lvl : wai_lvl
+      lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
       mark_test_level("(DEBUG): ", 0, "#{message}", 1, lvl)
       true
     end
@@ -281,7 +281,7 @@ module Awetestlib
     def get_caller(exception = nil)
       # TODO: Awetestlib no longer supports script types 'Selenium' or 'MobileNativeApp'.
       # Those are supported directly by Shamisen and Awetest
-      script_name ||= File.basename(@myName)
+      # script_name ||= File.basename(@myName)
       # if lnbr && script_type.eql?("Selenium")
       #   [script_name, lnbr, 'in run()'].join(":")
       # elsif lnbr && script_type.eql?("MobileNativeApp")
@@ -289,7 +289,7 @@ module Awetestlib
       # else
         caller_object = exception ? exception.backtrace : Kernel.caller
         call_frame    = caller_object.detect do |frame|
-          frame.match(/#{script_name}/) or
+          frame.match(/#{self.script_name}/) or
               (@library && frame.match(/#{@library}/)) or
               (@library2 && frame.match(/#{@library2}/))
         end
@@ -313,7 +313,6 @@ module Awetestlib
           puts "#{script_name}: init_logger RESCUE: #{$!}"
         end
       end
-      @log_spec    = log_spec
       logger       = ActiveSupport::Logger.new(log_spec)
       logger.level = ActiveSupport::Logger::DEBUG
       # logger.auto_flushing = (true)
@@ -350,7 +349,7 @@ module Awetestlib
     end
 
     # @private
-    def tally_error_references(list_tags = @report_all_refs)
+    def tally_error_references
       tags_tested = 0
       tags_hit    = 0
       if @my_error_hits and @my_error_hits.length > 0
@@ -367,7 +366,7 @@ module Awetestlib
         mark_test_level(">> All tested Defect or Test Case instances:") #, -1)
         #message_to_report(">> All tested Defect or Test Case instances:")
         tags_tested = @my_error_references.length
-        if list_tags
+        if self.report_all_test_refs
           @my_error_references.keys.sort.each do |ref|
             msg = "#{ref} (#{@my_error_references[ref]})"
             msg << " -- #{@refs_desc[ref]}" if @refs_desc
@@ -470,7 +469,7 @@ module Awetestlib
     end
 
     def first_script_index(script = @myName)
-      here      = nil
+      here      = 0
       call_list = get_call_list_new
       log_message(DEBUG, with_caller("=== #{__LINE__}\n#{call_list.to_yaml}\n===")) if $debug
       call_list.each_index do |x|
