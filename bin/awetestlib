@@ -119,7 +119,7 @@ case ARGV[0]
 
     options[:log_path_subdir]         = 'logs' if options[:output_to_log] and not options[:log_path_subdir]
 
-    $watir_script = options[:classic_watir]
+    # $watir_script = options[:classic_watir]
     $capture_load_times = options[:capture_load_times] unless $capture_load_times
 
     IS_WIN_2008 = File.exists?('config/win2008.txt')

@@ -278,6 +278,22 @@ module Awetestlib
     end
 
     # @private
+    def get_call_array(depth = 9)
+      arr       = []
+      call_list = Kernel.caller
+      call_list.each_index do |x|
+        my_caller = call_list[x].to_s
+        my_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:.*?)$/
+        # myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
+        arr << $1.gsub(/eval/, @myName)
+        break if x > depth or my_caller =~ /:in .run.*$/
+      end
+      arr
+    rescue
+      failed_to_log(unable_to)
+    end
+
+    # @private
     def get_caller(exception = nil)
       # TODO: Awetestlib no longer supports script types 'Selenium' or 'MobileNativeApp'.
       # Those are supported directly by Shamisen and Awetest
@@ -471,7 +487,7 @@ module Awetestlib
     def first_script_index(script = @myName)
       here      = 0
       call_list = get_call_list_new
-      log_message(DEBUG, with_caller("=== #{__LINE__}\n#{call_list.to_yaml}\n===")) if $debug
+      debug_to_log(DEBUG, with_caller("=== #{__LINE__}\n#{call_list.to_yaml}\n===")) if $debug
       call_list.each_index do |x|
         a_caller = call_list[x].to_s
         a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/

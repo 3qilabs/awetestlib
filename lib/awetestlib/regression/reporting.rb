@@ -4,21 +4,6 @@ module Awetestlib
 
     module Reporting
 
-      def get_call_array(depth = 9)
-        arr       = []
-        call_list = Kernel.caller
-        call_list.each_index do |x|
-          my_caller = call_list[x].to_s
-          my_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:.*?)$/
-          # myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-          arr << $1.gsub(/eval/, @myName)
-          break if x > depth or my_caller =~ /:in .run.*$/
-        end
-        arr
-      rescue
-        failed_to_log(unable_to)
-      end
-
       def get_caller_line
         last_caller = get_call_list[0]
         line        = last_caller.split(':', 3)[1]

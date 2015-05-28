@@ -9,6 +9,7 @@ require 'awetestlib/regression/drag_and_drop'
 require 'awetestlib/regression/date_and_time'
 require 'awetestlib/regression/test_data'
 require 'awetestlib/regression/utilities'
+require 'awetestlib/regression/reporting'
 require 'awetestlib/regression/legacy'
 require 'awetestlib/logging'
 require 'awetestlib/regression/validations'
@@ -34,6 +35,7 @@ module Awetestlib
       include ActiveSupport::Inflector #; load_time('include ActiveSupport::Inflector')
       include Awetestlib::Logging #; load_time('include Awetestlib::Logging')
       include Awetestlib::Regression::Utilities #; load_time('include Awetestlib::Regression::Utilities')
+      include Awetestlib::Regression::Reporting
       include Awetestlib::Regression::DateAndTime
       include Awetestlib::Regression::TestData
       include Awetestlib::Regression::Mobile
