@@ -285,6 +285,48 @@ module Awetestlib
         failed_to_log("#{__method__}: '#{$!}'")
       end
 
+      def get_project_git(proj_dir = Dir.pwd)
+        debug_to_log(with_caller(proj_dir))
+        sha    = nil
+        branch = nil
+        date   = nil
+
+        curr_dir = Dir.pwd
+
+        if Dir.exists?(proj_dir)
+
+          Dir.chdir(proj_dir) unless proj_dir == curr_dir
+
+          if Dir.exists?('.git')
+            require 'git'
+            git    = Git.open(Dir.pwd)
+            branch = git.current_branch
+            commit = git.gblob(branch).log(5).first
+            sha    = commit.sha
+            date   = commit.date
+
+            version_file = File.join(curr_dir, 'waft_version')
+            file         = File.open(version_file, 'w')
+            file.puts "#{branch}, #{date}, #{sha}"
+            file.close
+
+          end
+
+          Dir.chdir(curr_dir) unless proj_dir == curr_dir
+
+        end
+
+        unless branch
+          version_file = File.join(Dir.pwd, 'waft_version')
+          if File.exists?(version_file)
+            vers              = File.open(version_file).read
+            branch, date, sha = parse_list(vers.chomp)
+          end
+        end
+
+        [branch, date, sha]
+      end
+
       def git_sha1(file)
         if File.exists?(file)
           size, sha1 = `ruby git_sha1.rb #{file}`.chomp.split(/\n/)
