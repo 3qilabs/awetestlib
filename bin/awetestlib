@@ -1,8 +1,8 @@
 $: << './lib'
 
-$begin_time = Time.now
-$base_time  = Time.now
-$load_times = Hash.new
+$begin_time         = Time.now
+$base_time          = Time.now
+$load_times         = Hash.new
 $capture_load_times = true if ENV['AWETESTLIB-LOAD-TIMES']
 
 require File.join(File.dirname(__FILE__), 'awetestlib-helpers')
@@ -90,8 +90,8 @@ case ARGV[0]
       opts.on("-S", "--log_path_subdir LOG_PATH_SUBDIR", "Specify log path relative to root_path.") do |log_path_subdir|
         options[:log_path_subdir] = log_path_subdir
       end
-      opts.on("-R", "--report_all_test_refs", "Include report of all error/test case reference ids actually validated.") do
-        options[:report_all_test_refs] = true
+      opts.on("-R", "--report_all_test_refs REPORT_ALL_REFS", "Include report of all error/test case reference ids actually validated. Default is true") do |report_all_test_refs|
+        options[:report_all_test_refs] = report_all_test_refs
       end
       opts.on("-D", "--global_debug", "Set all global debug variables to true. ($DEBUG, $debug, $Debug") do
         options[:global_debug] = true
@@ -106,11 +106,15 @@ case ARGV[0]
 
     end.parse!
 
+    unless options[:report_all_test_refs] and options[:report_all_test_refs] == false
+      options[:report_all_test_refs] = true
+    end
+
     unless options[:browser]
-        puts "Missing -b/--browser option.  We can't test a browser without knowing which one..."
-        puts opts
-        exit
-      end
+      puts "Missing -b/--browser option.  We can't test a browser without knowing which one..."
+      puts opts
+      exit
+    end
 
     options[:environment]             ||= {}
     options[:environment]['name']     = options[:environment_name]
@@ -120,7 +124,7 @@ case ARGV[0]
     options[:log_path_subdir]         = 'logs' if options[:output_to_log] and not options[:log_path_subdir]
 
     # $watir_script = options[:classic_watir]
-    $capture_load_times = options[:capture_load_times] unless $capture_load_times
+    $capture_load_times               = options[:capture_load_times] unless $capture_load_times
 
     IS_WIN_2008 = File.exists?('config/win2008.txt')
     Awetestlib::Runner.new(options)

@@ -10,7 +10,6 @@ module Awetestlib
 
         debug_to_log(with_caller("$debug => #{$debug}, $DEBUG => #{$DEBUG}"))
         log_level = $debug ? 'debug:debug' : 'info:debug'
-
         debug_to_log("#{Dir.pwd.chomp}")
         log_file = File.join(Dir.pwd.chomp, 'log', "#{File.basename(__FILE__, '.rb')}_appium_lib_#{Time.now.strftime("%Y%m%d%H%M%S")}.log")
         command  = "start \"appium server\" appium --log-timestamp --log-level #{log_level} -g #{log_file} &"
@@ -24,7 +23,7 @@ module Awetestlib
 
         client         = Selenium::WebDriver::Remote::Http::Default.new
         client.timeout = 300
-        desired_caps = set_mobile_capabilities(self.device_id, self.device_type, self.sdk, self.emulator, client)
+        desired_caps   = set_mobile_capabilities(self.device_id, self.device_type, self.sdk, self.emulator, client)
 
         debug_to_log(desired_caps.to_yaml)
 
@@ -159,6 +158,112 @@ module Awetestlib
         failed_to_log(unable_to)
       end
 
+      def clean_up_android_temp
+
+        debug_to_log 'Here we will clean up emulator TMP files...'
+        user              = Etc::getlogin
+        # debug_to_log user
+        android_temp_path = 'C:\\Users\\'+user+'\\AppData\\Local\\Temp\\AndroidEmulator'
+        debug_to_log android_temp_path
+        dir = Dir.new(android_temp_path)
+        dir.each do |file|
+          debug_to_log file if file =~ /^TMP.+\.tmp/
+        end
+        tmp_ptrn = '\\TMP*.tmp'
+        dir_cmd  = "dir #{android_temp_path}#{tmp_ptrn} 2>&1"
+        del_cmd  = "del #{android_temp_path}#{tmp_ptrn} 2>&1"
+        debug_to_log "#{__LINE__}: #{dir_cmd}"
+        dir_out = `#{dir_cmd}`
+        unless dir_out =~ /file not found/i
+          debug_to_log "#{__LINE__}: #{del_cmd}"
+          debug_to_log `#{del_cmd}`.chomp
+          if `#{dir_cmd}` =~ /file not found/i
+            debug_to_log 'Emulator TMP files deleted successfully'
+          end
+        end
+
+      end
+
+      def end_android_processes
+
+        processes = ['node.exe', 'emulator-arm.exe', 'emulator-x86.exe', 'adb.exe', 'chromedriver.exe', 'cmd.exe']
+        tasks     = get_process_list
+        targets   = []
+
+        if USING_OSX
+          kill_cmd = 'kill -9 @@@@@'
+        else
+          kill_cmd = 'taskkill /f /pid @@@@@'
+        end
+
+        processes.each do |image_name|
+          if image_name == 'cmd.exe'
+            hit = tasks.detect { |t| t[:window_title] =~ /^appium server/i }
+          else
+            hit = tasks.detect { |t| t[:image_name] =~ /^#{image_name}/i }
+          end
+
+          if hit and hit.length > 0
+            targets << hit
+          end
+        end
+
+        ['node.exe', 'emulator', 'cmd.exe', 'adb.exe', 'chromedriver'].each do |process|
+          hit = targets.detect { |t| t[:image_name] =~ /^#{process}/i }
+          if hit and hit.length > 0
+            pid   = hit[:pid]
+            name  = hit[:image_name]
+            title = hit[:window_title]
+            cmd   = kill_cmd.sub('@@@@@', pid)
+            debug_to_log("[#{cmd}] #{name} #{title}")
+            kill_io = IO.popen(cmd, :err => :out)
+            debug_to_log(kill_io.read.chomp)
+            kill_io.close
+          end
+
+        end
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def get_process_list
+
+        if USING_OSX
+          cmd = "ps axo comm,pid,sess,fname"
+        else
+          cmd = 'tasklist /v -fo csv 2>&1'
+        end
+
+        debug_to_log(cmd)
+        raw  = `#{cmd}`
+        list = raw.force_encoding(Encoding::UTF_8)
+        # debug_to_log(list)
+        if list =~ /No tasks are running which match the specified criteria/i
+          tasks = nil
+        else
+          begin
+            csv = CSV.new(list, :headers => true, :header_converters => :symbol)
+              # debug_to_log(with_caller(__LINE__, "\n", "#{csv}"))
+          rescue => e
+            raise e
+          end
+          begin
+            arr = csv.to_a
+              # debug_to_log(with_caller(__LINE__, "\n", "#{arr}"))
+          rescue => e
+            raise e
+          end
+          begin
+            tasks = arr.map { |row| row.to_hash }
+              # debug_to_log(tasks)
+          rescue => e
+            raise e
+          end
+        end
+        tasks
+      rescue
+        failed_to_log(unable_to)
+      end
 
     end
   end
