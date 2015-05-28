@@ -39,11 +39,17 @@ module Awetestlib
         browser = nil
 
         if $mobile
+          end_android_processes if $platform == :android
+          clean_up_android_temp unless $device
+          sleep_for(3)
           browser = open_mobile_browser
         else
           case @targetBrowser.abbrev
             when 'IE'
               browser = open_ie
+              if browser.class.to_s == "Watir::IE"
+                @myHwnd = browser.hwnd
+              end
             when 'FF'
               browser = open_ff
             when 'S'

@@ -8,106 +8,109 @@ module Awetestlib
 
         mark_test_level(": #{self.device_type.titleize}")
 
-        if self.device_type =~ /android emulator/i
-          end_processes('adb.exe', 'node.exe', 'emulator-arm.exe', 'emulator-x86.exe', 'chromedriver.exe')
-
-          # debug_to_log("Regular Boot sequence for Android Emulator")
-          # emulator_command = 'emulator -avd poc -no-audio -http-proxy 151.151.15.250:8080 -dns-server 10.27.206.11,10.27.206.101,10.91.218.197 -no-boot-anim'
-          # debug_to_log("[#{emulator_command}]")
-          # system("#{emulator_command} &")
-          # system("adb wait-for-device")
-          # sleep 40
-          # unlock_emulator
-
-        end
+        debug_to_log(with_caller("$debug => #{$debug}, $DEBUG => #{$DEBUG}"))
+        log_level = $debug ? 'debug:debug' : 'info:debug'
 
         debug_to_log("#{Dir.pwd.chomp}")
-        log_file = File.join(Dir.pwd.chomp, 'log', "#{@myName}_appium_#{@start_timestamp.strftime("%Y%m%d%H%M%S")}.log")
-        command  = "appium --log-timestamp --local-timezone --log #{log_file} &"
+        log_file = File.join(Dir.pwd.chomp, 'log', "#{File.basename(__FILE__, '.rb')}_appium_lib_#{Time.now.strftime("%Y%m%d%H%M%S")}.log")
+        command  = "start \"appium server\" appium --log-timestamp --log-level #{log_level} -g #{log_file} &"
         debug_to_log(command)
-        appium = IO.popen(command)
-        debug_to_log("Appium PID: #{appium.pid}")
-        5.times { debug_to_log(appium.readline.chomp) }
+        appium      = IO.popen(command, :err => :out)
+        @appium_pid = appium.pid
+        debug_to_log("Appium PID: #{@appium_pid}")
 
-        capabilities = set_mobile_capabilities
+        debug_to_log("nodejs version: #{`"C:\\Program Files (x86)\\Appium\\node" --version`.chomp}")
+        sleep_for(10)
 
-        server_url     = "http://127.0.0.1:4723/wd/hub"
         client         = Selenium::WebDriver::Remote::Http::Default.new
-        client.timeout = 360
+        client.timeout = 300
+        desired_caps = set_mobile_capabilities(self.device_id, self.device_type, self.sdk, self.emulator, client)
 
-        debug_to_log(with_caller("Calling Watir::Browser.new (through Appium)"))
+        debug_to_log(desired_caps.to_yaml)
 
-        begin
-          browser = Watir::Browser.new(:chrome, #:android, #:remote, #:chrome,    #:remote,
-                                       :url                  => server_url,
-                                       :desired_capabilities => capabilities,
-                                       :http_client          => client)
-          browser.goto('wf.com')
-          sleep_for(5)
-        rescue => e
-          failed_to_log(with_caller(e))
-        end
+        Appium::Driver.new(desired_caps)
+        $driver.start_driver
+        # who_is_there?(__LINE__)
 
-        begin
-          debug_to_log(with_caller(browser.driver.capabilities.to_yaml))
-        rescue
-          puts 'oops browser.driver.capabilities.to_yaml'
-        end
+        debug_to_log('Getting Watir Browser from driver...')
+        browser = Watir::Browser.new($driver.driver)
+        # who_is_there?(__LINE__, browser)
+
+        # browser.goto('wf.com')
 
         browser
       rescue
         failed_to_log(unable_to)
       end
 
-      def set_mobile_capabilities
-        device_type = self.device_type
-        device_id   = self.device_id
-        ios_version = self.sdk ? self.sdk : '8.1'
-        mark_test_level(": #{device_type.titleize}")
+      def set_mobile_capabilities(device_id, device_type, sdk, emulator, http_client, server_url = "http://127.0.0.1:4723/wd/hub")
+        mark_test_level
 
-        case self.device_type
+        case device_type
 
           when /android device/i
             desired_caps = {
-                'deviceName'   => "My_device",
-                'platformName' => "Android",
-                'app'          => "Chrome",
-                'appPackage'   => "com.android.chrome",
-                'udid'         => device_id }
+                :caps       => {
+                    :newCommandTimeout         => 600,
+                    :androidDeviceReadyTimeout => 420,
+                    :avdLaunchTimeout          => 240000,
+                    :avdReadyTimeout           => 240000,
+                    :deviceName                => "Android Device",
+                    :automationName            => "Appium",
+                    :platformName              => "Android",
+                    :browserName               => "Chrome",
+                    :platformVersion           => sdk,
+                    'app'                      => "chrome",
+                    # 'appPackage'                => "com.android.chrome",
+                    :udid                      => device_id,
+                    :http_client               => http_client,
+                    :chromeOptions             => { "args" => ['--ignore-certificate-errors', '--verbose'] } #ignore-certificate-errors=true homepage=about:blank test_type=true' }
+                },
+                :appium_lib => {
+                    :server_url => server_url
+                }
+            }
 
           when /android emulator/i
 
-            # NOTE: appium cannot start avd from snapshot.
+            # NOTE: avd cannot start from snapshot?.
 
             desired_caps = {
-                'newCommandTimeout'         => 600,
-                'androidDeviceReadyTimeout' => 420,
-                'avdLaunchTimeout'          => 240000,
-                'avdReadyTimeout'           => 240000,
-                'deviceName'                => "My_device",
-                'platformName'              => "Android",
-                'avd'                       => "poc-x86",
-                'browserName'               => "Browser",
-                'avdArgs'                   => '-no-audio -http-proxy 151.151.15.250:8080 -dns-server 10.27.206.11:55,10.27.206.101:55,10.91.218.197:55',
-                # TODO: these lines trigger EPIPE write error because a pipe involving stdout is closed before the write completes
-                # TODO: Need to check if epipebomb is included in most recent node release
-                'chromeOptions'             => { 'args' => ['ignore-certificate-errors=true', 'homepage=about:blank', 'test_type=true'] }
+                :caps       => {
+                    :newCommandTimeout         => 1200,
+                    :androidDeviceReadyTimeout => 420,
+                    :avdLaunchTimeout          => 240000,
+                    :avdReadyTimeout           => 240000,
+                    :debug                     => true,
+                    :deviceName                => "Android Emulator",
+                    :platformName              => "Android",
+                    :avd                       => emulator,
+                    :browserName               => "Browser",
+                    :avdArgs                   => '-no-audio -http-proxy 151.151.15.250:8080 -dns-server 10.27.206.11:55,10.27.206.101:55,10.91.218.197:55',
+                    :http_client               => http_client,
+                    :chromeOptions             => { 'args' => ['--ignore-certificate-errors', '--verbose'] }
+                },
+                :appium_lib => {
+                    :server_url => server_url
+                }
             }
 
           when /ios device/i
             desired_caps = {
-                'platformVersion' => ios_version,
+                'platformVersion' => sdk,
                 'deviceName'      => "My_device",
                 'platformName'    => "iOS",
                 'browserName'     => 'Safari',
                 'udid'            => device_id }
 
-          else #iOS simulator
+          when /ios simulator/i
             desired_caps = {
                 'deviceName'      => device_type,
-                'platformVersion' => ios_version,
+                'platformVersion' => sdk,
                 'browserName'     => 'Safari',
                 'platformName'    => "iOS" }
+          else
+            raise "Unrecognized mobile device type: '#{device_type}'"
         end
 
         debug_to_log(with_caller("\n#{desired_caps.to_yaml}"))
