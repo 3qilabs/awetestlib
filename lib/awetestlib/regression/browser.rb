@@ -549,78 +549,71 @@ module Awetestlib
 
       # Closes main browser session. Usually used at end of script to shut down browser.
       def close_browser(browser, where = @myName, lnbr = __LINE__)
-        debug_to_log("Closing browser in #{where} at line #{lnbr}.")
-        debug_to_log("#{__method__}: browser: #{browser.inspect} (#{__LINE__})")
+        browser_name = BROWSER_MAP[@browserAbbrev]
+        mark_test_level("#{browser_name} in #{where}")
+        debug_to_log(with_caller("#{browser.inspect}"))
 
         url   = browser.url
         title = browser.title
+        message_to_report(with_caller("#{browser_name}   url: #{browser.url}"))
+        message_to_report(with_caller("#{browser_name} title: #{browser.title}"))
 
         report_browser_message(browser)
 
         if $mobile
           browser.close
           sleep(1)
-          end_processes('adb.exe', 'node.exe', 'emulator-arm.exe')
+          end_android_processes if $platform == :android
+          clean_up_android_temp unless $device
 
-        elsif ['FF', 'S'].include?(@browserAbbrev) || browser.exists?
-          case @browserAbbrev
-            when 'FF'
-              if is_browser?(browser)
-                debug_to_log("#{__method__}: Firefox browser url: [#{url}]")
-                debug_to_log("#{__method__}: Firefox browser title: [#{title}]")
-                debug_to_log("#{__method__}: Closing browser: #{where} (#{lnbr})")
-                if url and url.length > 1
-                  browser.close
-                else
-                  browser = FireWatir::Firefox.attach(:title, title)
-                  browser.close
-                end
-
-              end
-            when 'IE'
-              debug_to_log("#{__method__}: Internet Explorer browser url: [#{url}]")
-              debug_to_log("#{__method__}: Internet Explorer browser title: [#{title}]")
-              debug_to_log("#{__method__}: Closing browser: #{where} (#{lnbr})")
-              if $watir_script
-                hwnd = browser.hwnd
-                pid  = Watir::IE::Process.process_id_from_hwnd(hwnd)
-                debug_to_log("#{__method__}: Closing browser: hwnd #{hwnd} pid #{pid} #{where} (#{lnbr}) (#{__LINE__})")
-                browser.close
-                if browser.exists? and pid > 0 and pid < 538976288 # value of uninitialized memory location
-                  debug_to_log("Retry close browser: hwnd #{hwnd} pid #{pid} #{where} #{lnbr} (#{__LINE__})")
-                  browser.close
-                end
-                if browser.exists? and pid > 0 and pid < 538976288 # value of uninitialized memory location
-                  kill_browser(browser.hwnd, __LINE__, browser)
-                end
-              else
-                browser.close
-              end
-            when 'S'
-              if is_browser?(browser)
-                url   = browser.url
-                title = browser.title
-                debug_to_log("Safari browser url: [#{url}]")
-                debug_to_log("Safari browser title: [#{title}]")
-                debug_to_log("Closing browser: #{where} (#{lnbr})")
-                # close_modal_s # to close any leftover modal dialogs
-                browser.close
-              end
-            when 'C', 'GC'
-              if is_browser?(browser)
-                url   = browser.url
-                title = browser.title
-                debug_to_log("Chrome browser url: [#{url}]")
-                debug_to_log("Chrome browser title: [#{title}]")
-                debug_to_log("Closing browser: #{where} (#{lnbr})")
-                if url and url.length > 1
-                  browser.close
-                end
-
-              end
-            else
-              raise "Unsupported browser: '#{@browserAbbrev}'"
-          end
+        else
+          browser.close
+          # case @browserAbbrev
+          #   when 'FF'
+          #     if is_browser?(browser)
+          #       debug_to_log("#{__method__}: Firefox browser url: [#{url}]")
+          #       debug_to_log("#{__method__}: Firefox browser title: [#{title}]")
+          #       debug_to_log("#{__method__}: Closing browser: #{where} (#{lnbr})")
+          #       if url and url.length > 1
+          #         browser.close
+          #       else
+          #         browser = FireWatir::Firefox.attach(:title, title)
+          #         browser.close
+          #       end
+          #
+          #     end
+          #   when 'IE'
+          #     if is_browser?(browser)
+          #       debug_to_log("#{__method__}: Internet Explorer browser url: [#{url}]")
+          #       debug_to_log("#{__method__}: Internet Explorer browser title: [#{title}]")
+          #       debug_to_log("#{__method__}: Closing browser: #{where} (#{lnbr})")
+          #       browser.close
+          #     end
+          #   when 'S'
+          #     if is_browser?(browser)
+          #       url   = browser.url
+          #       title = browser.title
+          #       debug_to_log("Safari browser url: [#{url}]")
+          #       debug_to_log("Safari browser title: [#{title}]")
+          #       debug_to_log("Closing browser: #{where} (#{lnbr})")
+          #       # close_modal_s # to close any leftover modal dialogs
+          #       browser.close
+          #     end
+          #   when 'C', 'GC'
+          #     if is_browser?(browser)
+          #       url   = browser.url
+          #       title = browser.title
+          #       debug_to_log("Chrome browser url: [#{url}]")
+          #       debug_to_log("Chrome browser title: [#{title}]")
+          #       debug_to_log("Closing browser: #{where} (#{lnbr})")
+          #       if url and url.length > 1
+          #         browser.close
+          #       end
+          #
+          #     end
+          #   else
+          #     raise "Unsupported browser: '#{@browserAbbrev}'"
+          # end
         end
       rescue
         failed_to_log(unable_to)
@@ -632,6 +625,7 @@ module Awetestlib
           message_to_report(browser.text)
         end
       end
+
       # Close a browser window, usually a child window. Does not apply to modal popups/alerts.
       # @param [Watir::Browser] window Reference to the browser window to be closed
       def close_window(window)
