@@ -2151,7 +2151,7 @@ module Awetestlib
         rescue_msg_for_validation(msg)
       end
 
-      def is_not_focused?(container, element, how, what, value = nil, desc = '', refs = '', options = {})
+      def not_focused?(container, element, how, what, value = nil, desc = '', refs = '', options = {})
         value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
         code                       = build_webdriver_fetch(element, how, what, options)
         target                     = eval(code)
@@ -2159,6 +2159,8 @@ module Awetestlib
       rescue
         rescue_msg_for_validation(build_msg(element, how, what), refs)
       end
+
+      alias is_not_focused? not_focused?
 
       def element_not_focused?(element, how, what, value = nil, desc = '', refs = '')
         msg     = element_query_message(element, 'does not have focus?', how, what, value, desc, refs)
