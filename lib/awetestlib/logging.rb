@@ -341,11 +341,13 @@ module Awetestlib
     # @private
     def log_begin_run(begin_time)
       message_to_report(">> Running on host '#{$os.nodename}'")
+      message_to_report(">> Running #{$os.name} version #{$os.version}")
       @my_failed_count = 0 unless @my_failed_count
       @my_passed_count = 0 unless @my_passed_count
       utc_ts           = begin_time.getutc
       loc_tm           = "#{begin_time.strftime("%H:%M:%S")} #{begin_time.zone}"
-      message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm}) (Awetestlib)")
+      message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
+      debug_to_log("Awetestlib #{$metadata.to_yaml}")
     rescue
       failed_to_log(unable_to)
     end
