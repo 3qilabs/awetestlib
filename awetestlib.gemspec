@@ -9,6 +9,13 @@ Gem::Specification.new do |s|
   s.date        = Awetestlib::VERSION_DATE
   s.platform    = Gem::Platform::CURRENT
 
+  s.metadata                  = {
+      "version"         => Awetestlib::VERSION.to_s,
+      "git_branch"      => Awetestlib::BRANCH.to_s,
+      "git_commit"      => Awetestlib::SHA.to_s,
+      "git_commit_date" => Awetestlib::SHA_DATE.to_s
+  }
+
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors     = ["Patrick Neve", "Anthony Woo"]
   s.email       = %q{patrick@3qilabs.com}

@@ -339,12 +339,12 @@ module Awetestlib
     #private init_logger
 
     # @private
-    def log_begin_run(ts = nil)
-      @start_timestamp = ts ? ts : Time.now
+    def log_begin_run(begin_time)
+      message_to_report(">> Running on host '#{$os.nodename}'")
       @my_failed_count = 0 unless @my_failed_count
       @my_passed_count = 0 unless @my_passed_count
-      utc_ts           = @start_timestamp.getutc
-      loc_tm           = "#{@start_timestamp.strftime("%H:%M:%S")} #{@start_timestamp.zone}"
+      utc_ts           = begin_time.getutc
+      loc_tm           = "#{begin_time.strftime("%H:%M:%S")} #{begin_time.zone}"
       message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm}) (Awetestlib)")
     rescue
       failed_to_log(unable_to)
@@ -353,10 +353,10 @@ module Awetestlib
     # @private
     # Tally and report duration, validation and failure counts, and end time for the script.
     # @param [DateTime] ts Time stamp indicating the time the script completed.
-    def log_finish_run(ts = Time.now)
+    def log_finish_run(ts = Time.now, begin_time = $begin_time)
       tally_error_references
       message_to_report(
-          ">> #{@myName.titleize} duration: #{sec2hms(ts - @start_timestamp)}")
+          ">> #{@myName.titleize} duration: #{sec2hms(ts - begin_time)}")
       message_to_report(">> #{@myName.titleize} validations: #{@my_passed_count + @my_failed_count} "+
                             "fail: #{@my_failed_count}]") if @my_passed_count and @my_failed_count
       utc_ts = ts.getutc

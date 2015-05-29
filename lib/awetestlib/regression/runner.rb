@@ -21,7 +21,7 @@ require 'etc'
 require 'yaml'
 require 'active_support'
 require 'active_support/inflector'
-# require 'sys/uname'
+require 'sys/uname'
 
 require 'watir-webdriver'
 
@@ -31,7 +31,7 @@ module Awetestlib
     class Runner < Awetestlib::Runner
 
       # order matters here
-      #  include Sys  #; load_time('include Sys')
+      # include Sys::Uname
       include ActiveSupport::Inflector #; load_time('include ActiveSupport::Inflector')
       include Awetestlib::Logging #; load_time('include Awetestlib::Logging')
       include Awetestlib::Regression::Utilities #; load_time('include Awetestlib::Regression::Utilities')
@@ -215,53 +215,19 @@ module Awetestlib
         [target, actual]
       end
 
-      # def require_gems
-      #
-      #   case @browserAbbrev
-      #
-      #     when 'IE'
-      #       if $watir_script
-      #         #require 'watir/ie'  # ; load_time
-      #         require 'watir' # ; load_time
-      #         require 'watir/process' # ; load_time
-      #         require 'watirloo' # ; load_time
-      #         require 'patches/watir' # ; load_time
-      #         Watir::IE.visible = true
-      #       else
-      #         require 'watir-webdriver' # ; load_time
-      #       end
-      #
-      #     else
-      #       require 'watir-webdriver' #; load_time
-      #
-      #   end
-      #
-      #   if USING_WINDOWS
-      #     require 'win32ole' # ; load_time
-      #     @ai = ::WIN32OLE.new('AutoItX3.Control')
-      #   else
-      #     # TODO: Need alternative for Mac?
-      #     @ai = ''
-      #   end
-      #
-      #   if @xls_path
-      #     require 'roo' # ; load_time
-      #   end
-      #
-      # end
-
       def module_for(script_file)
         File.read(script_file).match(/^module\s+(\w+)/)[1].constantize
       end
 
       def before_run
+        get_os
+        get_awetestlib_metadata
         initiate_html_report($begin_time)
         load_time('Total load time', $begin_time)
         log_begin_run($begin_time)
       end
 
       def start
-        #get_os
         before_run
         run
       rescue Exception => e
