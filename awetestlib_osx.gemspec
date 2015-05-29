@@ -33,6 +33,7 @@ Gem::Specification.new do |s|
   s.add_dependency('appium_lib', '~> 6.0')
   s.add_dependency('pry')
   s.add_dependency('sys-uname')
+  s.add_dependency('git')
 
   #s.add_dependency('rb-appscript')
 

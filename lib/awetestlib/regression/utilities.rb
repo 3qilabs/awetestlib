@@ -289,7 +289,7 @@ module Awetestlib
         $metadata = YAML.load(`gem spec awetestlib metadata`.chomp)
       end
 
-      def get_project_git(proj_dir = Dir.pwd)
+      def get_project_git(proj_name, proj_dir = Dir.pwd)
         debug_to_log(with_caller(proj_dir))
         sha    = nil
         branch = nil
@@ -309,7 +309,7 @@ module Awetestlib
             sha    = commit.sha
             date   = commit.date
 
-            version_file = File.join(curr_dir, 'waft_version')
+            version_file = File.join(proj_dir, "#{proj_name.downcase.gsub(' ', '_')}_version")
             file         = File.open(version_file, 'w')
             file.puts "#{branch}, #{date}, #{sha}"
             file.close
