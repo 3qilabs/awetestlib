@@ -1385,7 +1385,7 @@ module Awetestlib
         #   sleep(3)
         # end
 
-        sleep_for(10)
+        # sleep_for(10)
         if container.text.match(target)
           passed_to_log("#{msg}")
           true
@@ -2541,7 +2541,7 @@ module Awetestlib
         end
 
         if errors == 0
-          passed_to_log(with_caller(msg, desc, refs))
+          passed_to_log(with_caller(msg))
           true
         else
           failed_to_log(with_caller(msg, "Found #{nice_array(errs)}"))

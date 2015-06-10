@@ -289,6 +289,12 @@ module Awetestlib
         $metadata = YAML.load(`gem spec awetestlib metadata`.chomp)
       end
 
+      def parse_list(string, delim = ',', limit = -1)
+        string.split(/#{delim}\s*/, limit)
+      rescue
+        failed_to_log(unable_to("string:[#{string}]"))
+      end
+
       def get_project_git(proj_name, proj_dir = Dir.pwd)
         debug_to_log(with_caller(proj_dir))
         sha    = nil
@@ -321,7 +327,7 @@ module Awetestlib
         end
 
         unless branch
-          version_file = File.join(Dir.pwd, 'waft_version')
+          version_file = File.join(Dir.pwd, "#{proj_name.downcase.gsub(' ', '_')}_version")
           if File.exists?(version_file)
             vers              = File.open(version_file).read
             branch, date, sha = parse_list(vers.chomp)
