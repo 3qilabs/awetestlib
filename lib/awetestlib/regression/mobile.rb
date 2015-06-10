@@ -9,7 +9,7 @@ module Awetestlib
         mark_test_level(": #{self.device_type.titleize}")
 
         debug_to_log(with_caller("$debug => #{$debug}, $DEBUG => #{$DEBUG}"))
-        log_level = $debug ? 'debug:debug' : 'info:debug'
+        log_level = $debug ? 'debug:debug' : 'warn:debug'
         debug_to_log("#{Dir.pwd.chomp}")
         log_file = File.join(Dir.pwd.chomp, 'log', "#{File.basename(__FILE__, '.rb')}_appium_lib_#{Time.now.strftime("%Y%m%d%H%M%S")}.log")
         command  = "start \"appium server\" appium --log-timestamp --log-level #{log_level} -g #{log_file} &"

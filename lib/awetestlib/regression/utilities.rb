@@ -302,6 +302,7 @@ module Awetestlib
         date   = nil
 
         curr_dir = Dir.pwd
+        version_file = "#{proj_name.downcase.gsub(' ', '_')}_version"
 
         if Dir.exists?(proj_dir)
 
@@ -315,7 +316,7 @@ module Awetestlib
             sha    = commit.sha
             date   = commit.date
 
-            version_file = File.join(proj_dir, "#{proj_name.downcase.gsub(' ', '_')}_version")
+            version_file = File.join(proj_dir, version_file)
             file         = File.open(version_file, 'w')
             file.puts "#{branch}, #{date}, #{sha}"
             file.close
@@ -327,7 +328,7 @@ module Awetestlib
         end
 
         unless branch
-          version_file = File.join(Dir.pwd, "#{proj_name.downcase.gsub(' ', '_')}_version")
+          version_file = File.join(Dir.pwd, version_file)
           if File.exists?(version_file)
             vers              = File.open(version_file).read
             branch, date, sha = parse_list(vers.chomp)

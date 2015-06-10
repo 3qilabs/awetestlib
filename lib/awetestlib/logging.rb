@@ -18,8 +18,8 @@ module Awetestlib
       level  = nil
 
       t        = Time.now.utc
-      last_ts  ||= t
-      duration = (t.to_f - last_ts.to_f)
+      @last_ts  ||= t
+      duration = (t.to_f - @last_ts.to_f)
 
       # durations = calculate_durations(tag, t = Time.now.utc)
 
@@ -51,7 +51,7 @@ module Awetestlib
 
       @report_class.add_to_report(message, who_called, text_for_level(tag), duration, level) if tag and tag.length > 0
 
-      last_ts = t
+      @last_ts = t
 
       nil # so method doesn't return whole @output.
     end
