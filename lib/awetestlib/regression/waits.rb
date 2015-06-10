@@ -16,7 +16,7 @@ module Awetestlib
       def sleep_for(seconds, desc = '')
         trace = $debug ? "\n#{get_debug_list}" : ''
         msg = build_message("Sleeping for #{seconds} seconds.", desc, trace)
-        info_to_log(msg)
+        info_to_log(msg, 3)
         sleep(seconds)
       end
 

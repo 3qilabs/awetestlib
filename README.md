@@ -1,21 +1,26 @@
 Awetestlib
 ==========
 
-Automate testing of browser-based applications in Windows, Android, OSX, and iOS.
+Automate testing of browser-based applications in Windows, OSX, iOS, or Android
 
-After completing this guide you will be able to run tests locally from command line or from an IDE.
+## Note: Awetestlib is undergoing significant changes and this document is very much a work in progress.
+1. Support for cucumber and calabash is removed to keep things focused
+2. Support for classic Watir is removed.  Watir-Webdriver and Selenium IE support are much improved since Awetestlib was first written.
+3. Native and hybrid mobile applications are not supported.  Browser based apps only.
+4. The legacy awetestlib dsl is being phased out.
+5. The new dsl is both simplified and expanded. Code readability and consistency is the primary aim.
+6. The gem will be heavily documented using Yard conventions so look for the current deployed version in rubygems and rubydoc.info
+
 
 ------------
-## Prerequisites: Ruby 2.x and RubyInstaller Devkit (Windows) or Xcode (Mac)
+## Prerequisites: Ruby 2.0.x and RubyInstaller Devkit (Windows) or Xcode (Mac)
 
 ### Windows
-#### Ruby 2.x
-You need to have Ruby 2.x installed using the RubyInstaller package.
+#### Ruby 2.0.x
+You need to have Ruby 2.0.x installed using the RubyInstaller package.
 
-You can download the RubyInstaller
-[here](http://rubyinstaller.org/downloads/).  
-
-Awetestlib 2.0.x is tested with Ruby 2.0.0 but should work with more recent 2.x versions.
+You can download the RubyInstaller for 2.0.x
+[here](http://rubyinstaller.org/downloads/).  Choose the most recent 2.0.x.
 
 **Install in a directory without spaces, like C:\Ruby187. Don't install in Program Files.**
 
@@ -34,7 +39,7 @@ Download DevKit
 and the installation directions can also be found
 [here](https://github.com/oneclick/rubyinstaller/wiki/Development-Kit).
 
-Choose the one for your Ruby and development platform (OS and 32/64 bit)
+Choose the one for Ruby 2.0.x and your Windows word size (32 or 64 bit) and download the package.
 
 Create directory C:\devkit and unzip the devkit package into that directory.
 
@@ -48,29 +53,29 @@ And do
 
 	ruby dk.rb review 
 
-And make sure you see C:\Ruby2xx at the end of the output.  Now
+And make sure you see C:\Ruby20x at the end of the output.  Now
 
 	ruby dk.rb install
 
 If you have difficulties with the above in Windows 7 and/or behind a firewall, you may have to set the http_proxy and/or run the installers as administrator. (see below)
 
-### Mac
+### OSX
 #### Ruby
-(Ruby 1.8.7 is installed by default in OSX. Mountain Lion has 1.8.7 p358 which should be fine.)
+Ruby 1.8.7 is installed by default in OSX. You will have to update to 2.0.x
 
 #### Xcode
 Follow Mac instructions for installing/upgrading Xcode to latest version.
 
 ## Install Awetestlib
 
-**Start** by opening a command window or terminal
+**Start** by opening a command window or terminal.
 
 ----------
 
 #### NOTE: If you are behind a firewall:
 
 1. You will need to set the http_proxy environment variable
-2. You may have to change the HOMEDRIVE environment variable to C: in Windows at least temporarily
+2. You _may_ have to change the HOMEDRIVE environment variable to C: in Windows
 3. You may need to run the Windows 7 command window as administrator.
 
 In Windows
@@ -109,6 +114,15 @@ Note: This could take up to 5 minutes for first time installs.  You may need to 
 Run the following command to see the different usages
 
     awetestlib
+    
+## Mobile
+### Appium (both Windows and OSX)
+#### Android
+##### Emulator (Windows only)
+##### Device
+#### iOs
+##### Simulator (OSX only)
+##### Device
 
 ## Setup Browsers
 ### Safari (OSX only)
@@ -117,7 +131,7 @@ Select selenium-server-standalone-x.xx.xx.jar.  (The version is 2.33.0 as of thi
 You will need to start this process in a terminal session before running Safari scripts, else you will get a 'waiting for connection' error. 
 Start it with this command in a terminal session:
 
-	nohup java -jar /Library/Java/Extensions/selenium-server-standalone-2.33.0.jar & 
+	  nohup java -jar /Library/Java/Extensions/selenium-server-standalone-2.33.0.jar & 
 
 When using raw Watir-webdriver for Safari, open the browser with
 
@@ -135,7 +149,7 @@ To setup support for Google Chrome browser, please download the latest Chromedri
 
 Then move the executables into your PATH. To find your PATH, type the command below in your terminal/command prompt:
 
-For Mac OSX:
+For OSX:
 
     echo $PATH
 
@@ -147,7 +161,7 @@ For Windows:
 To setup support for Internet Explorer, please download the latest IEDriverServer version from [here](http://code.google.com/p/selenium/downloads/list)
 and move the executable into your PATH.
 
-We suggest putting the Chrome and IE drivers in C:\Ruby2xx\bin (in Windows) as it should already be in your path.
+We suggest putting the Chrome and IE drivers in C:\Ruby187\bin (in Windows) as it should already be in your path.
 
 ## Setup IDEs (Rubymine, Netbeans)
 
@@ -170,46 +184,41 @@ For additional information on IDE setup, refer to the links below:
 ## Command Line Execution
 If you prefer to run your tests from command line, you can use the following command
 
-  `awetestlib <script_file> [parameters]`
+  `awetestlib <script_file> [options]`
 
   For example: To run a script named demo.rb in Firefox, your command will look like:
 
   `awetestlib demo.rb -b FF`
 
-Here is the full list of the currently available command line parameters:
+Here is the full list of the currently available command line options:
 
-    "-b", "--browser BROWSER",                            "Specify a browser by abbreviation (IE, FF, S, C) Required.")
-    "-d", "--debug",                                      "Turn on dsl debug messaging")
-    "-e", "--environment_url ENVIRONMENT_URL",            "Specify the environment URL")environment_url
-    "-f", "--environment_node_name ENVIRONMENT_NODENAME", "Specify the environment node name")
-    "-l", "--library LIBRARY",                            "Specify a library to be loaded")
-    "-m", "--run_mode RUN_MODE",                          "Specify the run mode: local, local_zip, remote_zip")
-    "-n", "--environment_name ENVIRONMENT_NAME",          "Specify the environment name")
-    "-o", "--output_to_log",                              "Write all output to log file")
-    "-p", "--pry",                                        "Require Pry for debugging")
-    "-r", "--root_path ROOT_PATH",                        "Specify the root path.  Defaults to current directory")
-    "-s", "--screencap-path SCREENCAP_PATH",              "Specify the path where screenshots will be saved")
-    "-t", "--locate_timeout LOCATE_TIMEOUT",              "Set timeout for locating DOM elements.")
-    "-u", "--selenium_remote_url SELENIUM_REMOTE_URL",    "Specify the device's remote url and port")
-    "-v", "--version VERSION",                            "Specify an expected browser version")
-    "-x", "--excel EXCEL_FILE",                           "Specify an excel file containing test data to be loaded")
-    "-E", "--emulator EMULATOR",                          "Mobile emulator image (avd)")
-    "-T", "--device_type DEVICE_TYPE",                    "Mobile device type (ipad, iphone, phone, tablet)")
-    "-I", "--device_id DEVICE_ID",                        "Mobile device identifier 'UDID' or serial number")
-    "-K", "--sdk SDK",                                    "Mobile native sdk. Optional for Android")
-    "-P", "--platform PLATFORM",                          "Mobile or desktop platform: Android, iOS, Windows, or OSX")
-    "-S", "--log_path_subdir LOG_PATH_SUBDIR",            "Specify log path relative to root_path.")
-    "-R", "--report_all_test_refs",                       "Include report of all error/test case reference ids actually validated.")
-    "-D", "--global_debug",                               "Set all global debug variables to true. ($DEBUG, $debug, $Debug")
-    "-L", "--capture_load_times",                         "Capture load time for gem requires.")
-      
+    Usage: awetestlib <script_file> [options]
+        -b, --browser BROWSER            Specify a browser (IE, FF, S, C)
+        -r, --root_path ROOT_PATH        Specify the root path (default is current path)
+        -l, --library LIBRARY            Specify a library to be loaded
+        -x, --excel EXCEL_FILE           Specify an excel file containing variables to be loaded
+        -v, --version VERSION            Specify a browser version
+        -e, --environment_url URL        Specify the environment URL
+        -f, --environment_nodename NODE  Specify the environment node name
+        -n, --environment_name NAME      Specify the environment name
+        -u, --selenium_remote_url URL    Specify the device's remote url and port
+        -s, --screencap_path PATH        Specify the path where screenshots will be saved
+        -o, --output_to_log              Write to log file
+            --log_path_subdir SUBDIR     Specify log path relative to root_path. Defaults to (root_path)/log if -o is specified.
+		-p, --pry						 Require Pry for debugging
+		-c, --classic_watir				 Use Classic Watir for IE instead of Watir-webdriver
+            --report_all_test_refs       Include list of all error/test case reference ids actually validated
+
 To start writing your own script, refer to the [Scripting Guide/Wiki](https://github.com/3qilabs/awetestlib/wiki/Getting-Started---Scripting) wiki.
 
 For the latest documentation of the Awetest DSL go to [Rubydoc](http://rubydoc.info/gems/awetestlib) and look in Awetestlib::Regression.
 
-### Cucumber, Calabash, and Classic Watir Support (discontinued)
+### Cucumber Support
 
-Awetestlib 2.x no longer supports Cucumber, Calabash, or Classic Watir.
+One of the technologies that the Awetest framework supports is [Cucumber](http://cukes.info/). To get setup with cucumber, you can run the following command:
 
-3qiLabs' flagship product Awetest Server and the worker software Shamisen support Cucumber, Calabash, Awetestlib and a number of other technologies.
-See 3qilabs.com for details.
+`awetestlib cucumber_setup <ProjectName>`
+
+That will create the standard cucumber folder structure in the ProjectName directory.
+
+Visit our [wiki](https://github.com/3qilabs/awetestlib/wiki/Predefined-Cucumber-Web-Steps) to see the list of predefined steps provided by awetestlib.

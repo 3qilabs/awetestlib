@@ -9,7 +9,7 @@ module Awetestlib
   end
 
   # @private
-  BROWSER_MAP = {
+  BROWSER_MAP        = {
       'FF' => 'Firefox',
       'IE' => 'Internet Explorer',
       'S'  => 'Safari',
@@ -183,7 +183,7 @@ module Awetestlib
   require 'active_support/all'
   require 'awetestlib/runner'
   require 'yaml'
-  require 'andand'
+  # require 'andand'
   require 'awetestlib/regression/runner'
   require 'html_validation'
   require 'html_validation/page_validations'
@@ -191,10 +191,27 @@ module Awetestlib
   require 'w3c_validators'
   require 'roo'
   require 'pry'
+  require 'rbconfig'
 
   if USING_OSX
-      # Issue with jruby unable to compile
-      # require 'appscript'  #; load_time
+    # Issue with jruby unable to compile
+    # require 'appscript'  #; load_time
+  end
+
+  def using_windows?
+    host_os.include?("mswin") || host_os.include?("mingw")
+  end
+
+  def using_osx?
+    host_os.include?("darwin")
+  end
+
+  def host_os
+    RbConfig::CONFIG['host_os']
+  end
+
+  def using_jruby?
+    defined?(JRUBY_VERSION)
   end
 
 end

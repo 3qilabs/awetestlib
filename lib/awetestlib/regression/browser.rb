@@ -6,7 +6,6 @@ module Awetestlib
 
       # @!group Browser
 
-      # @note webdriver specific - still work in progress
       def go_to_wd_url(browser, url)
 
         Watir::Browser.class_eval do
@@ -21,7 +20,8 @@ module Awetestlib
           end
         end
         browser.goto(url)
-
+      rescue
+        failed_to_log(unable_to)
       end
 
       alias goto_wd_url go_to_wd_url
@@ -34,41 +34,56 @@ module Awetestlib
       # @param [String, Regexp] url When provided, the browser will go to this url.
       # @return [Watir::Browser]
       def open_browser(url = nil)
-        message_to_report("Opening browser: #{@targetBrowser.name}")
-        case @targetBrowser.abbrev
-          when 'IE'
-            @myBrowser = open_ie
-            if @myBrowser.class.to_s == "Watir::IE"
-              @myHwnd = @myBrowser.hwnd
-            end
-          when 'FF'
-            @myBrowser = open_ff
-          when 'S'
-            @myBrowser = open_safari
-            # if USING_OSX
-              # @myBrowser = open_safari
-            # else
-              # raise "Safari is not supported under this operating system #{RUBY_PLATFORM}"
-            # end
-          when 'C', 'GC'
-            @myBrowser = open_chrome
-          else
-            raise "Unsupported browser: #{@targetBrowser.name}"
-        end
-        if url
-          go_to_url(@myBrowser, url)
+        message_to_report("Opening browser: #{@targetBrowser.abbrev}")
+
+        browser = nil
+
+        if $mobile
+          end_android_processes if $platform == :android
+          clean_up_android_temp unless $device
+          sleep_for(3)
+          browser = open_mobile_browser
+        else
+          case @targetBrowser.abbrev
+            when 'IE'
+              browser = open_ie
+              if browser.class.to_s == "Watir::IE"
+                @myHwnd = browser.hwnd
+              end
+            when 'FF'
+              browser = open_ff
+            when 'S'
+              if USING_OSX
+                browser = open_safari
+              else
+                fail "Safari is not supported under this operating system #{RUBY_PLATFORM}"
+              end
+            when 'C', 'GC'
+              browser = open_chrome
+            else
+              fail "Unsupported browser: #{@targetBrowser.name} (#{@targetBrowser.abbrev})"
+          end
         end
 
-        get_browser_version(@myBrowser)
-        browser_driver(@myBrowser)
+        if browser and url
+          go_to_url(browser, url)
+        end
 
-        @myBrowser
+        get_browser_version(browser)
+        message_to_report("Opened browser: #{@browserName} #{@browserVersion}")
+        #message_to_log(@browserName)
+        #message_to_log(@browserVersion)
+
+        @myBrowser = browser
+
+      rescue
+        failed_to_log(unable_to)
       end
 
       def browser_driver(browser)
         if @myBrowser.class.to_s =~ /IE/
           @actualBrowser.driver = 'Watir Classic'
-          $using_webdriver = false
+          $using_webdriver      = false
         else
           #@actualBrowser.driver = "Watir-webdriver #{@myBrowser.driver.capabilities.browser_name.titleize}"
           $using_webdriver = true
@@ -82,21 +97,16 @@ module Awetestlib
       # otherwise Watir Webdriver will be used.
       # @return [Watir::Browser]
       def open_ie
-        if $watir_script
-          @browser = Watir::IE.new
-        else
-          #browser = Watir::Browser.new :ie
-          @caps    = Selenium::WebDriver::Remote::Capabilities.internet_explorer(
-              #:nativeEvents => false,
-              #'nativeEvents' => false,
-              :enablePersistentHover                               => false,
-              :ignoreProtectedModeSettings                         => true,
-              :introduceInstabilityByIgnoringProtectedModeSettings => true,
-              :unexpectedAlertBehaviour                            => 'ignore'
-          )
-          @browser = Watir::Browser.new(:ie, :desired_capabilities => @caps)
-        end
-        @browser
+        #browser = Watir::Browser.new :ie
+        caps = Selenium::WebDriver::Remote::Capabilities.internet_explorer(
+            #:nativeEvents => false,
+            #'nativeEvents' => false,
+            :enablePersistentHover                               => false,
+            :ignoreProtectedModeSettings                         => true,
+            :introduceInstabilityByIgnoringProtectedModeSettings => true,
+            :unexpectedAlertBehaviour                            => 'ignore'
+        )
+        Watir::Browser.new(:ie, :desired_capabilities => caps)
       rescue
         failed_to_log(unable_to)
       end
@@ -105,19 +115,22 @@ module Awetestlib
       # @note Safari currently supported only on Mac OS X
       # @return [Watir::Browser]
       def open_safari
-        browser = Watir::Browser.new(:remote, :desired_capabilities => :'safari')
+        Watir::Browser.new(:remote, :desired_capabilities => :'safari')
       end
 
       # Open FF (Firefox) browser instance under FireWatir.
       # @return [Watir::Browser]
       def open_ff
-        browser = Watir::Browser.new :firefox
+        Watir::Browser.new :firefox
       end
 
       # Open GC (Google Chrome) browser instance.
       # @return [Watir::Browser] Browser is Google Chrome.
       def open_chrome
-        browser = Watir::Browser.new(:chrome)
+        client         = Selenium::WebDriver::Remote::Http::Default.new
+        client.timeout = 180 # seconds – default is 60
+
+        Watir::Browser.new(:chrome, :http_client => client)
       end
 
       # Instruct browser to navigate to a specific URL
@@ -129,7 +142,7 @@ module Awetestlib
         if url
           @myURL = url
         end
-        message_to_report("URL: #{@myURL}")
+        message_to_report(with_caller("URL: #{@myURL}"))
         browser.goto(@myURL)
         true
       rescue
@@ -147,26 +160,16 @@ module Awetestlib
       # @param [Symbol] how The element attribute used to identify the window: *:title* or :url.
       # @param [String|Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
+      # @param [String] refs List of reference identifiers to include in log/report message
       # @return [Watir::Browser]
-      def attach(browser, how, what, desc = '')
-        msg = "Attach browser window :#{how}=>'#{what}' #{desc}"
-        debug_to_log(msg)
-        if $using_webdriver  # [#49213693]
-          browser.driver.switch_to.window(browser.driver.window_handles[0])
-          browser.window(how, what).use
-          tmpbrowser = browser
-        else
-          tmpbrowser      = Watir::Browser.attach(how, what)
-          browser.visible = true
-          if tmpbrowser
-            tmpbrowser.visible = true
-            tmpbrowser.speed   = :fast
-          else
-            raise "Browser window :#{how}=>'#{what}' has at least one doc not in completed ready state."
-          end
-        end
-        debug_to_log("#{msg}: tmpbrowser:#{tmpbrowser.inspect}")
-        tmpbrowser
+      def attach(browser, how, what, desc = '', refs = '')
+        msg = "Attaching browser window :#{how}='#{what}' #{desc} #{refs}"
+        debug_to_report(with_caller(msg))
+        uri_decoded_pattern = ::URI.encode(what.to_s.gsub('(?-mix:', '').gsub(')', ''))
+        debug_to_log(with_caller(uri_decoded_pattern))
+        browser.driver.switch_to.window(browser.driver.window_handles[0])
+        browser.window(how, what).use
+        browser
       rescue
         failed_to_log(unable_to(msg))
       end
@@ -254,7 +257,7 @@ module Awetestlib
       # @param [Boolean] bypass_validate When set to true, the call to validate(),
       # which checks the health of the browser, is skipped..
       def basic_auth(browser, user, password, url, bypass_validate = false)
-        mark_testlevel("Basic Auth Login")
+        mark_test_level("Login")
 
         get_browser_version(browser)
         message_to_log(@browserName)
@@ -336,6 +339,10 @@ module Awetestlib
               browser.send_keys("~") # Enter
             end
             browser.windows[0].use
+          #when 'FF'
+          #  aug_url = insert_id_pswd_in_url(user, password, url)
+          #  debug_to_log("urL: #{url}\naug: #{aug_url}")
+          #  go_to_wd_url(browser, aug_url)
         end
 
         message_to_log("URL: [#{browser.url}]")
@@ -369,21 +376,17 @@ module Awetestlib
       # @param [Fixnum] lnbr Line number in calling script.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       #
-      def bail_out(browser, lnbr, desc)
+      def bail_out(browser, lnbr = __LINE__, desc = '')
         ts  = Time.new
-        msg = "Bailing out at util line #{lnbr} #{ts} " + desc
-        puts "#{msg}"
-        fatal_to_log(msg, lnbr)
-        debug_to_log(dump_caller(lnbr))
+        msg = "Bailing out at #{ts}. " + desc
+        debug_to_log(msg)
         if is_browser?(browser)
           if @browserAbbrev == 'IE'
             hwnd = browser.hwnd
             kill_browser(hwnd, lnbr, browser)
-            raise(RuntimeError, msg, caller)
           elsif @browserAbbrev == 'FF'
             debug_to_log("#{browser.inspect}")
             debug_to_log("#{browser.to_s}")
-            raise(RuntimeError, msg, caller)
           end
         end
         @status = 'bailout'
@@ -546,40 +549,82 @@ module Awetestlib
 
       # Closes main browser session. Usually used at end of script to shut down browser.
       def close_browser(browser, where = @myName, lnbr = __LINE__)
-        debug_to_log("Closing browser: #{where} (#{lnbr})")
+        browser_name = BROWSER_MAP[@browserAbbrev]
+        mark_test_level("#{browser_name} in #{where}")
+        debug_to_log(with_caller("#{browser.inspect}"))
 
         url   = browser.url
         title = browser.title
-        name  = @actualBrowser.name
-        debug_to_log("#{name} browser url: [#{url}]")
-        debug_to_log("#{name} browser title: [#{title}]")
+        message_to_report(with_caller("#{browser_name}   url: #{browser.url}"))
+        message_to_report(with_caller("#{browser_name} title: #{browser.title}"))
 
-        if is_browser?(browser)
-          if $using_webdriver
-            case @browserAbbrev
-              when 'S'
-                close_modal_s # to close any leftover modal dialogs
-            end
-            browser.close
-          else
-            hwnd = browser.hwnd
-            pid  = Watir::IE::Process.process_id_from_hwnd(hwnd)
-            debug_to_log("#{__method__}: Closing browser: hwnd #{hwnd} pid #{pid} #{where} (#{lnbr}) (#{__LINE__})")
-            browser.close
-            if browser.exists? and pid > 0 and pid < 538976288 # value of uninitialized memory location
-              debug_to_log("Retry close browser: hwnd #{hwnd} pid #{pid} #{where} #{lnbr} (#{__LINE__})")
-              browser.close
-            end
-            if browser.exists? and pid > 0 and pid < 538976288 # value of uninitialized memory location
-              kill_browser(browser.hwnd, __LINE__, browser)
-            end
-          end
+        report_browser_message(browser)
+
+        if $mobile
+          browser.close
+          sleep(1)
+          end_android_processes if $platform == :android
+          clean_up_android_temp unless $device
+
+        else
+          browser.close
+          # case @browserAbbrev
+          #   when 'FF'
+          #     if is_browser?(browser)
+          #       debug_to_log("#{__method__}: Firefox browser url: [#{url}]")
+          #       debug_to_log("#{__method__}: Firefox browser title: [#{title}]")
+          #       debug_to_log("#{__method__}: Closing browser: #{where} (#{lnbr})")
+          #       if url and url.length > 1
+          #         browser.close
+          #       else
+          #         browser = FireWatir::Firefox.attach(:title, title)
+          #         browser.close
+          #       end
+          #
+          #     end
+          #   when 'IE'
+          #     if is_browser?(browser)
+          #       debug_to_log("#{__method__}: Internet Explorer browser url: [#{url}]")
+          #       debug_to_log("#{__method__}: Internet Explorer browser title: [#{title}]")
+          #       debug_to_log("#{__method__}: Closing browser: #{where} (#{lnbr})")
+          #       browser.close
+          #     end
+          #   when 'S'
+          #     if is_browser?(browser)
+          #       url   = browser.url
+          #       title = browser.title
+          #       debug_to_log("Safari browser url: [#{url}]")
+          #       debug_to_log("Safari browser title: [#{title}]")
+          #       debug_to_log("Closing browser: #{where} (#{lnbr})")
+          #       # close_modal_s # to close any leftover modal dialogs
+          #       browser.close
+          #     end
+          #   when 'C', 'GC'
+          #     if is_browser?(browser)
+          #       url   = browser.url
+          #       title = browser.title
+          #       debug_to_log("Chrome browser url: [#{url}]")
+          #       debug_to_log("Chrome browser title: [#{title}]")
+          #       debug_to_log("Closing browser: #{where} (#{lnbr})")
+          #       if url and url.length > 1
+          #         browser.close
+          #       end
+          #
+          #     end
+          #   else
+          #     raise "Unsupported browser: '#{@browserAbbrev}'"
+          # end
         end
       rescue
         failed_to_log(unable_to)
       end
 
-      alias logout close_browser
+      def report_browser_message(browser)
+        if browser.title =~ /^\d+\s/
+          failed_to_log(browser.title)
+          message_to_report(browser.text)
+        end
+      end
 
       # Close a browser window, usually a child window. Does not apply to modal popups/alerts.
       # @param [Watir::Browser] window Reference to the browser window to be closed
@@ -836,7 +881,7 @@ module Awetestlib
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @param [Boolean] quiet If true, fewer messages and pass/fail validations are logged.
       def close_popup(title = '', button = 'OK', text = '', side = 'primary',
-          wait = WAIT, desc = '', quiet = false)
+                      wait = WAIT, desc = '', quiet = false)
         debug_to_log("#{__method__} begin")
         close_modal_ie(@myBrowser, title, button, text, side, wait, desc, quiet)
       end
@@ -971,20 +1016,8 @@ module Awetestlib
       # Confirm that the object passed in *browser* is actually a Browser object.
       # @param [Watir::Browser] browser A reference to the window or container element to be tested.
       def is_browser?(browser)
-        myClass = browser.class.to_s
-        case @targetBrowser.abbrev
-          when 'IE'
-            myClass =~ /Watir::IE|Watir::Browser|Watir::Window/i
-          when 'FF'
-            myClass =~ /Watir::Browser|Watir::Window/i
-          when 'S'
-            myClass =~ /Watir::Browser|Watir::Window/i
-          when 'C', 'GC'
-            myClass =~ /Watir::Browser|Watir::Window/i
-        end
+        browser.class.to_s =~ /Watir::Browser/i
       end
-
-      alias is_browser is_browser?
 
       # Translate window title supplied in *title* to a title appropriate for the targeted browser and version
       # actually being run.
@@ -1059,8 +1092,7 @@ module Awetestlib
       # Identify the exact version of the Browser currently being executed.
       # @todo Bring up to date with newer browser versions
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
-      def get_browser_version(browser)
-        debug_to_log("starting get_browser_version")
+      def browser_version(browser)
         case @targetBrowser.abbrev
           when 'IE'
             @browserAbbrev = 'IE'
@@ -1078,27 +1110,34 @@ module Awetestlib
             @browserAppInfo = browser.execute_script("return navigator.userAgent;")
             @browserAppInfo =~ /Firefox\/([\d\.]+)/
             @browserVersion = $1
-            debug_to_report("#{@browserName}, @browserAppInfo: (#{@browserAppInfo})")
           when 'S'
             @browserAbbrev  = 'S'
             @browserName    = 'Safari'
-            @browserVersion = '6.0' #TODO: get actual version from browser itself
             @browserAppInfo = browser.execute_script("return navigator.userAgent;")
-            debug_to_report("#{@browserName}, @browserAppInfo: (#{@browserAppInfo})")
+            @browserVersion = '6.0' #TODO: get actual version from browser itself
           when 'C', 'GC'
-            @browserAbbrev  = 'C'
+            @browserAbbrev  = 'GC'
             @browserName    = 'Chrome'
             @browserAppInfo = browser.execute_script("return navigator.userAgent;")
             @browserAppInfo =~ /Chrome\/([\d\.]+)/
             @browserVersion = $1
-            debug_to_report("#{@browserName}, @browserAppInfo: (#{@browserAppInfo})")
+          else
+            @browserAbbrev  = @targetBrowser.abbrev
+            @browserAppInfo = browser.execute_script("return navigator.userAgent;")
+
         end
-        @browserVersion
+        debug_to_report("#{@browserName}, @browserAppInfo: (#{@browserAppInfo})")
+        debug_to_log("#{browser.driver.capabilities.to_yaml}")
+
+        @browserVersion # = browser.driver.capabilities.version
       rescue
         failed_to_log(unable_to)
       ensure
-        message_to_report("Browser: [#{@browserAbbrev} #{@browserVersion}]")
+        message_to_report("Browser: [#{@browserName} (#{@browserAbbrev}) #{@browserVersion}]")
       end
+
+      alias get_browser_version browser_version
+
 
       protected :get_browser_version
 
@@ -1118,7 +1157,7 @@ module Awetestlib
         end
       end
 
-    # @!group Browser
+      # @!group Browser
 
       # Open and attach a browser popup window where the link to open it and its title contain the same string.
       # @deprecated
@@ -1143,15 +1182,16 @@ module Awetestlib
       # @param [Boolean] dbg If set to true additional debug messages are written to the log.
       #
       # @return [Boolean] True if no error conditions have been encountered.
-      def validate(browser, file_name = @myName, lnbr = "#{__LINE__}", dbg = false)
+      def validate(browser, file_name = @myName, lnbr = '', dbg = false)
         debug_to_log("#{__method__} begin") if dbg
         msg = ''
         ok  = true
         if not browser
-          msg = "#{file_name}----browser is nil object. (#{lnbr})"
+          msg = "browser is nil object."
           ok  = false
+
         elsif not browser.class.to_s =~ /Watir/
-          msg = "#{file_name}----not a Watir object. (#{lnbr})"
+          msg = "not a Watir object."
           debug_to_log(browser.inspect)
           ok = false
 
@@ -1159,8 +1199,7 @@ module Awetestlib
           if browser.respond_to?(:url)
             if not browser.url == @currentURL
               @currentURL = browser.url
-              debug_to_log("Current URL: [#{@currentURL}]")
-              #        mark_testlevel( "Current URL: [#{@currentURL}]", 1 )
+              debug_to_log(with_caller("Current URL: [#{@currentURL}]"))
             end
           end
 
@@ -1174,7 +1213,8 @@ module Awetestlib
           end
 
           begin
-            browser_text = browser.text.downcase
+            browser_text  = browser.text.downcase
+            browser_title = browser.title
           rescue => e
             unless rescue_me(e, __method__, "browser.text.downcase", "#{browser.class}", browser)
               debug_to_log("browser.text.downcase in #{__method__} #{browser.class}")
@@ -1187,111 +1227,111 @@ module Awetestlib
 
           if browser_text
             if browser_text.match(/unrecognized error condition has occurred/i)
-              msg = "#{file_name}----Unrecognized Exception occurred. (#{lnbr})"
-              ok  = false
+              error = "Unrecognized Exception occurred."
+              ok    = false
 
             elsif browser_text.match(/cannot find server or dns error/i)
-              msg = "#{file_name}----Cannot find server error or DNS error. (#{lnbr})"
-              ok  = false
+              error = "Cannot find server error or DNS error."
+              ok    = false
 
             elsif browser_text.match(/the rpc server is unavailable/i)
-              msg = "#{file_name}----RPC server unavailable. (#{lnbr})"
-              ok  = false
+              error = "RPC server unavailable."
+              ok    = false
 
             elsif browser_text.match(/404 not found/i) or
                 browser_text.match(/the page you were looking for does\s*n[o']t exist/i)
-              msg = "#{file_name}----RFC 2068 HTTP/1.1: 404 URI Not Found. (#{lnbr})"
-              ok  = false
+              error = "RFC 2068 HTTP/1.1: 404 URI Not Found."
+              ok    = false
 
             elsif browser_text.match(/we're sorry, but something went wrong/i) or
                 browser_text.match(/http status 500/i)
-              msg = "#{file_name}----RFC 2068 HTTP/1.1: 500 Internal Server Error. (#{lnbr})"
-              ok  = false
+              error = "RFC 2068 HTTP/1.1: 500 Internal Server Error."
+              ok    = false
 
             elsif browser_text.match(/internet explorer cannot display the webpage/i)
-              msg = "#{file_name}----Probably RFC 2068 HTTP/1.1: 500 Internal Server Error. (#{lnbr})"
-              ok  = false
+              error = "Probably RFC 2068 HTTP/1.1: 500 Internal Server Error."
+              ok    = false
 
             elsif browser_text.match(/503.*service unavailable/i)
-              msg = "#{file_name}----RFC 2068 HTTP/1.1: 503 Service Unavailable. (#{lnbr})"
-              ok  = false
+              error = "RFC 2068 HTTP/1.1: 503 Service Unavailable."
+              ok    = false
 
             elsif browser_text.match(/java.lang.NullPointerException/i)
-              msg = "#{file_name}----java.lang.NullPointerException. (#{lnbr})"
-              ok  = false
+              error = "java.lang.NullPointerException."
+              ok    = false
 
             elsif browser_text.match(/due to unscheduled maintenance/i)
-              msg = "#{file_name}----Due to unscheduled maintenance. (#{lnbr})"
-              ok  = false
+              error = "Due to unscheduled maintenance."
+              ok    = false
 
             elsif browser_text.match(/network\s+error\s*(.+)$/i)
               $1.chomp!
-              msg = "#{file_name}----Network Error #{$1}. (#{lnbr})"
-              ok  = false
+              error = "Network Error #{$1}."
+              ok    = false
 
             elsif browser_text.match(/warning: page has expired/i)
-              msg = "#{file_name}----Page using information from form has expired. Not automatically resubmitted. (#{lnbr})"
-              ok  = false
+              error = "Page using information from form has expired. Not automatically resubmitted."
+              ok    = false
 
             elsif browser_text.match(/no backend server available/i)
-              msg = "#{file_name}----Cannot Reach Server (#{lnbr})"
-              ok  = false
+              error = "Cannot Reach Server"
+              ok    = false
 
             elsif browser_text.match(/sign on\s+.+\s+unsuccessful/i)
-              msg = "#{file_name}----Invalid Id or Password (#{lnbr})"
-              ok  = false
+              error = "Invalid Id or Password"
+              ok    = false
 
             elsif browser_text.match(/you are not authorized/i)
-              msg = "#{file_name}----Not authorized to view this page. (#{lnbr})"
-              ok  = false
+              error = "Not authorized to view this page."
+              ok    = false
 
             elsif browser_text.match(/too many incorrect login attempts have been made/i)
-              msg = "#{file_name}----Invalid Id or Password. Too many tries. (#{lnbr})"
-              ok  = false
+              error = "Invalid Id or Password. Too many tries."
+              ok    = false
 
             elsif browser_text.match(/system error\.\s+an error has occurred/i)
-              msg = "#{file_name}----System Error. An error has occurred. Please try again or call the Help Line for assistance. (#{lnbr})"
-              ok  = false
+              error = "System Error. An error has occurred. Please try again or call the Help Line for assistance."
+              ok    = false
 
             elsif browser_text.match(/Internal Server failure,\s+NSAPI plugin/i)
-              msg = "#{file_name}----Internal Server failure, NSAPI plugin. (#{lnbr})"
-              ok  = false
+              error = "Internal Server failure, NSAPI plugin."
+              ok    = false
 
             elsif browser_text.match(/Error Page/i)
-              msg = "#{file_name}----Error Page. (#{lnbr})"
-              ok  = false
+              error = "Error Page."
+              ok    = false
 
             elsif browser_text.match(/The website cannot display the page/i)
-              msg = "#{file_name}----HTTP 500. (#{lnbr})"
-              ok  = false
+              error = "HTTP 500."
+              ok    = false
 
               #        elsif browser_text.match(/Insufficient Data/i)
-              #          msg  = "#{file_name}----Insufficient Data. (#{lnbr})"
+              #           error = "Insufficient Data."
               #          ok = false
 
             elsif browser_text.match(/The timeout period elapsed/i)
-              msg = "#{file_name}----Time out period elapsed or server not responding. (#{lnbr})"
-              ok  = false
+              error = "Time out period elapsed or server not responding."
+              ok    = false
 
             elsif browser_text.match(/Unexpected\s+errors*\s+occur+ed\.\s+(?:-+)\s+(.+)/i)
-              msg = "#{file_name}----Unexpected errors occurred. #{$2.slice(0, 120)} (#{lnbr})"
+              error = "Unexpected errors occurred. #{$2.slice(0, 120)}"
               if not browser_text.match(/close the window and try again/i)
                 ok = false
               else
-                debug_to_log("#{msg}")
+                debug_to_log(with_caller(filename, '----', error, "(#{browser.url})"))
               end
 
             elsif browser_text.match(/Server Error in (.+) Application\.\s+(?:-+)\s+(.+)/i)
-              msg = "#{file_name}----Server Error in #{1} Application. #{$2.slice(0, 100)} (#{lnbr})"
-              ok  = false
+              error = "Server Error in #{1} Application. #{$2.slice(0, 100)}"
+              ok    = false
 
             elsif browser_text.match(/Server Error in (.+) Application\./i)
-              msg = "#{file_name}----Server Error in #{1} Application. '#{browser_text.slice(0, 250)}...' (#{lnbr})"
-              ok  = false
+              error = "Server Error in #{1} Application. '#{browser_text.slice(0, 250)}...'"
+              ok    = false
 
             elsif browser_text.match(/An error has occur+ed\. Please contact support/i)
-              msg = "#{file_name}----An error has occurred. Please contact support (#{lnbr})"
-              ok  = false
+              error = "An error has occurred. Please contact support."
+              ok    = false
 
             end
           else
@@ -1299,12 +1339,19 @@ module Awetestlib
           end
         end
 
+        if browser_title
+          if browser_title.match(/page not found/i)
+            error = "#{browser_title} RFC 2068 HTTP/1.1: 404 URI Not Found."
+            ok    = false
+          end
+        end
+
         if not ok
-          msg << " (#{browser.url})"
+          msg = with_caller(file_name, '----', error, "(#{browser.url})")
           puts msg
           debug_to_log(browser.inspect)
           debug_to_log(browser.text)
-          fatal_to_log(msg, lnbr)
+          # fatal_to_log(msg)
           raise(RuntimeError, msg, caller)
         else
           debug_to_log("#{__method__} returning OK") if dbg
@@ -1313,13 +1360,74 @@ module Awetestlib
 
       rescue
         errmsg = $!
-        if errmsg and errmsg.match(msg)
+        if errmsg and errmsg.message.match(msg)
           errmsg = ''
         end
-        bail_out(browser, lnbr, "#{msg} #{errmsg}")
+        bail_out(browser, __LINE__, build_message(msg, errmsg))
       end
 
       alias validate_browser validate
+
+      def verify_browser_options
+        browser_name = Awetestlib::BROWSER_MAP[self.browser]
+        browser_acro = self.browser
+        ok           = true
+
+        if $mobile
+          debug_to_log(with_caller(":#{__LINE__}\n#{self.options.to_yaml}"))
+
+          parse_environment_node_for_mobile
+
+          debug_to_log(with_caller(":#{__LINE__}\n#{self.options.to_yaml}"))
+
+          case browser_acro
+            when 'FF', 'IE', 'S', 'GC', 'C', 'SP'
+              failed_to_log("#{browser_acro} (#{browser_name}) is not a valid mobile browser.")
+              ok = false
+            when 'IS', 'MS', 'IC', 'MC'
+              if self.sdk
+                self.device_type           = 'iOS Simulator'
+                self.options[:device_type] = 'iOS Simulator'
+              elsif self.device_id
+                self.device_type           = 'iOS Device'
+                self.options[:device_type] = 'iOS Device'
+              else
+                failed_to_log(with_caller("Must supply either sdk or device id for iOS."))
+                ok = false
+              end
+            when 'AC', 'AB'
+              if self.emulator
+                self.device_type           = 'Android Emulator'
+                self.options[:device_type] = 'Android Emulator'
+              elsif self.device_id
+                self.device_type           = 'Android Device'
+                self.options[:device_type] = 'Android Device'
+                if self.sdk
+                  self.options[:sdk] = self.sdk
+                else
+                  failed_to_log(with_caller("Must supply sdk for Android device."))
+                  ok = false
+                end
+              else
+                failed_to_log(with_caller("Must supply either emulator or device id for Android."))
+                ok = false
+              end
+            when 'ME', 'MP'
+              failed_to_log(with_caller("#{browser_acro} (#{browser_name}) is not yet supported."))
+              ok = false
+            else
+              failed_to_log(with_caller("'#{browser_acro}' is not a valid browser code."))
+              ok = false
+          end
+        else
+          ok = true
+        end
+        debug_to_log(with_caller(":#{__LINE__}\n#{self.options.to_yaml}"))
+
+        ok
+      rescue
+        failed_to_log(unable_to)
+      end
 
       # @!endgroup Error Handling
 

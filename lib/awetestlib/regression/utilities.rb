@@ -15,13 +15,13 @@ module Awetestlib
       end
 
       def setup
-        #    if @os.name =~ /Windows.+Server\s+2003/
+        #    if $os.name =~ /Windows.+Server\s+2003/
         ##  'Microsoft(R) Windows(R) Server 2003, Enterprise Edition'
         #      @vertical_hack_ie   = 110
         #      @vertical_hack_ff   = 138
         #      @horizontal_hack_ie = 5
         #      @horizontal_hack_ff = 4
-        #    elsif @os.name =~ /Windows XP Professional/
+        #    elsif $os.name =~ /Windows XP Professional/
         #  'Microsoft Windows XP Professional'
         @vertical_hack_ie        = 118
         @vertical_hack_ff        = 144
@@ -53,39 +53,21 @@ module Awetestlib
       def build_message(strg1, *strings)
         msg = "#{strg1}"
         strings.each do |strg|
-          msg << " #{strg}" if strg and strg.length > 0
-        end
+          if strg.is_a?(Array)
+            strg.each do |str|
+              msg << " #{str}" if str and str.length > 0
+            end
+          else
+            msg << " #{strg}" if strg and strg.length > 0
+          end
+        end if strings
         msg
+      rescue
+        failed_to_log(unable_to)
       end
 
       alias build_msg build_message
       alias bld_msg build_message
-
-
-    def get_date_names(date = Date.today)
-        this_month = date.month
-        if this_month == 12
-          next_month = 1
-        else
-          next_month = this_month + 1
-        end
-        if this_month == 1
-          prev_month = 12
-        else
-          prev_month = this_month - 1
-        end
-
-        month_arr = ['', 'January', 'February', 'March', 'April', 'May', 'June',
-                     'July', 'August', 'September', 'October', 'November', 'December']
-
-        this_month_name = month_arr[this_month]
-        next_month_name = month_arr[next_month]
-        prev_month_name = month_arr[prev_month]
-
-        arr = [date.year, date.day, this_month_name, next_month_name, prev_month_name]
-        debug_to_log("#{__method__} #{nice_array(arr)}")
-        arr
-      end
 
       def get_trace(lnbr)
         callertrace = "\nCaller trace: (#{lnbr})\n"
@@ -97,40 +79,36 @@ module Awetestlib
 
       alias dump_caller get_trace
 
-      def get_mdyy(t = Time.now)
-        "#{t.month}/#{t.day}/#{t.year}"
-      end
-
       def get_prefix(strg, offset)
         a_slice = strg.slice(0, offset)
         a_slice.downcase
       end
 
-      def get_timestamp(format = 'long', offset = nil, offset_unit = :years)
-        t = DateTime.now
-        if offset
-          t = t.advance(offset_unit => offset)
-        end
-        case format
-          when 'dateonly'
-            t.strftime("%m/%d/%Y")
-          when 'condensed'
-            t.strftime("%Y%m%d%H%M")
-          when 'condensed_seconds'
-            t.strftime("%Y%m%d%H%M%S")
-          when 'long'
-            t.strftime("%m/%d/%Y %I:%M %p")
-          when 'mdyy'
-            get_mdyy(t)
-          when 'm/d/y'
-            get_mdyy(t)
-          else
-            Time.now.strftime("%m/%d/%Y %H:%M:%S")
-        end
-      end
-
       def calc_index(index, every = 1)
         (index / every) + (every - 1)
+      end
+
+      def get_upload_file_control_indexes
+        case $win_major
+          when '5'
+            case @browserAbbrev
+              when 'IE'
+                ['1', '1', '2', 'Choose File to Upload']
+              when 'FF'
+                ['1', '1', '2', 'File Upload']
+              when 'GC', 'C'
+                ['1', '1', '2', 'Open']
+            end
+          when '6'
+            case @browserAbbrev
+              when 'IE'
+                ['1', '1', '2', 'Choose File to Upload']
+              when 'FF'
+                ['1', '1', '2', 'File Upload']
+              when 'GC', 'C'
+                ['1', '1', '2', 'Open']
+            end
+        end
       end
 
       def get_variables(file, key_type = :role, enabled_only = true, dbg = true)
@@ -256,6 +234,45 @@ module Awetestlib
         failed_to_log(unable_to)
       end
 
+      def translate_color_name(color)
+        if color and color.length > 0
+          HTML_COLORS[color.camelize.downcase].downcase
+        else
+          color
+        end
+      end
+
+      def translate_tag_name(element)
+        rtrn = ''
+        tag  = ''
+        typ  = ''
+        if element.respond_to?(:tag_name)
+          tag  = element.tag_name
+          typ  = element.type if element.respond_to?(:type)
+          rtrn = tag
+          case tag
+            when 'a'
+              rtrn = 'link'
+            when 'input'
+              case typ
+                when 'text'
+                  rtrn = 'textfield'
+                when 'textarea'
+                  rtrn = 'textarea'
+                when 'submit', 'button'
+                  rtrn = 'button'
+                else
+                  rtrn = tag
+              end
+            else
+              rtrn = tag
+          end
+        end
+        rtrn
+      rescue
+        failed_to_log(unable_to(tag, typ))
+      end
+
       def translate_var_list(key)
         if @var[key] and @var[key].length > 0
           list = @var[key].dup
@@ -266,6 +283,65 @@ module Awetestlib
         end
       rescue
         failed_to_log("#{__method__}: '#{$!}'")
+      end
+
+      def get_awetestlib_metadata
+        $metadata = YAML.load(`gem spec awetestlib metadata`.chomp)
+      end
+
+      def parse_list(string, delim = ',', limit = -1)
+        string.split(/#{delim}\s*/, limit)
+      rescue
+        failed_to_log(unable_to("string:[#{string}]"))
+      end
+
+      def get_project_git(proj_name, proj_dir = Dir.pwd)
+        debug_to_log(with_caller(proj_dir))
+        sha    = nil
+        branch = nil
+        date   = nil
+
+        curr_dir = Dir.pwd
+
+        if Dir.exists?(proj_dir)
+
+          Dir.chdir(proj_dir) unless proj_dir == curr_dir
+
+          if Dir.exists?('.git')
+            require 'git'
+            git    = Git.open(Dir.pwd)
+            branch = git.current_branch
+            commit = git.gblob(branch).log(5).first
+            sha    = commit.sha
+            date   = commit.date
+
+            version_file = File.join(proj_dir, "#{proj_name.downcase.gsub(' ', '_')}_version")
+            file         = File.open(version_file, 'w')
+            file.puts "#{branch}, #{date}, #{sha}"
+            file.close
+
+          end
+
+          Dir.chdir(curr_dir) unless proj_dir == curr_dir
+
+        end
+
+        unless branch
+          version_file = File.join(Dir.pwd, "#{proj_name.downcase.gsub(' ', '_')}_version")
+          if File.exists?(version_file)
+            vers              = File.open(version_file).read
+            branch, date, sha = parse_list(vers.chomp)
+          end
+        end
+
+        [branch, date, sha]
+      end
+
+      def git_sha1(file)
+        if File.exists?(file)
+          size, sha1 = `ruby git_sha1.rb #{file}`.chomp.split(/\n/)
+          debug_to_log("#{file} #{size} sha1 is #{sha1}")
+        end
       end
 
       def grab_window_list(strg)
@@ -286,24 +362,20 @@ module Awetestlib
         stuff
       end
 
+      def count_duplicates(arr)
+        counts = {}
+        dups   = {}
+        arr.each do |id|
+          counts[id] = counts[id] ? counts[id] + 1 : 1
+          dups[id]   = counts[id] if counts[id] > 1
+        end
+        [dups, counts]
+      end
+
       def debug_call_list(msg)
         call_array = get_call_array
         debug_to_log("#{msg}\n#{dump_array(call_array)}")
       end
-
-      def sec2hms(s)
-        Time.at(s.to_i).gmtime.strftime('%H:%M:%S')
-      end
-
-      def close_log(scriptName, lnbr = '')
-        complete_ts = Time.now.to_f.to_s
-        log_message(DEBUG, "#{scriptName} finished.  Closing log. #{lnbr.to_s}")
-        passed_to_log("#{scriptName} run complete [#{complete_ts}]")
-        @myLog.close()
-        sleep(2)
-      end
-
-      protected :close_log
 
       def find_sheet_with_name(workbook, sheet_name)
         sheets = workbook.sheets
@@ -342,28 +414,71 @@ module Awetestlib
         sprintf(ptrn, number).gsub(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,")
       end
 
-      def pad_date(dt)
-       if dt and dt.length > 0
-         a, d1, b, d2, c = dt.split(/([\/\.-])/)
-         a = a.rjust(2, '0') unless a and a.length > 1
-         b = b.rjust(2, '0') unless b and b.length > 1
-         c = c.rjust(2, '0') unless c and c.length > 1
-         a + d1 + b + d2 + c
-       else
-         ''
-       end
-     end
+      def normalize_color_value(value, rgba = true)
+        case value
+          when /^#/
+            html_to_rgb(value, rgba)
+          when /^rgba/i
+            value
+          when /^rgb()/i
+            rgb_to_rgba(value)
+          when /^transparent/i, /^0$/i
+            'rgba(0, 0, 0, 0)'
+          when /white/
+            'rgba(255, 255, 255, 1)'
+          else
+            html_to_rgb(translate_color_name(value), rgba)
+        end
+      end
+
+      def number_to_word(nbr)
+        map = { 1  => 'one', 2 => 'two', 3 => 'three', 4 => 'four', 5 => 'five',
+                6  => 'six', 7 => 'seven', 8 => 'eight', 9 => 'nine', 10 => 'ten',
+                11 => 'eleven', 12 => 'twelve', 13 => 'thirteen', 14 => 'fourteen', 15 => 'fifteen',
+                16 => 'sixteen', 17 => 'seventeen', 18 => 'eighteen', 19 => 'nineteen', 20 => 'twenty'
+        }
+        if nbr > 20
+          'more than twenty'
+        else
+          map[nbr]
+        end
+      end
+
+      alias nbr2word number_to_word
+
+      def string_array_numeric_sort(arr)
+        #TODO: almost certainly a more 'rubyish' and less clunky way to do this
+        trgt = arr.dup
+        narr = []
+        trgt.each do |n|
+          narr << n.to_i
+        end
+        narr.sort!
+        sarr = []
+        narr.each do |n|
+          sarr << n.to_s
+        end
+        sarr
+      end
+
+      alias strg_arr_numeric_sort string_array_numeric_sort
 
       def string_count_in_string(strg, substrg)
         count = strg.scan(substrg).length
         count
       end
 
+      def string_to_hex(strg, format = 'U')
+        strg.unpack(format*strg.length)
+        # strg.split(//).collect do |x|
+        #   x.match(/\d/) ? x : x.unpack('U')[0].to_s(16)
+        # end
+      end
+
       def strip_regex_mix(strg)
         rslt = strg.dup
-        while match = rslt.match(/(\(\?-mix:(.+)\))/)
-          rslt.sub!(match[1], "/#{match[2]}/")
-        end
+        mtch = rslt.match(/(\(\?-mix:(.+)\))/)
+        rslt.sub!(mtch[1], "/#{mtch[2]}/")
         rslt
       end
 
@@ -379,7 +494,7 @@ module Awetestlib
         end
         msg = e.message
         debug_to_log("#{__method__}: msg = #{msg}")
-        if  msg =~ /undefined method\s+.join.\s+for/i # firewatir to_s implementation error
+        if msg =~ /undefined method\s+.join.\s+for/i # firewatir to_s implementation error
           ok = true
         elsif msg =~ /undefined method\s+.match.\s+for.+WIN32OLERuntimeError/i # watir and firewatir
           ok = true
@@ -401,11 +516,11 @@ module Awetestlib
           end
         elsif msg =~ /(The SafariDriver does not interact with modal dialogs)/i
           to_report = $1
-          ok = true
+          ok        = true
         elsif msg =~ /HRESULT error code:0x80070005/
           ok = true
-                                                      #elsif msg =~ /missing\s+\;\s+before statement/
-                                                      #  ok = true
+          #elsif msg =~ /missing\s+\;\s+before statement/
+          #  ok = true
         end
         call_list = get_call_list(6, true)
         if ok
@@ -422,135 +537,67 @@ module Awetestlib
         ok
       end
 
-      def get_caller_line
-        last_caller = get_call_list[0]
-        line        = last_caller.split(':', 3)[1]
-        line
-      end
-
-      def get_call_list(depth = 9, dbg = $debug)
-        myList    = []
-        call_list = Kernel.caller
-        log_message(DEBUG, call_list) if dbg
-        call_list.each_index do |x|
-          myCaller = call_list[x].to_s
-          myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-          myList << "[#{$1.gsub(/eval/, @myName)}] "
-          break if x > depth or myCaller =~ /:in .run.$/
-        end
-        myList
-      end
-
-      alias get_callers get_call_list
-
-      def get_call_list_new(depth = 15, dbg = $debug)
-        a_list    = ['[unknown]']
-        proj_name = File.basename(@library) if @library
-        call_list = Kernel.caller
-        log_message(DEBUG, with_caller(call_list)) if dbg
-        call_list.each_index do |x|
-          a_caller = call_list[x].to_s
-          a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-          caller = $1
-          if caller =~ /#{@myName}/
-            a_list << "#{caller.gsub(/\(eval\)/, "(#{@myName})")}"
-          elsif proj_name and caller =~ /#{proj_name}/
-            a_list << "#{caller.gsub(/\(eval\)/, "(#{proj_name})")}" if proj_name
-          elsif @library2 and caller =~ /#{@library2}/
-            a_list << "#{caller.gsub(/\(eval\)/, "(#{@library2})")}" if @library2
-          else
-            a_list << "#{caller}"
-          end
-          next if a_caller =~ /:in .run.$/ and not a_caller.include?(@myName)
-          break if x > depth
-        end
-        a_list
-      rescue
-        failed_to_log(unable_to)
-      end
-
-      def get_call_array(depth = 9)
-        arr       = []
-        call_list = Kernel.caller
-        call_list.each_index do |x|
-          myCaller = call_list[x].to_s
-          myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-          arr << $1.gsub(/eval/, @myName) if $1
-          break if x > depth or myCaller =~ /:in .run.$/
-        end
-        arr
-      end
-
-      def report_error_count(errors, msg)
-        call_script, call_line, call_meth = parse_caller(get_call_array()[1])
-        msg = build_msg("#{call_meth.titleize}:", msg)
-        if errors > 0
-          failed_to_log("<b>#{msg}</b>")
+      def convert_color_value(value, rgba = false)
+        if value =~ /^#/
+          html_to_rgb(value, rgba)
         else
-          passed_to_log(msg)
-          true
+          rgb_to_html(value)
         end
       end
 
-      def convert_color_value(value)
-        expectedvalue    = value[/(\(.*)/]
-        expectedvalue    = expectedvalue.gsub(')', '')
-        expectedvalue    = expectedvalue.gsub('(', '')
-        expectedvalue    = expectedvalue.split(",").map { |s| s.to_f }
-        expectedvalue[3] = expectedvalue[3].round
-      end
-
-      def module_for(script_file)
-        File.read(script_file).match(/^module\s+(\w+)/)[1].constantize
-      end
-
-      def get_debug_list(dbg = $debug, no_trace = false, last_only = false)
-        calls = get_call_array(10)
-        log_message(DEBUG, "*** #{__LINE__}\n#{calls.to_yaml}\n***") if dbg
-        arr = []
-        calls.each_index do |ix|
-          if ix > 1 # skip this method and the logging method
-            if filter_call(calls[ix])
-              arr << calls[ix]
-            end
-          end
-        end
-        log_message(DEBUG, "*** #{__LINE__}\n#{arr.to_yaml}\n***") if dbg
-        if arr.length > 0
-          list = ''
-          arr.reverse.each do |l|
-            if last_only
-              list = l
-              break
-            else
-              list << "=>#{l}"
-            end
-          end
-          if no_trace
-            "#{list}"
-          else
-            " [TRACE:#{list}]"
-          end
+      def rgb_to_html(rgb)
+        rgb =~ /rgba?\((.+)\)/
+        if $1
+          r, g, b, a = $1.split(/,\s*/)
+          "#%02x%02x%02x" % [r, g, b]
         else
-          ''
+          rgb
         end
-      rescue
-        failed_to_log(unable_to)
       end
 
-      def filter_call(call)
-        rtrn = true
-        modl = call.match(/^(browser|logging|find|runner|tables|user_input|utilities|validations|waits|page_data|legacy|drag_and_drop|awetest)/) || ''
-        meth = call.match(/in .(run|each)/) || ''
-        if "#{modl}#{meth}".length > 0
-          rtrn = false
+      def rgb_to_rgba(rgb)
+        if rgb =~ /^rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)/i
+          r    = $1
+          g    = $2
+          b    = $3
+          op   = rgb =~ /[1-9]/ ? '1' : '0'
+          rtrn = "rgba(#{r}, #{g}, #{b}, #{op})" #waft-1148
+        else
+          rtrn = rgb
         end
         rtrn
       end
 
-      def analyse_element_presence(container, element, how, what, max_seconds = 30, interval = 0.5)
+      def html_to_rgb(html, a = true)
+        if html and html.length > 0
+          html = html.gsub(%r{[#;]}, '')
+          case html.size
+            when 3
+              colors = html.scan(%r{[0-9A-Fa-f]}).map { |el| (el * 2).to_i(16) }
+            when 6
+              colors = html.scan(%r<[0-9A-Fa-f]{2}>).map { |el| el.to_i(16) }
+          end
+          rgb = 'rgb'
+          rgb << 'a' if a
+          rgb << '('
+          colors.each do |c|
+            rgb << "#{c}, "
+          end
+          if a
+            rgb << '1)'
+          else
+            rgb.strip!.chop!
+            rgb << ')'
+          end
+          rgb
+        else
+          html
+        end
+      end
+
+      def analyse_element_presence(container, element, how, what, max_seconds = 30, interval = 0.25)
         duration = 0
-        code = build_webdriver_fetch(element, how, what) + '.present?'
+        code     = build_webdriver_fetch(element, how, what) + '.present?'
         debug_to_log("#{__method__}: code=>[#{code}")
         until duration > max_seconds do
           begin
@@ -624,73 +671,16 @@ module Awetestlib
         end
       end
 
-      def dump_all_tables(browser, to_report = false)
-        tables  = browser.tables
-        msg     = ''
-        tbl_cnt = 0
-        tables.each do |tbl|
-          tbl_cnt += 1
-          row_cnt = 0
-          msg << "\n=================\ntable: #{tbl_cnt}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
-          tbl.rows.each do |row|
-            row_cnt  += 1
-            cell_cnt = 0
-            msg << "\n=================\ntable: #{tbl_cnt} row: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
-            row.each do |cell|
-              cell_cnt += 1
-              msg << " \ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
-            end
-          end
+      def dump_option_array(options, desc = '', to_report = false)
+        msg = with_caller(desc, "\n")
+        options.each do |option|
+          msg << "text: '#{option.text}' value: '#{option.value}' selected: #{option.selected?}\n"
         end
         if to_report
           debug_to_report(msg)
         else
           debug_to_log(msg)
         end
-      end
-
-      def dump_table_and_rows(table, to_report = false)
-        msg = "\n=================\ntable\n=================\nn#{table}\n#{table.to_yaml}\nrows:"
-        cnt = 0
-        table.rows.each do |r|
-          cnt += 1
-          msg << "\n#{cnt}: #{r.text}"
-        end
-        msg << "\n=================\n================="
-        if to_report
-          debug_to_report(msg)
-        else
-          debug_to_log(msg)
-        end
-      end
-
-      def dump_table_rows_and_cells(tbl)
-        msg     = ''
-        row_cnt = 0
-        msg << "\n=================\ntable: #{tbl.inspect}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
-        tbl.rows.each do |row|
-          row_cnt  += 1
-          cell_cnt = 0
-          msg << "\n=================\nrow: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
-          row.each do |cell|
-            cell_cnt += 1
-            msg << "\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
-          end
-        end
-        debug_to_log(msg)
-      end
-
-      alias dump_table_rows dump_table_rows_and_cells
-
-      def dump_row_cells(row)
-        msg      = ''
-        cell_cnt = 0
-        msg << "\n=================\nrow: #{row.inspect}\n#{row}\ntext:'#{row.text}'"
-        row.each do |cell|
-          cell_cnt += 1
-          msg << "\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
-        end
-        debug_to_log(msg)
       end
 
       def parse_cookies(browser)
@@ -726,21 +716,6 @@ module Awetestlib
         failed_to_log(unable_to)
       end
 
-      def parse_mdy_to_datetime(mdy)
-        if mdy and mdy.length > 0
-          m, d1, d, d2, y = mdy.split(/([\/\.-])/)
-          y = "20#{y}" unless y.length == 4
-          ymd = "#{y}#{d1}#{m}#{d1}#{d}"
-          DateTime.parse(ymd)
-        end
-      rescue
-        failed_to_log(unable_to)
-      end
-
-      def diff_datetimes_in_days(beg_dt, end_dt)
-        (end_dt - beg_dt).to_i
-      end
-
       def build_webdriver_fetch(element, how, what, more = {})
         code = "container.#{element}(:#{how} => "
         what = escape_stuff(what) unless how == :index
@@ -753,34 +728,102 @@ module Awetestlib
         end
         if more and not more.empty?
           more.each do |key, vlu|
-            next if key == :desc or key == 'desc'
-            unless vlu
-              code << ", :#{key} => "
-              if vlu.is_a?(Regexp)
-                vlu << "/#{vlu}/"
-              else
-                vlu.gsub!('/', '\/')
-                code << "'#{vlu}'"
-              end
+            next if key == :desc or key == :flash or key == :exists_only
+            code << ", :#{key} => "
+            if vlu.is_a?(Regexp)
+              code << "/#{vlu}/"
+            elsif vlu.is_a?(String)
+              code << "'#{vlu.gsub('/', '\/')}'"
+            else
+              code << "#{vlu}"
             end
           end
         end
         code << ')'
-        debug_to_log("code: '#{code}'")
+        #debug_to_log("code: '#{code}'")
         code
       rescue
         failed_to_log(unable_to)
       end
 
-      def escape_stuff(strg)
-        rslt = strg.dup
-        unless rslt.is_a?(Regexp)
-          if rslt.match( /[\/\(\)]/ )
-            rslt.gsub!('/', '\/')
-            rslt.gsub!('(', '\(')
-            rslt.gsub!(')', '\)')
-            rslt = Regexp.new(rslt)
+      def element_action_message(element, action, how = nil, what = nil, value = nil, desc = '', refs = '')
+        name      = element.respond_to?(:tag_name) ? element.tag_name.upcase : element.to_s
+        how, what = extract_locator(element, how)[1, 2] unless how and what
+        build_message(desc, action, "#{name}",
+                      (what ? "with #{how}=>'#{what}'" : nil),
+                      (value ? "and value=>'#{value}'" : nil), refs)
+      end
+
+      def element_query_message(element, query, how = nil, what = nil, value = nil, desc = '', refs = '')
+        if element.exists?
+          name = element.respond_to?(:tag_name) ? element.tag_name.upcase : element.to_s
+        else
+          name = '(unknown)'
+        end
+        build_message(desc, "#{name}",
+                      (what ? "with #{how}=>' #{what}'" : nil),
+                      (value ? "and value=>'#{value}'" : nil),
+                      query, refs)
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def end_processes(*names)
+        pattern = ''
+        names.each { |n| pattern << "#{n}|" }
+        pattern.chop!
+        # puts pattern
+        targets = {}
+
+        if USING_OSX
+          p_io = IO.popen("ps axo comm,pid,sess,fname")
+        else
+          p_io = IO.popen("tasklist /nh")
+        end
+
+        p_io.readlines.each do |prc|
+          # puts prc.chop
+          if prc =~ /#{pattern}/
+            name, pid    = prc.split(/\s+/)[0, 2]
+            # puts "#{name} #{pid}"
+            base         = File.basename(name)
+            targets[pid] = base
           end
+        end
+
+        debug_to_log("End these processes:\n#{targets.to_yaml}")
+
+        if USING_OSX
+          kill_cmd = 'kill -9 @@@@@'
+        else
+          kill_cmd = 'taskkill /f /pid @@@@@'
+        end
+
+        targets.each do |pid, name|
+          cmd = kill_cmd.sub('@@@@@', pid)
+          debug_to_log("[#{cmd}]")
+          kill_io = IO.popen(cmd, :err => :out)
+          debug_to_log(kill_io.read.chomp)
+        end
+
+        if targets.length > 0
+          sleep_for(10)
+        end
+      end
+
+      def escape_stuff(strg)
+        if strg.respond_to?(:dup)
+          rslt = strg.dup
+          unless rslt.is_a?(Regexp)
+            if rslt.match(/[\/\(\)]/)
+              rslt.gsub!('/', '\/')
+              rslt.gsub!('(', '\(')
+              rslt.gsub!(')', '\)')
+              rslt = Regexp.new(rslt)
+            end
+          end
+        else
+          rslt = strg
         end
         rslt
       rescue
@@ -800,6 +843,33 @@ module Awetestlib
         arr.sort
       rescue
         failed_to_log(unable_to)
+      end
+
+      def extract_locator(element, how = nil)
+        # html_to_log(element)
+        if element.respond_to?(:tag_name)
+          tag = element.tag_name.to_sym
+        else
+          element = element.body.elements[0]
+          tag     = element.tag_name.to_sym
+        end
+        what = nil
+        case how
+          when nil
+            [:id, :name, :title, :class, :value].each do |attr|
+              what = element.attribute_value(attr.to_s)
+              if what and what.length > 0
+                how = attr
+                break
+              end
+            end
+          else
+            what = element.attribute_value(how.to_s)
+        end
+        # debug_to_log(with_caller("#{tag}:#{how}:#{what}"))
+        [tag, how, what]
+      rescue
+        failed_to_log(unable_to(build_message(":#{tag}, :#{how}='#{what}'")))
       end
 
       def capture_screen(browser, ts)
@@ -843,12 +913,30 @@ module Awetestlib
         failed_to_log("Unable to #{msg} '#{$!}'")
       end
 
-      def flash(element, count = 4)
-        element.flash(count)
-        debug_to_log("'#{element.inspect}' flashed #{count} times.")
-        true
+      def flash(container, element, how, what, value = nil, desc = '', refs = '', options = {})
+        if @flash
+          value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
+          code                       = build_webdriver_fetch(element, how, what, options)
+          target                     = eval(code)
+          flash_element(target, desc, refs)
+        end
       rescue
-        debug_to_log("Flash '#{element.inspect}' failed: '#{$!}' (#{__LINE__})")
+        failed_to_log(unable_to)
+      end
+
+      def flash_element(element, desc = '', refs = '')
+        if @flash
+          if element
+            element.wd.location_once_scrolled_into_view
+            # scroll_to(element.browser, element, desc, refs)
+            if element.respond_to?(:flash)
+              # sleep(0.1)
+              element.flash
+            end
+          end
+        end
+      rescue
+        failed_to_log(unable_to)
       end
 
       def get_save_file_path(root, filename)
@@ -931,6 +1019,28 @@ module Awetestlib
         @ai.ControlClick("Download complete", "", "Close")
       rescue
         failed_to_log("Save file failed: #{desc} '#{$!}'. (#{__LINE__})")
+      end
+
+      def rotate_array(arr, stop = 0, index = 0, target = '')
+        rotated = arr.dup
+        length  = rotated.size
+        (1..length).each do |itr|
+          rotated.push(rotated.shift)
+          if stop > 0
+            break if itr == stop
+          else
+            break if rotated[index] == target
+          end
+        end
+        rotated
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def running_thread_count
+        running = Thread.list.select { |thread| thread.status == "run" }.count
+        asleep  = Thread.list.select { |thread| thread.status == "sleep" }.count
+        [running, asleep]
       end
 
       #method for handling save dialog
@@ -1073,7 +1183,7 @@ module Awetestlib
       #use click_no_wait on the action that triggers the save dialog
       # TODO need version for Firefox
       def file_upload(filepath, title = 'Choose File', text = '', button = '&Open',
-          control = 'Edit1', side = 'primary')
+                      control = 'Edit1', side = 'primary')
         title = translate_popup_title(title)
         msg   = "Window title=#{title} button='#{button}' text='#{text}' side='#{side}':"
         begin
@@ -1108,20 +1218,22 @@ module Awetestlib
 
       end
 
-      def upload_file(data_path)
-        limit = 180 # .seconds
-        Timeout::timeout(limit) {
-          wait = 20
-          @ai.WinWait("Choose File to Upload", "", wait)
-          sleep 1
-          @ai.ControlSend("Choose File to Upload", "", "Edit1", data_path)
-          @ai.ControlClick("Choose File to Upload", "", "[CLASS:Button; INSTANCE:2]", "left")
-          sleep 4
-          #sleep 1
-        }
-        failed_to_log("Choose File to Upload not found after #{limit} '#{$!}'")
-      rescue Timeout::Error
-        failed_to_log("File Upload timeout after #{limit} '#{$!}'")
+      def upload_file(browser, data_path, wait = 20)
+        #mark_test_level(data_path)
+        message_to_report(with_caller(data_path))
+        data_path.gsub!('/', '\\') if USING_WINDOWS
+
+        file, open, cancel, title = get_upload_file_control_indexes
+
+        @ai.WinWait(title, "", wait)
+        sleep_for(1)
+        @ai.ControlSend(title, '', "[CLASS:Edit; INSTANCE:#{file}]", '!u')
+        @ai.ControlSetText(title, '', "[CLASS:Edit; INSTANCE:#{file}]", data_path)
+        sleep_for(0.5)
+        @ai.ControlClick(title, "", "[CLASS:Button; INSTANCE:#{open}]", "primary")
+
+      rescue
+        failed_to_log(unable_to)
       end
 
       def focus_on_textfield_by_id(browser, strg, desc = '')
@@ -1167,23 +1279,41 @@ module Awetestlib
         loc
       end
 
-      def method_to_title(method, no_sub = false)
-        title = method.to_s.titleize
-        title.gsub!(/And/, '&') unless no_sub
-        title
-      rescue
-        debug_to_log("#{__method__}: #{method} #{$!}")
+      def rescue_msg_for_validation(desc, refs = nil)
+        failed_to_log(unable_to(build_message(desc, refs), NO_DOLLAR_BANG, VERIFY_MSG), 2)
       end
 
-      def unable_to(message = '', no_dolbang = false, verify_that = false)
-        call_arr                          = get_call_array()
-        call_script, call_line, call_meth = parse_caller(call_arr[1])
+      def method_to_title(method, no_sub = false, subs = { /And/ => '&', /^Ac / => 'AC ' })
+        title = method.to_s.titleize
+        unless no_sub
+          subs.each do |ptrn, rplc|
+            title.gsub!(ptrn, rplc)
+          end
+        end
+        title
+      rescue
+        debug_to_log(unable_to(": #{method}"))
+      end
+
+      def unable_to(message = '', no_dolbang = false, verify_that = false, caller_index = 1)
+        call_arr = get_call_array
+        puts call_arr
+        call_script, call_line, call_meth = parse_caller(call_arr[caller_index])
         strg                              = "Unable to"
         strg << " verify" if verify_that
         strg << " #{call_meth.titleize}:"
+        strg << '?' if call_meth =~ /\?/
+        strg << ':'
         strg << " #{message}" if message.length > 0
         strg << " '#{$!}'" unless no_dolbang
         strg
+      end
+
+      def pad_id_end_count(id, delim = '_', pad = 6)
+        mtch = id.match(/^(.*)#{delim}(\d+)$/)
+        mtch[1] + delim + mtch[2].rjust(pad, '0')
+      rescue
+        failed_to_log(unable_to("id: '#{id}' delim: '#{delim}' pad: #{pad}"))
       end
 
       def parse_caller(caller)
@@ -1193,32 +1323,6 @@ module Awetestlib
         call_meth =~ /in .([\w\d_]+)./
         call_meth = $1
         [call_script, call_line, call_meth]
-      end
-
-      def get_test_level
-        arr       = []
-        each_line = 0
-        call_list = Kernel.caller
-        #debug_to_log("#{call_list.to_yaml}")
-        call_list.each_index do |x|
-          myCaller = call_list[x].to_s
-          myCaller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
-          string = $1
-          unless string =~ /logging\.rb|mark_testlevel|mark_test_level|debug_to_report|debug_toreport/
-            if string.length > 0
-              if string =~ /each|each_key/
-                each_line = string.match(/\:(\d+)\:/)[1]
-              elsif string.match(/\:(\d+)\:/)[1] == each_line
-                next
-              else
-                arr << string.gsub(/eval/, @myName)
-              end
-            end
-          end
-          break if myCaller =~ /:in .run.$|runner\.rb/
-        end
-        #debug_to_log("#{arr.length} #{nice_array(arr)}")
-        [arr.length, arr]
       end
 
       def insert_id_pswd_in_url(userid, password, url)
@@ -1286,7 +1390,7 @@ module Awetestlib
         end
         if awetestlib?
           if @runenv
-            @env_name = @myAppEnv.name.downcase
+            @env_name = @myAppEnv.name.downcase.underscore
           else
             @env_name = 'dev'
             #if xls
@@ -1297,14 +1401,15 @@ module Awetestlib
             #end
           end
         else
-          @env_name = @myAppEnv.nodename.downcase #.gsub(/^toad./, '')
+          @env_name = @myAppEnv.name.downcase # .underscore #.gsub(/^toad./, '')
         end
         debug_to_report("#{__LINE__}: @env_name=#{@env_name}")
       rescue
         failed_to_log(unable_to)
       end
 
-      def set_xls_spec(proj_acro = 'unknown', env = @env_name.downcase, fix = :prefix)
+      def set_xls_spec(proj_acro = 'unknown', env = @env_name.downcase.underscore, fix = :prefix, xlsx = @xlsx)
+        env = env.split(/:[\s_]*/)[1] if env =~ /:/
         case fix
           when :prefix
             xls_name = "#{proj_acro}_#{env}.xls"
@@ -1312,8 +1417,12 @@ module Awetestlib
             xls_name = "#{env}_#{proj_acro}.xls"
           when :none
             xls_name = "#{env.gsub('-', '_')}.xls"
+          else
+            failed_to_log(with_caller("Unknown fix type: '#{fix}'.  Must be 'prefix', 'suffix', or 'none'."))
+            return nil
         end
         spec = "#{@myRoot}/#{xls_name}"
+        spec << 'x' if xlsx
         debug_to_log("#{where_am_i?}: #{spec}")
         spec
       rescue
@@ -1330,19 +1439,83 @@ module Awetestlib
         refs
       end
 
+      def force_regexp(target)
+        if target.respond_to?(:dup)
+          rslt = target.dup
+          unless rslt.is_a?(Regexp)
+            rslt = Regexp.new(Regexp.escape(target.to_s))
+          end
+        else
+          rslt = target
+        end
+        rslt
+      rescue
+        failed_to_log(unable_to("'#{target}'"))
+      end
+
+      def force_string(target, slash_regexp = true)
+        if target
+          if target.respond_to?(:dup)
+            rslt = target.dup
+            if rslt.is_a?(Regexp)
+              if slash_regexp
+                rslt = "/#{rslt.source}/"
+              else
+                rslt = rslt.source
+              end
+            end
+          else
+            rslt = target.to_s
+          end
+        else
+          rslt = ''
+        end
+        rslt
+      rescue
+        failed_to_log(unable_to("'#{target}'"))
+      end
+
+      def array_neighbors(arr, target)
+        less_than    = []
+        greater_than = []
+        arr.each do |elmt|
+          if elmt < target
+            less_than << elmt
+          elsif elmt > target
+            greater_than << elmt
+          end
+        end
+        [less_than.max, greater_than.min]
+      end
+
+      def array_to_list(arr, delim = ',')
+        list = ''
+        arr.each do |entry|
+          if entry =~ /#{delim}/
+            list << "\"#{entry}\""
+          else
+            list << entry
+          end
+          list << "#{delim} " unless entry == arr.last
+        end
+        list
+      end
+
+      alias arr2list array_to_list
+
       def awetestlib?
-        not Awetestlib::Runner.nil?
+        defined? Awetestlib::Runner
       rescue
         return false
       end
 
       def get_os
-        @os = OpenStruct.new(
-          :name     => Sys::Uname.sysname,
-          :version  => Sys::Uname.version,
-          :release  => Sys::Uname.release,
-          :nodename => Sys::Uname.nodename,
-          :machine  => Sys::Uname.machine
+        $os = OpenStruct.new(
+            :name     => Sys::Uname.sysname,
+            :version  => Sys::Uname.version,
+            :release  => Sys::Uname.release,
+            :nodename => Sys::Uname.nodename,
+            :machine  => Sys::Uname.machine
         )
       end
 

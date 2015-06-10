@@ -5,6 +5,75 @@ module Awetestlib
     module Tables
 
 
+      def dump_all_tables(browser, to_report = false)
+        tables  = browser.tables
+        msg     = ''
+        tbl_cnt = 0
+        tables.each do |tbl|
+          tbl_cnt += 1
+          row_cnt = 0
+          msg << "\n=================\ntable: #{tbl_cnt}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
+          tbl.rows.each do |row|
+            row_cnt  += 1
+            cell_cnt = 0
+            msg << "\n=================\ntable: #{tbl_cnt} row: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
+            row.each do |cell|
+              cell_cnt += 1
+              msg << " \ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+            end
+          end
+        end
+        if to_report
+          debug_to_report(msg)
+        else
+          debug_to_log(msg)
+        end
+      end
+
+      def dump_table_and_rows(table, to_report = false)
+        msg = "\n=================\ntable\n=================\nn#{table}\n#{table.to_yaml}\nrows:"
+        cnt = 0
+        table.rows.each do |r|
+          cnt += 1
+          msg << "\n#{cnt}: #{r.text}"
+        end
+        msg << "\n=================\n================="
+        if to_report
+          debug_to_report(msg)
+        else
+          debug_to_log(msg)
+        end
+      end
+
+      def dump_table_rows_and_cells(tbl)
+        msg     = ''
+        row_cnt = 0
+        msg << "\n=================\ntable: #{tbl.inspect}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
+        tbl.rows.each do |row|
+          row_cnt  += 1
+          cell_cnt = 0
+          msg << "\n=================\nrow: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
+          row.each do |cell|
+            cell_cnt += 1
+            msg << "\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+          end
+        end
+        debug_to_log(msg)
+      end
+
+      alias dump_table_rows dump_table_rows_and_cells
+
+      def dump_row_cells(row)
+        msg      = ''
+        cell_cnt = 0
+        msg << "\n=================\nrow: #{row.inspect}\n#{row}\ntext:'#{row.text}'"
+        row.each do |cell|
+          cell_cnt += 1
+          msg << "\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+        end
+        debug_to_log(msg)
+      end
+
       def get_index_for_column_head(panel, table_index, strg, desc = '')
         table = panel.tables[table_index]
         get_column_index(table, strg, desc, true)
@@ -44,7 +113,7 @@ module Awetestlib
       end
 
       def get_parent_row(container, element, how, what, limit = 5)
-        msg    = "#{__method__}: #{element} :#{how}=>'#{what}'"
+        msg    = "#{__method__}: #{element.to_s.upcase} :#{how}='#{what}'"
         target = nil
         parent = nil
         case element
@@ -59,7 +128,7 @@ module Awetestlib
           when :radio
             target = container.radio(how, what)
           else
-            raise "#{element} not supported."
+            fail "#{element.to_s.upcase} not supported."
         end
         if target
           count  = 0
