@@ -101,6 +101,7 @@ module Awetestlib
         caps = Selenium::WebDriver::Remote::Capabilities.internet_explorer(
             #:nativeEvents => false,
             #'nativeEvents' => false,
+            :initialBrowserUrl                                   => 'about:blank',
             :enablePersistentHover                               => false,
             :ignoreProtectedModeSettings                         => true,
             :introduceInstabilityByIgnoringProtectedModeSettings => true,
@@ -1374,6 +1375,14 @@ module Awetestlib
         ok           = true
 
         if $mobile
+
+          # REDTAG: correction for Shamisen sending wrong browser acronym.
+          if self.browser =~ /browser/i
+            self.browser = 'AB'
+            browser_name = Awetestlib::BROWSER_MAP[self.browser]
+            browser_acro = self.browser
+          end
+
           debug_to_log(with_caller(":#{__LINE__}\n#{self.options.to_yaml}"))
 
           parse_environment_node_for_mobile
@@ -1381,7 +1390,7 @@ module Awetestlib
           debug_to_log(with_caller(":#{__LINE__}\n#{self.options.to_yaml}"))
 
           case browser_acro
-            when 'FF', 'IE', 'S', 'GC', 'C', 'SP'
+            when 'FF', 'IE', 'S', 'GC', 'C', 'ED', 'O'
               failed_to_log("#{browser_acro} (#{browser_name}) is not a valid mobile browser.")
               ok = false
             when 'IS', 'MS', 'IC', 'MC'
@@ -1412,7 +1421,7 @@ module Awetestlib
                 failed_to_log(with_caller("Must supply either emulator or device id for Android."))
                 ok = false
               end
-            when 'ME', 'MP'
+            when 'ME', 'MI'
               failed_to_log(with_caller("#{browser_acro} (#{browser_name}) is not yet supported."))
               ok = false
             else

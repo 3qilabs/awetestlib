@@ -179,6 +179,37 @@ module Awetestlib
       end
 
       # @private
+      def unformat_refs(list)
+        refs = ''
+        if list.is_a?(Array)
+          list.each { |ref| refs << unformat_reference(ref) + ' ' }
+        else
+          list.split(/,\s*/).each do |ref|
+            refs << unformat_reference(ref) + ' '
+          end
+        end
+        refs
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      # @private
+      def unformat_ref_arr(arr)
+        refs = []
+        arr.each { |ref| refs << unformat_reference(ref) }
+        refs
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      # @private
+      def unformat_reference(ref)
+        ref.gsub!('***', '').strip
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      # @private
       def collect_references(*strings)
         refs = ''
         strings.each do |strg|

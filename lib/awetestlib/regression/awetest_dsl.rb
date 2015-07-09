@@ -1050,8 +1050,8 @@ module Awetestlib
 
       alias element_attribute_not_equal? element_attribute_does_not_equal?
 
-      def element_attribute_contains?(element, attribute, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "attribute '#{attribute}' contains '#{force_string(expected)}'?", nil, nil, nil, desc, refs)
+      def element_attribute_contains?(element, attribute, expected, desc = '', refs = '', how = nil, what = nil)
+        msg = element_query_message(element, "attribute '#{attribute}' contains '#{force_string(expected)}'?", how, what, nil, desc, refs)
         actual = element.attribute_value(attribute)
         if actual
           if actual.match(expected)
@@ -1269,7 +1269,7 @@ module Awetestlib
         rescue_msg_for_validation(msg)
       end
 
-      def element_contains_text?(element, expected, desc = '', refs = '', how = '', what = '')
+      def element_contains_text?(element, expected, desc = '', refs = '', how = '', what = '', skip_fail = false)
         msg = element_query_message(element, "text contains '#{expected}'?", how, what, nil, desc, refs)
         element_wait(element)
         if element.text.match(expected)
@@ -1340,6 +1340,16 @@ module Awetestlib
         end
       rescue
         rescue_msg_for_validation(msg)
+      end
+
+      def string_contains?(strg, target, desc = '', refs = '')
+        msg = build_message("String '#{strg}' contains '#{target}'.", desc, refs)
+        if strg.match(target)
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log(msg)
+        end
       end
 
       def string_equals?(actual, expected, desc = '', refs = '')
@@ -2040,13 +2050,13 @@ module Awetestlib
         value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
         code                       = build_webdriver_fetch(element, how, what, options)
         target                     = eval(code)
-        element_does_not_exist?(target, value, desc, refs, how, what)
+        element_does_not_exist?(target, value, desc, refs, how, what, element)
       rescue
         rescue_msg_for_validation(desc, refs)
       end
 
-      def element_does_not_exist?(element, value = nil, desc = '', refs = '', how = nil, what = nil)
-        msg = element_query_message(element, 'does not exist?', how, what, value, desc, refs)
+      def element_does_not_exist?(element, value = nil, desc = '', refs = '', how = nil, what = nil, tag = nil)
+        msg = element_query_message(element, 'does not exist?', how, what, value, desc, refs, tag)
         if element.exists?
           failed_to_log(msg)
         else
@@ -2882,6 +2892,15 @@ module Awetestlib
         failed_to_log(unable_to(msg))
       end
 
+      def element_hover(element, desc = '', refs = '', how = nil, what = nil)
+        msg = element_action_message(element, "Hover over", how, what, nil, desc, refs)
+        element.hover
+        passed_to_log(msg)
+        true
+      rescue
+        failed_to_log(unable_to(msg))
+      end
+
       def set(container, element, how, what, value = nil, desc = '', refs = '', options = {})
         value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
         code                       = build_webdriver_fetch(element, how, what, options)
@@ -3090,64 +3109,64 @@ module Awetestlib
         message_to_report(msg)
       end
 
-      def send_page_down(browser)
-        send_a_key(browser, :page_down)
+      def send_page_down(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :page_down, modifier, desc, refs)
       end
 
       alias press_page_down send_page_down
 
-      def sent_page_up(browser)
-        send_a_key(browser, :page_up)
+      def sent_page_up(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :page_up, modifier, desc, refs)
       end
 
       alias press_page_up sent_page_up
 
-      def send_spacebar(browser)
-        send_a_key(browser, :space)
+      def send_spacebar(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :space, modifier, desc, refs)
       end
 
       alias press_spacebar send_spacebar
       alias press_space send_spacebar
       alias send_space send_spacebar
 
-      def send_enter(browser)
-        send_a_key(browser, :enter)
+      def send_enter(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :enter, modifier, desc, refs)
       end
 
       alias press_enter send_enter
 
-      def send_tab(browser, modifier = nil)
-        send_a_key(browser, :tab, modifier)
+      def send_tab(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :tab, modifier, desc, refs)
       end
 
       alias press_tab send_tab
 
-      def send_up_arrow(browser)
-        send_a_key(browser, :arrow_up)
+      def send_up_arrow(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :arrow_up, modifier, desc, refs)
       end
 
       alias press_up_arrow send_up_arrow
 
-      def send_down_arrow(browser)
-        send_a_key(browser, :arrow_down)
+      def send_down_arrow(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :arrow_down, modifier, desc, refs)
       end
 
       alias press_down_arrow send_down_arrow
 
-      def send_right_arrow(browser)
-        send_a_key(browser, :arrow_right)
+      def send_right_arrow(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :arrow_right, modifier, desc, refs)
       end
 
       alias press_right_arrow send_right_arrow
 
-      def send_left_arrow(browser)
-        send_a_key(browser, :arrow_left)
+      def send_left_arrow(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :arrow_left, modifier, desc, refs)
       end
 
       alias press_left_arrow send_left_arrow
 
-      def send_escape(browser)
-        send_a_key(browser, :escape)
+      def send_escape(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :escape, modifier, desc, refs)
       end
 
       alias press_escape send_escape
@@ -3602,19 +3621,19 @@ module Awetestlib
         hash                = Hash.new
         #hash[:text]         = element.text
         #hash[:unit]         = element
-        hash[:clientLeft]   = element.attribute_value('clientLeft')
-        hash[:clientTop]    = element.attribute_value('clientTop')
-        hash[:clientWidth]  = element.attribute_value('clientWidth')
-        hash[:clientHeight] = element.attribute_value('clientHeight')
+        hash[:clientLeft]   = element.attribute_value('clientLeft').to_i
+        hash[:clientTop]    = element.attribute_value('clientTop').to_i
+        hash[:clientWidth]  = element.attribute_value('clientWidth').to_i
+        hash[:clientHeight] = element.attribute_value('clientHeight').to_i
         #hash[:offsetParent] = element.attribute_value('offsetParent')
-        hash[:offsetLeft]   = element.attribute_value('offsetLeft')
-        hash[:offsetTop]    = element.attribute_value('offsetTop')
-        hash[:offsetWidth]  = element.attribute_value('offsetWidth')
-        hash[:offsetHeight] = element.attribute_value('offsetHeight')
-        hash[:scrollLeft]   = element.attribute_value('scrollLeft')
-        hash[:scrollTop]    = element.attribute_value('scrollTop')
-        hash[:scrollWidth]  = element.attribute_value('scrollWidth')
-        hash[:scrollHeight] = element.attribute_value('scrollHeight')
+        hash[:offsetLeft]   = element.attribute_value('offsetLeft').to_i
+        hash[:offsetTop]    = element.attribute_value('offsetTop').to_i
+        hash[:offsetWidth]  = element.attribute_value('offsetWidth').to_i
+        hash[:offsetHeight] = element.attribute_value('offsetHeight').to_i
+        hash[:scrollLeft]   = element.attribute_value('scrollLeft').to_i
+        hash[:scrollTop]    = element.attribute_value('scrollTop').to_i
+        hash[:scrollWidth]  = element.attribute_value('scrollWidth').to_i
+        hash[:scrollHeight] = element.attribute_value('scrollHeight').to_i
         if desc.length > 0
           debug_to_log("#{desc} #{refs}\n#{hash.to_yaml}")
         end
@@ -3644,6 +3663,25 @@ module Awetestlib
           debug_to_log("#{desc} #{refs}\n#{hash.to_yaml}")
         end
         hash
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def get_outside_location(element, desc = '', refs = '', offset = 10, vertical = 'top', horizontal = 'right')
+        dimensions = get_element_dimensions(element.browser, element, with_caller(desc), refs)
+
+        if vertical =~ /top/i
+          y = dimensions[:offsetTop].to_i
+        else
+          y = dimensions[:offsetTop].to_i + dimensions[:offsetHeight].to_i
+        end
+        if horizontal =~ /right/i
+          x = dimensions[:offsetLeft].to_i + dimensions[:offsetWidth].to_i + offset
+        else
+          x = dimensions[:offsetLeft].to_i - offset
+        end
+
+        [x, y]
       rescue
         failed_to_log(unable_to)
       end

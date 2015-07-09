@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.add_dependency('watir-nokogiri')
   s.add_dependency('activesupport', '~> 4.2', '>= 4.2.0')
   s.add_dependency('andand')
-  s.add_dependency('roo')
+  s.add_dependency('roo', '~> 2.0', '>= 2.0.1')
   s.add_dependency('selenium-webdriver')
   s.add_dependency('nokogiri')
   s.add_dependency('i18n')
