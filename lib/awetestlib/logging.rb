@@ -243,7 +243,7 @@ module Awetestlib
     def message_to_report(message, wai_lvl = 4)
       scr_lvl = first_script_index
       lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
-      mark_test_level(message, 0, '', 1, lvl)
+      mark_test_level(message, 0, '', 1, lvl + 1)
       true
     end
 
@@ -252,7 +252,7 @@ module Awetestlib
     def debug_to_report(message, wai_lvl = 4)
       scr_lvl = first_script_index
       lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
-      mark_test_level("(DEBUG): ", 0, "#{message}", 1, lvl)
+      mark_test_level("(DEBUG): ", 0, "#{message}", 1, lvl + 1)
       true
     end
 
