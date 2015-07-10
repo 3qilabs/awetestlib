@@ -1,5 +1,5 @@
 module Awetestlib
-  VERSION      = "1.2.2"
+  VERSION      = "1.2.3"
   VERSION_DATE = "2015-07-10"
   if Dir.exists?('.git')
     require 'git'
