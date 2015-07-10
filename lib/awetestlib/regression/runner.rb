@@ -67,7 +67,7 @@ module Awetestlib
       attr_accessor :browser, :browser_abbrev, :version, :env,
                     :library, :script_type, :script_file, :script_name,
                     :screencap_path, :xls_path, :script_path, :user_token, :root_path,
-                    :debug_dsl,
+                    :debug_dsl, :global_debug,
                     :environment, :environment_name, :environment_url, :environment_nodename,
                     :output_to_log, :log_path_subdir, :report_all_test_refs,
                     :timeout, :classic_watir, :capture_load_times, :platform, :pry,
