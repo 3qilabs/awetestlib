@@ -347,7 +347,7 @@ module Awetestlib
       utc_ts           = begin_time.getutc
       loc_tm           = "#{begin_time.strftime("%H:%M:%S")} #{begin_time.zone}"
       message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
-      debug_to_log("Awetestlib #{$metadata.to_yaml}")
+      debug_to_log("\nAwetestlib #{$metadata.to_yaml}")
     rescue
       failed_to_log(unable_to)
     end
