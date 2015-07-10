@@ -10,11 +10,14 @@ module Awetestlib
 
         if Dir.pwd =~ /shamisen/i
           subdir = 'awetest_report'
-          sleep  = 30
-          server_url = 'http://0.0.0.0:4723/wd/hub'
+          sleep1  = 30
+          sleep2  = 90
+          server_url = "http://127.0.0.1:4723/wd/hub"
+          # server_url = 'http://0.0.0.0:4723/wd/hub'
         else
           subdir = 'log'
-          sleep = 10
+          sleep1 = 10
+          sleep2 = 10
           server_url = "http://127.0.0.1:4723/wd/hub"
         end
 
@@ -31,7 +34,7 @@ module Awetestlib
 
         debug_to_log(with_caller("nodejs version: #{`node --version`.chomp}"))
 
-        sleep_for(sleep)
+        sleep_for(sleep1)
 
         client         = Selenium::WebDriver::Remote::Http::Default.new
         client.timeout = 300
@@ -39,9 +42,12 @@ module Awetestlib
 
         debug_to_log(desired_caps.to_yaml)
 
+        debug_to_log(with_caller('Instantiating Appium Driver'))
         Appium::Driver.new(desired_caps)
-        debug_to_log(with_caller('Staring Appium Driver'))
+        debug_to_log(with_caller('Starting Appium Driver'))
         $driver.start_driver
+
+        sleep_for(sleep2)
 
         debug_to_log(with_caller('Getting Watir Browser from driver...'))
         browser = Watir::Browser.new($driver.driver)
