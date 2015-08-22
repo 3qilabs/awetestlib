@@ -1,6 +1,353 @@
 module Awetestlib
 
+  module Logging
+
+    def where_am_i?(index = 2)
+      index = index ? index : 2
+      calls = get_call_list_new
+      log_message(DEBUG, "=== #{__LINE__}\n#{calls.to_yaml}\n===") if $debug
+      if calls[index]
+        where = calls[index].dup.to_s
+        here  = where.gsub(/^\[/, '').gsub(/\]\s*$/, '')
+      else
+        here = 'unknown'
+      end
+      here
+    rescue
+      failed_to_log(unable_to)
+    end
+
+  end
+
   module Regression
+
+    module Runner
+
+      def start
+        before_run
+        run
+      rescue Exception => e
+        failed_to_log(e.to_s, 3, e)
+      ensure
+        after_run
+      end
+
+    end
+
+    module TestData
+
+      def instantiate_style_list
+        @style_list =
+            ['-webkit-app-region', '-webkit-appearance', '-webkit-background-composite',
+             '-webkit-border-horizontal-spacing', '-webkit-border-vertical-spacing',
+             '-webkit-box-align', '-webkit-box-decoration-break', '-webkit-box-direction',
+             '-webkit-box-flex', '-webkit-box-flex-group', '-webkit-box-lines',
+             '-webkit-box-ordinal-group', '-webkit-box-orient', '-webkit-box-pack',
+             '-webkit-box-reflect', '-webkit-column-break-after', '-webkit-column-break-before',
+             '-webkit-column-break-inside', '-webkit-column-count', '-webkit-column-gap',
+             '-webkit-column-rule-color', '-webkit-column-rule-style', '-webkit-column-rule-width',
+             '-webkit-column-span', '-webkit-column-width', '-webkit-font-smoothing', '-webkit-highlight',
+             '-webkit-hyphenate-character', '-webkit-line-box-contain', '-webkit-line-break',
+             '-webkit-line-clamp', '-webkit-locale', '-webkit-margin-after-collapse',
+             '-webkit-margin-before-collapse', '-webkit-mask-box-image', '-webkit-mask-box-image-outset',
+             '-webkit-mask-box-image-repeat', '-webkit-mask-box-image-slice', '-webkit-mask-box-image-source',
+             '-webkit-mask-box-image-width', '-webkit-mask-clip', '-webkit-mask-composite',
+             '-webkit-mask-image', '-webkit-mask-origin', '-webkit-mask-position', '-webkit-mask-repeat',
+             '-webkit-mask-size', '-webkit-print-color-adjust', '-webkit-rtl-ordering',
+             '-webkit-tap-highlight-color', '-webkit-text-combine', '-webkit-text-decorations-in-effect',
+             '-webkit-text-emphasis-color', '-webkit-text-emphasis-position', '-webkit-text-emphasis-style',
+             '-webkit-text-fill-color', '-webkit-text-orientation', '-webkit-text-security',
+             '-webkit-text-stroke-color', '-webkit-text-stroke-width', '-webkit-user-drag',
+             '-webkit-user-modify', '-webkit-user-select', 'align-content', 'align-items', 'align-self',
+             'alignment-baseline', 'animation-delay', 'animation-direction', 'animation-duration',
+             'animation-fill-mode', 'animation-iteration-count', 'animation-name', 'animation-play-state',
+             'animation-timing-function', 'backface-visibility', 'background-attachment', 'background-blend-mode',
+             'background-clip', 'background-color', 'background-image', 'background-origin',
+             'background-position', 'background-repeat', 'background-size', 'baseline-shift', 'border-bottom-color',
+             'border-bottom-left-radius', 'border-bottom-right-radius', 'border-bottom-style', 'border-bottom-width',
+             'border-collapse', '-webkit-border-image', 'border-image-outset', 'border-image-repeat',
+             'border-image-slice', 'border-image-source', 'border-image-width', 'border-left-color',
+             'border-left-style', 'border-left-width', 'border-right-color', 'border-right-style',
+             'border-right-width', 'border-top-color', 'border-top-left-radius', 'border-top-right-radius',
+             'border-top-style', 'border-top-width', 'bottom', 'box-shadow', 'box-sizing', 'buffered-rendering',
+             'caption-side', 'clear', 'clip', 'clip-path', 'clip-rule', 'color', 'color-interpolation',
+             'color-interpolation-filters', 'color-rendering', 'cursor', 'cx', 'cy', 'direction', 'display',
+             'dominant-baseline', 'empty-cells', 'fill', 'fill-opacity', 'fill-rule', 'filter', 'flex-basis',
+             'flex-direction', 'flex-grow', 'flex-shrink', 'flex-wrap', 'float', 'flood-color', 'flood-opacity',
+             'font-family', 'font-kerning', 'font-size', 'font-stretch', 'font-style', 'font-variant',
+             'font-variant-ligatures', 'font-weight', 'glyph-orientation-horizontal', 'glyph-orientation-vertical',
+             'height', 'image-rendering', 'isolation', 'justify-content', 'left', 'letter-spacing', 'lighting-color',
+             'line-height', 'list-style-image', 'list-style-position', 'list-style-type', 'margin-bottom', 'margin-left',
+             'margin-right', 'margin-top', 'marker-end', 'marker-mid', 'marker-start', 'mask', 'mask-type', 'max-height',
+             'max-width', 'min-height', 'min-width', 'mix-blend-mode', 'object-fit', 'object-position', 'opacity', 'order',
+             'orphans', 'outline-color', 'outline-offset', 'outline-style', 'outline-width', 'overflow-wrap', 'overflow-x',
+             'overflow-y', 'padding-bottom', 'padding-left', 'padding-right', 'padding-top', 'page-break-after',
+             'page-break-before', 'page-break-inside', 'paint-order', 'perspective', 'perspective-origin', 'pointer-events',
+             'position', 'r', 'resize', 'right', 'rx', 'ry', 'shape-image-threshold', 'shape-margin', 'shape-outside',
+             'shape-rendering', 'speak', 'stop-color', 'stop-opacity', 'stroke', 'stroke-dasharray', 'stroke-dashoffset',
+             'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'stroke-width', 'tab-size',
+             'table-layout', 'text-align', 'text-anchor', 'text-decoration', 'text-indent', 'text-overflow', 'text-rendering',
+             'text-shadow', 'text-transform', 'top', 'touch-action', 'transform', 'transform-origin', 'transform-style',
+             'transition-delay', 'transition-duration', 'transition-property', 'transition-timing-function', 'unicode-bidi',
+             'vector-effect', 'vertical-align', 'visibility', 'white-space', 'widows', 'width', 'will-change', 'word-break',
+             'word-spacing', 'word-wrap', 'writing-mode', '-webkit-writing-mode', 'x', 'y', 'z-index', 'zoom']
+      end
+
+      def load_variables(file, key_type = :role, enabled_only = true, dbg = true, scripts = nil)
+        mark_test_level(build_message(file, "key:'#{key_type}'"))
+
+        # ok = true
+
+        debug_to_log("#{__method__}: file = #{file}")
+        debug_to_log("#{__method__}: key  = #{key_type}")
+
+        workbook = file =~ /\.xlsx$/ ? Roo::Excelx.new(file) : Roo::Excel.new(file)
+
+        if @myName =~ /appium/i
+          ok = script_found_in_data = script_found_in_login = true
+        else
+          script_found_in_data      = load_data_variables(workbook, dbg)
+          ok, script_found_in_login = load_login_variables(workbook, enabled_only, file, key_type, scripts, dbg)
+        end
+
+        unless @env_name =~ /^gen/
+          unless ok and script_found_in_login and script_found_in_data
+            ok = false
+            failed_to_log("Script found: in Login = #{script_found_in_login}; in Data = #{script_found_in_data}")
+          end
+        end
+
+        workbook.close
+
+        [ok, script_found_in_login, script_found_in_data]
+      rescue
+        failed_to_log(unable_to)
+      end
+
+    end
+
+    module Utilities
+
+      def element_action_message(element, action, how = nil, what = nil, value = nil, desc = '', refs = '')
+        if element.respond_to?(:tag_name)
+          begin
+            name = element.tag_name #.upcase
+          rescue
+            name = element.to_s
+          end
+        else
+          name = element.to_s
+        end
+        how, what = extract_locator(element, how)[1, 2] unless how and what
+        build_message(desc, action, "#{name}",
+                      (what ? "with #{how}=>'#{what}'" : nil),
+                      (value ? "and value=>'#{value}'" : nil), refs)
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def extract_locator(element, how = nil)
+        # html_to_log(element)
+        if element.respond_to?(:tag_name)
+          tag = element.tag_name.to_sym
+        else
+          element = element.body.elements[0]
+          tag     = element.tag_name.to_sym
+        end
+        what = nil
+        case how
+          when nil
+            [:id, :name, :title, :class, :value].each do |attr|
+              what = element.attribute_value(attr.to_s)
+              if what and what.length > 0 and what != 'undefined'
+                how = attr
+                break
+              end
+            end
+          else
+            what = element.attribute_value(how.to_s)
+        end
+        # debug_to_log(with_caller("#{tag}:#{how}:#{what}"))
+        [tag, how, what]
+      rescue
+        failed_to_log(unable_to(build_message(":#{tag}, :#{how}='#{what}'")))
+      end
+
+      alias nbr2wd number_to_word
+
+      def get_project_git(proj_name, proj_dir = Dir.pwd)
+        debug_to_log(with_caller(proj_dir))
+        sha    = nil
+        branch = nil
+        date   = nil
+
+        curr_dir     = Dir.pwd
+        version_file = "#{proj_name.downcase.gsub(' ', '_')}_version"
+
+        if Dir.exists?(proj_dir)
+
+          Dir.chdir(proj_dir) unless proj_dir == curr_dir
+
+          if Dir.exists?('.git')
+            require 'git'
+            git    = Git.open(Dir.pwd)
+            branch = git.current_branch
+            commit = git.gblob(branch).log(5).first
+            sha    = commit.sha
+            date   = commit.date
+
+            version_file = File.join(curr_dir, version_file)
+            file         = File.open(version_file, 'w')
+            file.puts "#{proj_name}: #{branch}, #{date}, #{sha}"
+            file.close
+
+          end
+
+          Dir.chdir(curr_dir) unless proj_dir == curr_dir
+
+        end
+
+        unless branch
+          version_file = File.join(Dir.pwd, version_file)
+          if File.exists?(version_file)
+            vers              = File.open(version_file).read
+            branch, date, sha = parse_list(vers.chomp)
+          end
+        end
+
+        [branch, date, sha]
+      end
+
+      def normalize_border_style(value, rgba = true)
+        weight, style, color = parse_list(value, ' ', 3)
+        norm_color           = normalize_color_value(color, rgba)
+        "#{weight} #{style} #{norm_color}"
+      end
+
+      def rescue_me(e, me = nil, what = nil, where = nil, who = nil)
+        #TODO: these are rescues from exceptions raised in Watir or Watir-webdriver
+        debug_to_log("#{__method__}: Begin rescue")
+        ok = false
+        begin
+          gaak    = who.inspect
+          located = gaak =~ /located=true/i
+        rescue
+          debug_to_log("#{__method__}: gaak: '#{gaak}'")
+        end
+        msg = e.message
+        debug_to_log("#{__method__}: msg = #{msg}")
+        if msg =~ /undefined method\s+.join.\s+for/i # firewatir to_s implementation error
+          ok = true
+        elsif msg =~ /the server refused the connection/i
+          ok = true
+        elsif msg =~ /undefined method\s+.match.\s+for.+WIN32OLERuntimeError/i # watir and firewatir
+          ok = true
+        elsif msg =~ /undefined method\s+.match.\s+for.+UnknownObjectException/i # watir
+          ok = true
+        elsif msg =~ /window\.getBrowser is not a function/i # firewatir
+          ok = true
+        elsif msg =~ /WIN32OLERuntimeError/i # watir
+          ok = true
+        elsif msg =~ /undefined method\s+.match.\s+for/i # watir
+          ok = true
+        elsif msg =~ /wrong number of arguments \(1 for 0\)/i
+          ok = true
+        elsif msg =~ /unable to locate element/i
+          if located
+            ok = true
+          elsif where == 'Watir::Div'
+            ok = true
+          end
+        elsif msg =~ /(The SafariDriver does not interact with modal dialogs)/i
+          to_report = $1
+          ok        = true
+        elsif msg =~ /HRESULT error code:0x80070005/
+          ok = true
+          #elsif msg =~ /missing\s+\;\s+before statement/
+          #  ok = true
+        end
+        call_list = get_call_list(6, true)
+        if ok
+          debug_to_log("#{__method__}: RESCUED: \n#{who.to_yaml}=> #{what} in #{me}()\n=> '#{$!}'")
+          debug_to_log("#{__method__}: #{who.inspect}") if who
+          debug_to_log("#{__method__}: #{where.inspect}")
+          debug_to_log("#{__method__}: #{call_list}")
+          failed_to_log("#{to_report}  #{call_list}")
+        else
+          debug_to_log("#{__method__}: NO RESCUE: #{e.message}")
+          debug_to_log("#{__method__}: NO RESCUE: \n#{call_list}")
+        end
+        debug_to_log("#{__method__}: Exit")
+        ok
+      end
+
+      def get_element_properties(element, list = [])
+        hash = {}
+        list.each do |prop|
+          style = nil
+          attr  = nil
+          begin
+            style = element.style(prop)
+          rescue
+            debug_to_log(with_caller("Can't find style '#{prop}"))
+          end
+          begin
+            attr = element.attribute_value(prop)
+          rescue
+            debug_to_log(with_caller("Can't find attribute '#{prop}"))
+          end
+
+          hash[prop] = style ? style : attr
+        end
+
+        hash
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def escape_stuff(strg)
+        if strg.nil?
+          rslt = strg
+        else
+          if strg.respond_to?(:dup)
+            rslt = strg.dup
+            unless rslt.is_a?(Regexp)
+              if rslt.match(/[\/\(\)]/)
+                rslt.gsub!('/', '\/')
+                rslt.gsub!('(', '\(')
+                rslt.gsub!(')', '\)')
+                rslt = Regexp.new(rslt)
+              end
+            end
+          else
+            rslt = strg
+          end
+        end
+        rslt
+      rescue
+        failed_to_log(unable_to("#{rslt}"))
+      end
+
+      def element_query_message(element, query, how = nil, what = nil, value = nil, desc = '', refs = '', tag = '')
+        if element.exists?
+          name = element.respond_to?(:tag_name) ? element.tag_name.upcase : element.to_s
+        else
+          if tag and tag.length > 0
+            name = tag.upcase
+          else
+            name = '(unknown)'
+          end
+        end
+        build_message(desc, "#{name}",
+                      (what ? "with #{how}=>' #{what}'" : nil),
+                      (value ? "and value=>'#{value}'" : nil),
+                      query, refs)
+      rescue
+        failed_to_log(unable_to)
+      end
+
+    end
+
 
     module Find
 
@@ -23,7 +370,7 @@ module Awetestlib
 
         colors = [
             'color', 'background-color', 'border-bottom-color', 'border-left-color', 'border-right-color',
-            'border-top-color'
+            'border-top-color', 'border-color'
         ] unless colors.size > 0
 
         hash = {}
@@ -50,7 +397,7 @@ module Awetestlib
       end
 
       def get_selected_options(browser, how, what, desc = '', refs = '')
-        msg      = with_caller(desc, with_caller(" in Select list #:#{how}=>#'#{what}'"), refs)
+        msg      = build_message(desc, with_caller("in Select list #:#{how}=>#'#{what}'"), refs)
         selected = nil
         begin
           list = browser.select_list(how, what)
@@ -62,10 +409,10 @@ module Awetestlib
         if list
           selected = list.selected_options
           if selected and selected.length > 0
-            passed_to_log(msg + " Found #{selected.length} selected options.")
+            passed_to_log(msg + " Found #{selected.length} selected options:" + " (first: value/text: #{selected[0].value}/#{selected[0].text})")
             selected
           else
-            failed_to_log(msg + " Found no selected options.")
+            failed_to_log(msg + ' Found no selected options.')
           end
         else
           failed_to_log(with_caller(desc, "Select List #{how}=#{what} not found.", refs))
@@ -418,10 +765,10 @@ module Awetestlib
           msg.gsub!('xxxx', 'fully spelled')
         end
         if list == month_names
-          passed_to_log(with_caller(msg, desc, refs))
+          passed_to_log(with_caller(msg, refs))
           true
         else
-          failed_to_log(with_caller(msg, desc, refs))
+          failed_to_log(with_caller(msg, refs))
         end
       rescue
         failed_to_log(unable_to(msg))
@@ -438,10 +785,10 @@ module Awetestlib
           msg.gsub!('xxxx', 'fully spelled')
         end
         if list == day_names
-          passed_to_log(with_caller(msg, desc, refs))
+          passed_to_log(with_caller(msg, refs))
           true
         else
-          failed_to_log(with_caller(msg, desc, refs))
+          failed_to_log(with_caller(msg, refs))
         end
       rescue
         failed_to_log(unable_to(msg))
@@ -1050,8 +1397,8 @@ module Awetestlib
 
       alias element_attribute_not_equal? element_attribute_does_not_equal?
 
-      def element_attribute_contains?(element, attribute, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "attribute '#{attribute}' contains '#{force_string(expected)}'?", nil, nil, nil, desc, refs)
+      def element_attribute_contains?(element, attribute, expected, desc = '', refs = '', how = nil, what = nil)
+        msg    = element_query_message(element, "attribute '#{attribute}' contains '#{force_string(expected)}'?", how, what, nil, desc, refs)
         actual = element.attribute_value(attribute)
         if actual
           if actual.match(expected)
@@ -1153,6 +1500,29 @@ module Awetestlib
         rescue_msg_for_validation(desc, refs)
       end
 
+      def element_value_equals?(element, expected, desc = '', refs = '')
+        msg = element_query_message(element, "value equals '#{expected}'?", nil, nil, nil, desc, refs)
+
+        if element.responds_to?('value')
+          actual = element.value
+          if actual
+            if actual == expected
+              passed_to_log(msg)
+              true
+            else
+              failed_to_log(msg)
+            end
+          else
+            failed_to_log("#{msg} 'value' not found.")
+          end
+        else
+          failed_to_log("#{msg} Element does not respond to 'value'")
+        end
+
+      rescue
+        rescue_msg_for_validation(desc, refs)
+      end
+
       def element_text_equals?(element, expected, desc = '', refs = '')
         msg    = element_query_message(element, "text equals '#{expected}'?", nil, nil, nil, desc, refs)
         actual = element.text
@@ -1164,7 +1534,7 @@ module Awetestlib
             failed_to_log(msg)
           end
         else
-          failed_to_log("#{msg} '#{attribute}' not found.")
+          failed_to_log("#{msg} 'text' not found.")
         end
       rescue
         rescue_msg_for_validation(desc, refs)
@@ -1181,7 +1551,7 @@ module Awetestlib
             true
           end
         else
-          failed_to_log("#{msg} '#{attribute}' not found.")
+          failed_to_log("#{msg} 'text' not found.")
         end
       rescue
         rescue_msg_for_validation(desc, refs)
@@ -1198,7 +1568,7 @@ module Awetestlib
             failed_to_log(msg)
           end
         else
-          failed_to_log("#{msg} '#{attribute}' not found.")
+          failed_to_log("#{msg} 'text' not found.")
         end
       rescue
         rescue_msg_for_validation(desc, refs)
@@ -1269,7 +1639,7 @@ module Awetestlib
         rescue_msg_for_validation(msg)
       end
 
-      def element_contains_text?(element, expected, desc = '', refs = '', how = '', what = '')
+      def element_contains_text?(element, expected, desc = '', refs = '', how = '', what = '', skip_fail = false)
         msg = element_query_message(element, "text contains '#{expected}'?", how, what, nil, desc, refs)
         element_wait(element)
         if element.text.match(expected)
@@ -1342,6 +1712,16 @@ module Awetestlib
         rescue_msg_for_validation(msg)
       end
 
+      # def string_contains?(strg, target, desc = '', refs = '')
+      #   msg = build_message("String '#{strg}' contains '#{target}'.", desc, refs)
+      #   if strg.match(target)
+      #     passed_to_log(msg)
+      #     true
+      #   else
+      #     failed_to_log(msg)
+      #   end
+      # end
+
       def string_equals?(actual, expected, desc = '', refs = '')
         msg = build_message(desc, "String '#{actual}' equals expected '#{expected}'?", refs)
         if actual == expected
@@ -1368,7 +1748,28 @@ module Awetestlib
 
       alias string_not_equal? string_does_not_equal?
 
-      def text_equals?(container, ptrn, desc = '', refs = '', skip_fail = false, skip_sleep = false)
+      def text_does_not_contain?(container, ptrn, desc = '', refs = '')
+        name = container.respond_to?(:tag_name) ? container.tag_name.titleize : 'DOM'
+        msg  = build_message(desc, "#{name} text does not contain '#{ptrn}'?", refs)
+
+        if ptrn.is_a?(Regexp)
+          target = ptrn
+        else
+          target = Regexp.new(Regexp.escape(ptrn))
+        end
+
+        if container.text.match(target)
+          failed_to_log(msg)
+        else
+          passed_to_log(msg)
+          true
+        end
+
+      rescue
+        rescue_msg_for_validation(msg)
+      end
+
+      def text_contains?(container, ptrn, desc = '', refs = '', skip_fail = false, skip_sleep = false)
         name = container.respond_to?(:tag_name) ? container.tag_name.titleize : 'DOM'
         msg  = build_message(desc, "#{name} text contains '#{ptrn}'?", refs)
         if ptrn.is_a?(Regexp)
@@ -1400,8 +1801,9 @@ module Awetestlib
         rescue_msg_for_validation(msg)
       end
 
-      alias validate_text text_equals?
-      alias element_text_equals? text_equals?
+      alias text_equals? text_contains?
+      alias validate_text text_contains?
+      alias element_text_equals? text_contains?
 
       def validate_html(container, page, force_browser = false, filter = true)
         mark_testlevel(": #{page}")
@@ -2040,13 +2442,13 @@ module Awetestlib
         value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
         code                       = build_webdriver_fetch(element, how, what, options)
         target                     = eval(code)
-        element_does_not_exist?(target, value, desc, refs, how, what)
+        element_does_not_exist?(target, value, desc, refs, how, what, element)
       rescue
         rescue_msg_for_validation(desc, refs)
       end
 
-      def element_does_not_exist?(element, value = nil, desc = '', refs = '', how = nil, what = nil)
-        msg = element_query_message(element, 'does not exist?', how, what, value, desc, refs)
+      def element_does_not_exist?(element, value = nil, desc = '', refs = '', how = nil, what = nil, tag = nil)
+        msg = element_query_message(element, 'does not exist?', how, what, value, desc, refs, tag)
         if element.exists?
           failed_to_log(msg)
         else
@@ -2489,8 +2891,20 @@ module Awetestlib
         msg           = element_query_message(element, "style '#{style}' equals '#{expected}'?", how, what, nil, desc, refs)
         actual        = element.style(style)
         actual        = element.attribute_value(style) unless actual and actual.length > 0
-        actual_norm   = style =~ /color/ ? normalize_color_value(actual) : actual
-        expected_norm = style =~ /color/ ? normalize_color_value(expected) : expected
+        case style
+          when /color/
+            actual_norm   = normalize_color_value(actual)
+            expected_norm = normalize_color_value(expected)
+          when /opacity/
+            actual_norm   = actual.to_f
+            expected_norm = expected.to_f
+          when /border/
+            actual_norm   = normalize_border_style(actual)
+            expected_norm = normalize_border_style(expected)
+          else
+            actual_norm   = actual
+            expected_norm = expected
+        end
 
         # if style =~ /color/
         #   debug_to_log(with_caller("'#{style}'", "actual:   raw: '" + actual + "'  normalized: '" + actual_norm + "'"))
@@ -2533,6 +2947,7 @@ module Awetestlib
           idx      = sides.index(side)
           color    = colors[idx] ? colors[idx] : colors[0]
           expected = normalize_color_value(color)
+          debug_to_log(with_caller(desc, side, 'expected normalized:', expected))
           actual   = normalize_color_value(element.style("border-#{side}-color"))
           unless actual == expected
             errors += 1
@@ -2723,7 +3138,7 @@ module Awetestlib
       end
 
       def focus_element(element, desc = '', refs = '', how = nil, what = nil)
-        msg = element_action_message(element, "Set focus on", how, what, nil, desc, refs)
+        msg = element_action_message(element, 'Set focus on', how, what, nil, desc, refs)
         element.focus
         if element.focused?
           passed_to_log(with_caller(msg))
@@ -2750,7 +3165,7 @@ module Awetestlib
 
       def clear(container, element, how, what, value = nil, desc = '', refs = '', options = {})
         value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
-        msg                        = element_action_message(element, "Clear", how, what, value, desc, refs)
+        msg                        = element_action_message(element, 'Clear', how, what, value, desc, refs)
         code                       = build_webdriver_fetch(element, how, what, options)
         eval("#{code}.clear")
         cleared = false
@@ -2775,15 +3190,15 @@ module Awetestlib
       def click(container, element, how, what, desc = '', refs = '', wait = 10)
         code   = build_webdriver_fetch(element, how, what)
         target = eval("#{code}.when_present(#{wait})")
-        click_element(target, desc, refs, how, what)
+        click_element(target, desc, refs, how, what, value = nil)
       rescue
         failed_to_log(unable_to(build_message(desc, "#{element.to_s.upcase} :#{how}=>'#{what}'", refs)))
       end
 
       alias click_js click
 
-      def click_element(element, desc = '', refs = '', how = '', what = '')
-        msg = element_action_message(element, "Click", how, what, nil, desc, refs)
+      def click_element(element, desc = '', refs = '', how = '', what = '', value = '')
+        msg = element_action_message(element, 'Click', how, what, value, desc, refs)
         begin
           element.click
         rescue => e
@@ -2882,6 +3297,15 @@ module Awetestlib
         failed_to_log(unable_to(msg))
       end
 
+      def element_hover(element, desc = '', refs = '', how = nil, what = nil)
+        msg = element_action_message(element, "Hover over", how, what, nil, desc, refs)
+        element.hover
+        passed_to_log(msg)
+        true
+      rescue
+        failed_to_log(unable_to(msg))
+      end
+
       def set(container, element, how, what, value = nil, desc = '', refs = '', options = {})
         value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
         code                       = build_webdriver_fetch(element, how, what, options)
@@ -2958,6 +3382,22 @@ module Awetestlib
           new_index = 0
         else
           new_index = options[selected_index + 1] ? selected_index + 1 : 0
+        end
+
+        select_option_from_list(list, :index, new_index, with_caller(desc), refs)
+      rescue
+        failed_to_log(unable_to(msg))
+      end
+
+      def select_previous_option_from_list(list, desc = '', refs = '')
+        msg            = build_message(desc, refs)
+        options        = list.options
+        #This doesnt seem to account for the last option already being selected. ex. calendar with dec selected
+        selected_index = list.selected_options[0].index
+        if selected_index == options.length - 1
+          new_index = 0
+        else
+          new_index = options[selected_index - 1] ? selected_index - 1 : 0
         end
 
         select_option_from_list(list, :index, new_index, with_caller(desc), refs)
@@ -3090,64 +3530,64 @@ module Awetestlib
         message_to_report(msg)
       end
 
-      def send_page_down(browser)
-        send_a_key(browser, :page_down)
+      def send_page_down(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :page_down, modifier, desc, refs)
       end
 
       alias press_page_down send_page_down
 
-      def sent_page_up(browser)
-        send_a_key(browser, :page_up)
+      def sent_page_up(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :page_up, modifier, desc, refs)
       end
 
       alias press_page_up sent_page_up
 
-      def send_spacebar(browser)
-        send_a_key(browser, :space)
+      def send_spacebar(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :space, modifier, desc, refs)
       end
 
       alias press_spacebar send_spacebar
       alias press_space send_spacebar
       alias send_space send_spacebar
 
-      def send_enter(browser)
-        send_a_key(browser, :enter)
+      def send_enter(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :enter, modifier, desc, refs)
       end
 
       alias press_enter send_enter
 
-      def send_tab(browser, modifier = nil)
-        send_a_key(browser, :tab, modifier)
+      def send_tab(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :tab, modifier, desc, refs)
       end
 
       alias press_tab send_tab
 
-      def send_up_arrow(browser)
-        send_a_key(browser, :arrow_up)
+      def send_up_arrow(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :arrow_up, modifier, desc, refs)
       end
 
       alias press_up_arrow send_up_arrow
 
-      def send_down_arrow(browser)
-        send_a_key(browser, :arrow_down)
+      def send_down_arrow(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :arrow_down, modifier, desc, refs)
       end
 
       alias press_down_arrow send_down_arrow
 
-      def send_right_arrow(browser)
-        send_a_key(browser, :arrow_right)
+      def send_right_arrow(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :arrow_right, modifier, desc, refs)
       end
 
       alias press_right_arrow send_right_arrow
 
-      def send_left_arrow(browser)
-        send_a_key(browser, :arrow_left)
+      def send_left_arrow(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :arrow_left, modifier, desc, refs)
       end
 
       alias press_left_arrow send_left_arrow
 
-      def send_escape(browser)
-        send_a_key(browser, :escape)
+      def send_escape(browser, desc = '', refs = '', modifier = nil)
+        send_a_key(browser, :escape, modifier, desc, refs)
       end
 
       alias press_escape send_escape
@@ -3530,6 +3970,8 @@ module Awetestlib
       def mouse_to_browser_edge(container, offset_x = -3, offset_y = -3)
         x, y = window_dimensions(container)[4, 2]
         container.driver.mouse.move_to(container.driver[:tag_name => 'body'], x - offset_x, y - offset_y)
+        container.driver.mouse.down
+        container.driver.mouse.up
       end
 
       def set_viewport_size(browser, width, height, diff = nil, move_to_origin = true, use_body = false, desc = '', refs = '')
@@ -3602,19 +4044,19 @@ module Awetestlib
         hash                = Hash.new
         #hash[:text]         = element.text
         #hash[:unit]         = element
-        hash[:clientLeft]   = element.attribute_value('clientLeft')
-        hash[:clientTop]    = element.attribute_value('clientTop')
-        hash[:clientWidth]  = element.attribute_value('clientWidth')
-        hash[:clientHeight] = element.attribute_value('clientHeight')
+        hash[:clientLeft]   = element.attribute_value('clientLeft').to_i
+        hash[:clientTop]    = element.attribute_value('clientTop').to_i
+        hash[:clientWidth]  = element.attribute_value('clientWidth').to_i
+        hash[:clientHeight] = element.attribute_value('clientHeight').to_i
         #hash[:offsetParent] = element.attribute_value('offsetParent')
-        hash[:offsetLeft]   = element.attribute_value('offsetLeft')
-        hash[:offsetTop]    = element.attribute_value('offsetTop')
-        hash[:offsetWidth]  = element.attribute_value('offsetWidth')
-        hash[:offsetHeight] = element.attribute_value('offsetHeight')
-        hash[:scrollLeft]   = element.attribute_value('scrollLeft')
-        hash[:scrollTop]    = element.attribute_value('scrollTop')
-        hash[:scrollWidth]  = element.attribute_value('scrollWidth')
-        hash[:scrollHeight] = element.attribute_value('scrollHeight')
+        hash[:offsetLeft]   = element.attribute_value('offsetLeft').to_i
+        hash[:offsetTop]    = element.attribute_value('offsetTop').to_i
+        hash[:offsetWidth]  = element.attribute_value('offsetWidth').to_i
+        hash[:offsetHeight] = element.attribute_value('offsetHeight').to_i
+        hash[:scrollLeft]   = element.attribute_value('scrollLeft').to_i
+        hash[:scrollTop]    = element.attribute_value('scrollTop').to_i
+        hash[:scrollWidth]  = element.attribute_value('scrollWidth').to_i
+        hash[:scrollHeight] = element.attribute_value('scrollHeight').to_i
         if desc.length > 0
           debug_to_log("#{desc} #{refs}\n#{hash.to_yaml}")
         end
@@ -3644,6 +4086,25 @@ module Awetestlib
           debug_to_log("#{desc} #{refs}\n#{hash.to_yaml}")
         end
         hash
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def get_outside_location(element, desc = '', refs = '', offset = 10, vertical = 'top', horizontal = 'right')
+        dimensions = get_element_dimensions(element.browser, element, with_caller(desc), refs)
+
+        if vertical =~ /top/i
+          y = dimensions[:offsetTop].to_i
+        else
+          y = dimensions[:offsetTop].to_i + dimensions[:offsetHeight].to_i
+        end
+        if horizontal =~ /right/i
+          x = dimensions[:offsetLeft].to_i + dimensions[:offsetWidth].to_i + offset
+        else
+          x = dimensions[:offsetLeft].to_i - offset
+        end
+
+        [x, y]
       rescue
         failed_to_log(unable_to)
       end
