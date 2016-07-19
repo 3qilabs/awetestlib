@@ -401,6 +401,7 @@ module Awetestlib
     alias msg_with_caller with_caller
 
     def where_am_i?(index = 2)
+      index = index ? index : 2
       calls = get_call_list_new
       log_message(DEBUG, "=== #{__LINE__}\n#{calls.to_yaml}\n===") if $debug
       if calls[index]
