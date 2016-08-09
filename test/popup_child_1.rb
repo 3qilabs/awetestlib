@@ -2,6 +2,7 @@ module PopupChild1
 #http://www.entheosweb.com/website_design/pop_up_windows.asp
 
   def run
+    $using_webdriver = true
     browser = open_browser
     #go_to_url(browser, 'http://www.entheosweb.com')
     go_to_url(browser, 'http://www.entheosweb.com/website_design/pop_up_windows.asp')
@@ -14,9 +15,9 @@ module PopupChild1
     if popup
       validate_text(popup, 'Smart Rollover Pictures')
 
-      verify_rollover(popup, 'Services')
+      # verify_rollover(popup, 'Services')
 
-      close_child_window(popup)
+      close_window(popup)
     end
 
     sleep(1)

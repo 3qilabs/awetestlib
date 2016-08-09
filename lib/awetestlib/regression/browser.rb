@@ -129,7 +129,7 @@ module Awetestlib
       # @return [Watir::Browser] Browser is Google Chrome.
       def open_chrome
         client         = Selenium::WebDriver::Remote::Http::Default.new
-        client.timeout = 180 # seconds – default is 60
+        client.timeout = 180 # seconds ï¿½ default is 60
 
         Watir::Browser.new(:chrome, :http_client => client)
       end

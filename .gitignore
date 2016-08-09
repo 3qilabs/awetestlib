@@ -68,3 +68,4 @@ config/settings.yml
 PROJECT_NAME
 *.log
 awetest_reports/
+awetest_report/
