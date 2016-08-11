@@ -1,6 +1,6 @@
 module Awetestlib
-  VERSION      = "1.2.4"
-  VERSION_DATE = "2016-07-19"
+  VERSION      = "1.3.0"
+  VERSION_DATE = "2016-08-19"
   if Dir.exists?('.git')
     require 'git'
     git      = Git.open(Dir.pwd)
