@@ -1,35 +1,613 @@
+# require 'color/rgb'
+# require 'color/rgb/contrast'
+require 'selenium/webdriver/common'
+require 'digest/sha1'
+
 module Awetestlib
+
+  RDTL       = '@dtl@'
+  RENV       = '@env@'
+  RSMY       = '@smy@'
+  RFTR       = '@ftr@'
+  RSTP       = '@stp@'
+  RPGL       = '@pgl@'
+
+  # include Selenium::Webdriver::Proxy
+  $log_count = 0
+
+  $default_font_size   = 16
+  $default_line_height = 26
+
+  if ::USING_WINDOWS
+    $default_screen_dpi = 96
+  else
+    $default_screen_dpi = 72
+  end
+
+  # @focus_moves                  = {
+  #     :remove => { :blur => 0, :tab => 0, :enter => 0, :fail => 0, :already => 0 },
+  #     :return => { :onclick => 0, :onfocus => 0, :focus => 0, :click => 0, :shift_tab => 0, :fail => 0, :already => 0 }
+  # }
 
   module Logging
 
-    def where_am_i?(index = 2)
+    def mark_test_level(message = '', lvl = nil, desc = '', caller = 1, wai_lvl = 4, data = nil, trc = $debug)
+      strg     = ''
+      list     = nil
+      call_arr = get_call_array
+
+      debug_to_log("#{call_arr.to_yaml}") if trc
+      call_script, call_line, call_meth = parse_caller(call_arr[caller])
+
+      if not lvl or lvl > 1
+        lvl, list = get_test_level
+        strg << "#{call_meth.titleize}: "
+      end
+
+      strg << "#{message}" if message.length > 0
+      strg << " (#{desc})" if desc.length > 0
+      strg << " [#{call_line}]" if trc
+      strg << "\n#{list.to_yaml}" if list and trc
+
+      log_message(INFO, strg, lvl, where_am_i?(wai_lvl), nil, data)
+
+      if lvl == 0
+        parse_error_references(message)
+      end
+
+      true
+    rescue
+      failed_to_log(unable_to)
+    end
+
+    def message_to_report(message, wai_lvl = 4, data = nil)
+      scr_lvl = first_script_index
+      lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
+      mark_test_level(message, 0, '', 1, lvl + 1, data)
+      true
+    end
+
+    def info_to_log(message, wai_lvl = 3)
+      log_message(INFO, message, '', where_am_i?(wai_lvl))
+    end
+
+    def log_begin_run(begin_time)
+      sctn = RENV
+      mark_test_level("#{sctn}Begin Test Run") # not getting here, already executed from Logging
+      message_to_report("#{sctn}>> Running on host '#{$os.nodename}'")
+      message_to_report("#{sctn}>> Running #{$os.name} version #{$os.version}")
+      @my_failed_count = 0 unless @my_failed_count
+      @my_passed_count = 0 unless @my_passed_count
+      utc_ts           = begin_time.getutc
+      loc_tm           = "#{begin_time.strftime("%H:%M:%S")} #{begin_time.zone}"
+      message_to_report("#{sctn}>> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
+      debug_to_log("\nAwetestlib #{$metadata.to_yaml}")
+    rescue
+      failed_to_log(unable_to)
+    end
+
+    def log_message(severity, message, tag = '', who_called = nil, exception = nil, data = nil)
+      level = nil
+
+      # $log_count += 1
+
+      t        = Time.now.utc
+      @last_ts ||= t
+      duration = (t.to_f - @last_ts.to_f)
+
+      # durations = calculate_durations(tag, t = Time.now.utc)
+
+      tstmp    = t.strftime('%H%M%S') + '.' + t.to_f.modulo(t.to_i).to_s.split('.')[1].slice(0, 5)
+      my_sev   = translate_severity(severity)
+      my_msg   = '%-8s' % my_sev
+      my_msg << '[' + tstmp + ']:'
+
+      my_msg << "[#{'%9.5f' % duration}]:"
+
+      if tag
+        if tag.is_a? Fixnum
+          level = tag.to_i
+          tag   = '-LVL' + tag.to_s
+        end
+      end
+      my_msg << '[%-6s][:' % tag
+
+      unless who_called
+        who_called = exception.nil? ? get_debug_list(false, true, true) : get_caller(exception)
+      end
+      my_msg << who_called
+
+      message, section = set_report_section(message)
+
+      message.sub!(/^@\w{3}@/, '')
+
+      my_msg << ']: ' + message
+
+      @logger.add(severity, my_msg) if @logger
+
+      puts my_msg + "\n"
+
+      @report_class.add_to_report(message, who_called, text_for_level(tag), duration, level, section, data) if tag and tag.length > 0
+
+      @last_ts = t
+
+    rescue
+      puts with_caller("#{section}#{message} \n#{get_debug_list}")
+      debug_to_log("#{section}#{message} \n#{get_debug_list}")
+    end
+
+    def text_for_level(tag)
+      case tag
+        when /PASS/i
+          'PASSED'
+        when /FAIL/i
+          build_link_for_fail
+        #when tag =~ /\d+/ # avoid having to require andand for awetestlib. pmn 05jun2012
+        when /\d+/
+          unless tag == '0'
+            tag.to_s
+          end
+        when /DONE/i
+          'DONE'
+        when /role/i
+          'ROLE'
+        else
+          ''
+      end
+    end
+
+    def build_link_for_fail
+      rtrn = 'FAILED'
+      if @current_instance
+        # debug_to_log(with_caller("#{File.basename(__FILE__)}\n#{@current_instance.to_yaml}"))
+        if @current_instance[:fail_href]
+          href = @current_instance[:fail_href]
+          unless @current_instance[:ref_done] == href
+            rtrn                         = "<a id=\"#{href}\"></a><a href=\"#summary\">FAILED</a>"
+            @current_instance[:ref_done] = href
+            # debug_to_log(with_caller("#{File.basename(__FILE__)}\n#{@current_instance.to_yaml}"))
+          end
+        end
+      end
+      rtrn
+    end
+
+    def set_report_section(message)
+      section = case message
+                  when /#{RDTL}/
+                    message.sub!(RDTL, '')
+                    RDTL
+                  when /#{RENV}/
+                    message.sub!(RENV, '')
+                    RENV
+                  when /#{RSMY}/
+                    message.sub!(RSMY, '')
+                    RSMY
+                  when /#{RSTP}/
+                    message.sub!(RSTP, '')
+                    RSTP
+                  when /#{RPGL}/
+                    message.sub!(RPGL, '')
+                    RPGL
+                  when /#{RFTR}/
+                    message.sub!(RFTR, '')
+                    RFTR
+                  else
+                    RDTL
+                end
+      [message, section]
+    end
+
+    def failed_to_log(message, wai_lvl = 3, exception = nil)
+      message << " \n#{get_debug_list}" if $debug
+      @my_failed_count += 1 if @my_failed_count
+      scr_lvl          = first_script_index
+      lvl              = scr_lvl > 0 ? scr_lvl : wai_lvl
+      parse_error_references(message, true)
+      log_message(WARN, "#{message}", FAIL, where_am_i?(lvl), exception)
+      false
+    rescue
+      debug_to_log("#{message} \n#{get_debug_list}")
+    end
+
+    def run_summary(ts = Time.now, begin_time = $begin_time)
+      # msg  = tally_error_references
+      mark_test_level(RFTR)
+      # message_to_report(msg)
+      @run_elapsed = sec2hms(ts - begin_time)
+      elapsed_msg  = ">> #{@myName.titleize} elapsed: #{@run_elapsed}"
+      message_to_report("#{RENV}#{elapsed_msg}")
+      message_to_report("#{RFTR}#{elapsed_msg}")
+      if @my_passed_count and @my_failed_count
+        total_count = @my_passed_count + @my_failed_count
+        tally_msg   = ">> #{@myName.titleize} validations: #{total_count} "+
+            "fail: #{@my_failed_count} (#{nice_percent(@my_failed_count, total_count, 2)}%)"
+        message_to_report("#{RENV}#{tally_msg}")
+        message_to_report("#{RFTR}#{tally_msg}")
+      end
+      utc_ts = ts.getutc
+      loc_tm = "#{ts.strftime('%H:%M:%S')} #{ts.zone}"
+      message_to_report("#{RFTR}>> End #{@myName.titleize} #{utc_ts} (#{loc_tm})")
+    end
+
+    alias log_finish_run run_summary
+
+    def where_am_i?(index = 2, sctn = RDTL)
       index = index ? index : 2
       calls = get_call_list_new
-      log_message(DEBUG, "=== #{__LINE__}\n#{calls.to_yaml}\n===") if $debug
-      if calls[index]
+      log_message(DEBUG, "#{sctn}=== #{__LINE__}\n#{calls.to_yaml}\n===",
+                  '', "#{File.basename($0)}:#{__LINE__}:in '#{__method__}'",
+                  "@current_location: #{@current_location}"
+      ) if @debug_dsl
+      if @current_location
+        here              = @current_location
+        @current_location = nil
+      elsif calls[index]
         where = calls[index].dup.to_s
         here  = where.gsub(/^\[/, '').gsub(/\]\s*$/, '')
       else
         here = 'unknown'
       end
+      if @lib_name
+        name = parse_caller(here)[0]
+        if @lib_name == name
+          here.sub!(/#{name}:/, '')
+        end
+      end
+      here
+    rescue
+      failed_to_log(unable_to(sctn))
+    end
+
+    def first_script_index(script = @myName)
+      target    = @deeper_call ? @deeper_call : script
+      here      = 0
+      where_idx = 2
+      who       = ''
+      call_list = get_call_list_new
+      log_message(DEBUG, with_caller("=== #{__LINE__} @deeper_call:[#{@deeper_call}]  where_idx: #{where_idx}\n#{call_list.to_yaml}\n==="),
+                  '', where_am_i?(where_idx)) if @debug_dsl and @deeper_call
+      call_list.each_index do |x|
+        a_caller = call_list[x].to_s
+        a_caller =~ /([\(\)\w_\_\-\.]+\:\d+\:?.*?)$/
+        caller = $1
+        if caller =~ /#{target}|#{script}/
+          here = x
+          who  = caller
+          break
+        end
+      end
+      log_message(DEBUG, with_caller("=== #{__LINE__} index: [#{here}] @deeper_call:[#{@deeper_call}] where_idx: #{where_idx} who: [#{who}]"),
+                  '', where_am_i?(where_idx)) if @debug_dsl and @deeper_call
       here
     rescue
       failed_to_log(unable_to)
+    end
+
+    def with_caller(message = '', *strings)
+      call_arr             = get_call_array
+      call_line, call_meth = get_previous_caller(call_arr, 1)[1, 2]
+
+      if strings.include?(/^(@...@)$/)
+        strg = "#{$1}#{call_meth}[#{call_line}]: "
+      else
+        strg = "#{call_meth}(): "
+      end
+      @current_location = call_arr[1]
+      strg << build_message(message, *strings)
+      strg
+    end
+
+    def get_previous_caller(call_arr, how_far = 1)
+      script, line, meth = parse_caller(call_arr[how_far])
+      meth.sub!(/^#{@method_prefix}_/i, '') if @method_prefix
+      meth.sub!(/\s*\(*block\)*\s*/, '')
+      [script, line, meth]
     end
 
   end
 
   module Regression
 
-    module Runner
+    class Runner
+
+      def initiate_html_report(ts)
+        html_report_dir = File.join(FileUtils.pwd, 'awetest_report')
+        FileUtils.mkdir html_report_dir unless File.directory? html_report_dir
+        @report_class = Awetestlib::HtmlReport2.new(@myName, html_report_dir, ts)
+        @report_class.create_report(@myName)
+      end
 
       def start
         before_run
         run
       rescue Exception => e
-        failed_to_log(e.to_s, 3, e)
+        failed_to_log(e.to_s, 3, e) unless e.message =~ /not currently supported by WatirNokogiri/i
       ensure
         after_run
+      end
+
+      def load_manifest
+        sctn = RENV
+
+        if @myRoot =~ /shamisen/i
+          manifest_file = File.join(@myRoot, @myName, 'manifest.json')
+        else
+          manifest_file = File.join(@myRoot, 'manifest.json')
+        end
+
+        manifest = ::JSON.parse(File.open(manifest_file).read, :symbolize_names => true)[:params]
+
+        unless @myRoot =~ /shamisen/i
+          manifest[:browser]                         = @targetBrowser.abbrev
+          manifest[:script_file]                     = "#{@myName}.rb"
+          manifest[:log_properties]                  =
+              {
+                  :sequence           => 0,
+                  :job_id             => Process.pid,
+                  :project_version_id => nil,
+                  :project_id         => 0,
+                  :test_run_id        => "local#{$begin_time.strftime('%Y%m%d%H%M%S')}",
+                  :script_id          => nil,
+                  :company_id         => 3,
+                  :test_case_id       => nil,
+                  :test_category_id   => nil
+              }
+          manifest[:variables][:temp][:alm_run_type] = 'full'
+
+          case manifest[:log_properties][:project_id]
+            when 13
+              manifest[:log_properties][:project_name] = 'WFRIA2'
+            when 32
+              manifest[:log_properties][:project_name] = 'WRIA2 Sandbox'
+          end
+
+
+        end
+
+        msg = build_message("#{sctn}>> Job: #{manifest[:log_properties][:job_id]}",
+                            "Run: #{manifest[:log_properties][:test_run_id]}",
+                            "Project: #{manifest[:log_properties][:project_id]}",
+                            "(#{manifest[:log_properties][:project_name]})"
+        )
+        debug_to_log(msg)
+        # message_to_report(msg)
+        debug_to_log(with_caller("\n#{('*' * 60)}\n#{manifest.to_yaml}\n#{('*' * 60)}")) if @debug_dsl
+
+        manifest
+
+      rescue
+        failed_to_log(unable_to(sctn))
+      end
+
+    end
+
+    module Reporting
+
+      def report_results(errors, msg, component_symb = nil)
+        call_meth = parse_caller(get_call_array[1])[2]
+        full_msg  = ">> SUMMARY: #{build_msg("#{call_meth.titleize}:", msg)}"
+
+        if errors > 0
+          mark_test_level("#{full_msg}   ::FAIL::")
+        else
+          mark_test_level("#{full_msg}   ::Pass::")
+        end
+
+        if @current_instance
+          # debug_to_log(with_caller("\n#{@current_instance.to_yaml}"))
+
+          alm_pfx   = @current_instance[:alm_pfx]
+          component = @wf2_components[component_symb][:name]
+
+          if @current_instance[:errors].empty?
+            @component_instances[component][alm_pfx][:status] = 'passed'
+          else
+            ref_list = []
+            @current_instance[:errors].each_key do |ref|
+              href  = @current_instance[:errors][ref][:href]
+              count = @current_instance[:errors][ref][:count]
+              text  = "#{ref}(#{count})"
+              ref_list << "<a href=\"##{href}\">#{text}</a>"
+            end
+
+            @component_instances[component][alm_pfx][:smy_msg] =
+                "[#{alm_pfx}] " +
+                    "Page: #{@current_instance[:page]} " +
+                    "Title: #{@current_instance[:title]}  " +
+                    "(#{@current_instance[:ord_seq]})" +
+                    "#{@current_instance[:desc]}"
+
+            @component_instances[component][alm_pfx][:errors]   = @current_instance[:errors]
+            @component_instances[component][alm_pfx][:ref_list] = ref_list
+            @component_instances[component][alm_pfx][:status]   = 'failed'
+
+          end
+        end
+
+      rescue
+        failed_to_log(unable_to('*** waft014 ***'))
+      end
+
+      # def report_results(errors, msg, component_symb = nil)
+      #   call_meth = parse_caller(get_call_array[1])[2]
+      #   full_msg  = ">> SUMMARY: #{build_msg("#{call_meth.titleize}:", msg)}"
+      #   status    = 'passed'
+      #   if errors > 0
+      #     mark_test_level("#{full_msg}   ::FAIL::")
+      #     status = 'failed'
+      #   else
+      #     mark_test_level("#{full_msg}   ::Pass::")
+      #     true
+      #   end
+      #     # if component_symb and @component_instances
+      #     #   name = @wf2_components[component_symb][:name]
+      #     #   @component_instances[name][]
+      #     # end
+      # rescue
+      #   failed_to_log(unable_to)
+      # end
+
+      def tally_error_references
+        tags_tested = 0
+        tags_hit    = 0
+        sctn        = RSMY
+        mark_test_level(sctn + '>> Failed Defect or Test Case instances:')
+        if @my_error_hits and @my_error_hits.length > 0
+          @my_error_hits.keys.sort.each do |ref|
+            # NOTE: WAFT specific override
+            unless reference_is_alm?(ref)
+              msg = format_reference_tally_msg(ref, @my_error_hits)
+              message_to_report("#{sctn}#{msg}")
+              tags_hit += 1
+            end
+          end
+        else
+          message_to_report(sctn + 'No failed defect or test case instances encountered.')
+        end
+        if @my_error_references and @my_error_references.length > 0
+          if self.report_all_test_refs
+            mark_test_level(sctn + '>> All tested Defect or Test Case instances:')
+            @my_error_references.keys.sort.each do |ref|
+              # NOTE: WAFT specific override
+              unless reference_is_alm?(ref) or reference_is_waft_wip?(ref)
+                msg = format_reference_tally_msg(ref, @my_error_references)
+                message_to_report("#{sctn}#{msg}")
+                tags_tested += 1
+              end
+            end
+          end
+        else
+          message_to_report(sctn + '>> No Defect or Test Case references found.')
+        end
+
+        ">> One or more failures logged for #{tags_hit} of #{tags_tested} (#{nice_percent(tags_hit, tags_tested)}%)"
+      end
+
+      def format_reference_tally_msg(ref, source)
+        sctn = RSMY
+        msg  = "#{sctn}#{ref} (#{source[ref]})"
+        msg << " -- #{@refs_desc[ref]}" if @refs_desc
+        msg << " -- #{array_to_list(@alm_refs[:waft][ref])}" if alm_ref_exists?(ref)
+        msg << " [waft_tc: #{@refs_waft_tc[ref]}]" if @refs_waft_tc[ref]
+        if @refs_waft_wip
+          if @refs_waft_wip[ref] and @bypass_wip
+            msg << " (wip: #{array_to_list(@refs_waft_wip[ref])})"
+          end
+        end
+        msg
+      end
+
+      def unformat_refs_to_arr(refs)
+        out = []
+        if refs.is_a?(Array)
+          refs.each { |ref| out << unformat_reference(ref) }
+        elsif refs.is_a?(Hash)
+          refs.each_value { |v| out << unformat_reference(v) }
+        else
+          out << refs
+        end
+        out
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def parse_caller(caller)
+        call_script, call_line, call_meth = caller.split(':')
+        call_script.gsub!(/\.rb/, '')
+        call_script = call_script.camelize
+        call_meth =~ /in .([\w\d_ \?]+)./
+        call_meth = $1
+        if call_meth.match(/((rescue|block|eval)\s*in\s*)/)
+          delete = $1
+          append = $2
+          call_meth.sub!(delete, '')
+          call_meth << " (#{append})"
+        end
+        [call_script, call_line, call_meth]
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def parse_error_references(message, fail = false)
+        initialize_reference_regexp unless @reference_regexp
+        msg = message.dup
+        while msg.match(@reference_regexp)
+          fmt_ref = $1
+          ref     = $2
+          msg.sub!(fmt_ref, '')
+          capture_error_reference(ref, fail)
+          if fail and @current_instance
+            capture_instance_fails(ref)
+          end
+        end
+      rescue
+        failed_to_log(unable_to('*** waft014 ***'))
+      end
+
+      def capture_instance_fails(ref)
+        @current_instance[:errors][ref] = {} unless @current_instance[:errors][ref]
+        @current_instance[:errors][ref][:count] ? @current_instance[:errors][ref][:count] += 1 : @current_instance[:errors][ref][:count] = 1
+
+        @current_instance[:log][@my_failed_count] = [] unless @current_instance[:log][@my_failed_count]
+        @current_instance[:log][@my_failed_count] << ref unless @current_instance[:log][@my_failed_count].include?(ref)
+
+        unless @current_instance[:errors][ref][:href]
+          @current_instance[:errors][ref][:href] =
+              "#{@current_instance[:alm_pfx]}_#{@my_failed_count}"
+              # "#{@current_instance[:alm_pfx]}_#{ref}_#{@current_instance[:errors][ref][:count]}"
+        end
+
+        unless @current_instance[:ref_done] == @current_instance[:errors][ref][:href]
+          @current_instance[:fail_href] = @current_instance[:errors][ref][:href]
+        end
+
+        @current_instance[:status] = 'failed'
+        debug_to_log(with_caller("\n#{@current_instance.to_yaml}"))
+      end
+
+      # def parse_error_references(message, fail = false)
+      #   initialize_reference_regexp unless @reference_regexp
+      #   msg = message.dup
+      #   while msg.match(@reference_regexp)
+      #     capture_error_reference($2, fail)
+      #     msg.sub!($1, '')
+      #   end
+      # rescue
+      #   failed_to_log(unable_to)
+      # end
+
+      def capture_error_reference(ref, fail)
+        if fail
+          @my_error_hits = Hash.new unless @my_error_hits
+          if @my_error_hits[ref]
+            @my_error_hits[ref] += 1
+          else
+            @my_error_hits[ref] = 1
+          end
+          #debug_to_report("#{__method__}: error hits:\n#{@my_error_hits.to_yaml}")
+        end
+        @my_error_references = Hash.new unless @my_error_references
+        if @my_error_references[ref]
+          @my_error_references[ref] += 1
+        else
+          @my_error_references[ref] = 1
+        end
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      # @private
+      def unformat_reference(ref)
+        r = nil
+        if ref
+          r = ref.dup
+          r.gsub!('***', '')
+          r.strip!
+        end
+        r
+      rescue
+        failed_to_log(unable_to)
       end
 
     end
@@ -93,8 +671,8 @@ module Awetestlib
              'word-spacing', 'word-wrap', 'writing-mode', '-webkit-writing-mode', 'x', 'y', 'z-index', 'zoom']
       end
 
-      def load_variables(file, key_type = :role, enabled_only = true, dbg = true, scripts = nil)
-        mark_test_level(build_message(file, "key:'#{key_type}'"))
+      def load_variables(file, key_type = :role, enabled_only = true, dbg = true, scripts = nil, sctn = RSTP)
+        message_to_report(with_caller(sctn, file, "key: '#{key_type}'"))
 
         # ok = true
 
@@ -113,7 +691,7 @@ module Awetestlib
         unless @env_name =~ /^gen/
           unless ok and script_found_in_login and script_found_in_data
             ok = false
-            failed_to_log("Script found: in Login = #{script_found_in_login}; in Data = #{script_found_in_data}")
+            failed_to_log("#{sctn}Script found: in Login = #{script_found_in_login}; in Data = #{script_found_in_data}")
           end
         end
 
@@ -121,12 +699,524 @@ module Awetestlib
 
         [ok, script_found_in_login, script_found_in_data]
       rescue
-        failed_to_log(unable_to)
+        failed_to_log(unable_to(sctn))
       end
 
     end
 
     module Utilities
+
+      REG_COLOR_HEX = /(#([0-9a-f]{6}|[0-9a-f]{3})([\s;]|$))/i
+      REG_COLOR_NUM = Regexp.new('((hsl|rgb)[\s]*\([\s-]*[\d]+(\.[\d]+)?[%\s]*,[\s-]*[\d]+(\.[\d]+)?[%\s]*,[\s-]*[\d]+(\.[\d]+)?[%\s]*\))', Regexp::IGNORECASE)
+      REG_COLOR_OPA = Regexp.new('((hsla|rgba)[\s]*\([\s-]*[\d]+(\.[\d]+)?[%\s]*,[\s-]*[\d]+(\.[\d]+)?[%\s]*,[\s-]*[\d]+(\.[\d]+)?[%\s]*,[\s-]*[\d]+(\.[\d]+)?[%\s]*\))', Regexp::IGNORECASE)
+      REG_COLOR     = Regexp.union(REG_COLOR_NUM, REG_COLOR_OPA, REG_COLOR_HEX)
+
+      REG_GRADIENT = /[-a-z]*gradient\([-a-z0-9 .,#%()]*\)/im
+
+      # def validate_col_percent(browser, expected_percentage)
+      #   actual = calculate_col_percentage(browser)
+      #   msg = "Column percentage equals #{expected_percentage}?"
+      #   if actual == expected_percentage
+      #     pass_to_log(msg)
+      #   else
+      #     fail_to_log("#{msg} Found '#{actual}'.")
+      #   end
+      # end
+      #
+      # def calculate_col_percentage(browser)
+      #   #TODO: make more generic and remove instance variable
+      #   bodysize        = browser.body.style 'width'
+      #   bodysize        = bodysize.to_f
+      #   col_size        = browser.div(:class, 'wf2-u').style 'width'
+      #   col_size        = col_size.to_f
+      #   ((col_size/bodysize)*100).to_i
+      # end
+
+      # def set_current_instance(desc, page, tc_hash)
+      #   @current_instance = {
+      #       :component => tc_hash['component'],
+      #       :page      => page,
+      #       :ord_seq   => tc_hash[:ord_seq],
+      #       :alm_pfx   => tc_hash[:alm_pfx],
+      #       :title     => tc_hash['title'],
+      #       :desc      => desc,
+      #       :errors    => {},
+      #       :log       => {},
+      #       :status    => 'pending'
+      #   }
+      # end
+
+      def get_sha1_by_git_style(filespec)
+        mem_buf = File.open(filespec) { |io| io.read }
+        size    = mem_buf.size
+        puts "size is #{size}"
+
+        header = "blob #{size}\0" # type(space)size(null byte)
+        store  = header + mem_buf
+
+        sha1 = Digest::SHA1.hexdigest(store)
+      end
+
+      def nice_array(arr, space_to_underscore = false)
+        new_arr = Array.new
+        if space_to_underscore
+          arr.each do |nty|
+            new_arr << nty.gsub(/\s/, '_')
+          end
+        else
+          new_arr = arr if arr
+        end
+        "['#{new_arr.join("', '")}']"
+      end
+
+      def string_array_numeric_sort(arr, direction = 'asc')
+        #TODO: almost certainly a more 'rubyish' and less clunky way to do this
+        trgt = arr.dup
+        narr = []
+        trgt.each do |n|
+          narr << n.to_i
+        end
+
+        narr.sort!
+        unless direction =~ /^asc/i
+          narr.reverse!
+        end
+
+        sarr = []
+        narr.each do |n|
+          sarr << n.to_s
+        end
+
+        sarr
+      end
+
+      def set_xls_spec(proj_acro = 'unknown', env = @env_name.downcase.underscore, fix = :prefix, xlsx = $xlsx)
+        env = env.split(/:[\s_]*/)[1] if env =~ /:/
+        case fix
+          when :prefix
+            xls_name = "#{proj_acro}_#{env}.xls"
+          when :suffix
+            xls_name = "#{env}_#{proj_acro}.xls"
+          when :none
+            xls_name = "#{env.gsub('-', '_')}.xls"
+          else
+            failed_to_log(with_caller("#{RSTP}Unknown fix type: '#{fix}'.  Must be 'prefix', 'suffix', or 'none'."))
+            return nil
+        end
+        spec = "#{@myRoot}/#{xls_name}"
+        spec << 'x' if xlsx
+        debug_to_log("#{where_am_i?}: #{spec}")
+        spec
+      rescue
+        failed_to_log(unable_to(RSTP))
+      end
+
+      def set_env_name(xls = @xls_path, fix = :prefix, strg = 'toad')
+        if fix == :prefix
+          pattern = /#{strg}_([\w\d]+)\.xls$/
+        else
+          pattern = /([\w\d]+)_#{strg}\.xls$/
+        end
+        if awetestlib?
+          if @runenv
+            @env_name = @myAppEnv.name.downcase.underscore
+          else
+            @env_name = 'dev'
+            #if xls
+            #  xls =~ pattern
+            #  @env_name = $1
+            #else
+            #  @env_name = 'sit'
+            #end
+          end
+        else
+          @env_name = @myAppEnv.name.downcase # .underscore #.gsub(/^toad./, '')
+        end
+      rescue
+        failed_to_log(unable_to(RSTP))
+      end
+
+      def get_awetest_manifest
+        if @myRoot =~ /shamisen/i
+
+        else
+
+        end
+      end
+
+      def deeply_sort_hash(object)
+        return object unless object.is_a?(Hash)
+        hash = {}
+        # hash = RUBY_VERSION >= '1.9' ? Hash.new : ActiveSupport::OrderedHash.new
+        object.each { |k, v| hash[k] = deeply_sort_hash(v) }
+        sorted = hash.sort { |a, b| a[0].to_s <=> b[0].to_s }
+        hash.class[sorted]
+      end
+
+      def to_valid_symbol(strg, sctn = RSTP)
+        rtrn = ''
+        if strg =~ /^\d/
+          rtrn = '_'
+        end
+        rtrn << strg.gsub(/-|\s+|\./, '_').downcase
+        rtrn.to_sym
+      rescue
+        failed_to_log(unable_to(sctn))
+      end
+
+      def array_to_list(arr, delim = ',', spaces = true)
+        list = ''
+        arr.each do |entry|
+          strg = entry.to_s
+          if strg =~ /#{delim}/
+            list << "\"#{strg}\""
+          else
+            list << strg
+          end
+          unless entry == arr.last
+            list << "#{delim}"
+            list << ' ' if spaces
+          end
+        end
+        list
+      end
+
+      def dump_option_array(options, desc = '', to_report = false)
+        msg   = with_caller(desc, "\n")
+        count = 1
+        options.each do |option|
+          msg << "#{count}: innerText: #{option.attribute_value('innerText')} text: '#{option.text}' label: '#{option.label}' value: '#{option.value}' selected: #{option.selected?}\n"
+          count += 1
+        end
+        if to_report
+          debug_to_report(msg)
+        else
+          debug_to_log(msg)
+        end
+      end
+
+      def extract_selected(selected_options, which = :text, sctn = RDTL)
+        arr = Array.new
+        selected_options.each do |so|
+          case which
+            when :text
+              arr << so.attribute_value('innerText')
+            when :value
+              arr << so.value
+            when :label
+              arr << so.label
+            when :inner
+              arr << so.attribute_value('innerText')
+            else
+              arr << so.value
+          end
+        end
+        arr.sort
+      rescue
+        failed_to_log(unable_to(sctn))
+      end
+
+      def build_message(strg1, *strings)
+        msg = "#{strg1}"
+        strings.each do |strg|
+          if strg.is_a?(Array)
+            strg.each do |str|
+              next if str =~ /^@...@$/
+              msg << " #{str}" if str and str.size > 0
+            end
+          else
+            next if strg =~ /^@...@$/
+            msg << " #{strg}" if strg and strg.size > 0
+          end
+        end if strings
+        msg
+      rescue
+        failed_to_log(unable_to(RDTL))
+      end
+
+      def html_to_rgb(html, a = true)
+        if html and html.length > 0
+          html, opacity = html.split(/\s+/)
+          html          = html.gsub(%r{[#;]}, '')
+          case html.size
+            when 3
+              colors = html.scan(%r{[0-9A-Fa-f]}).map { |el| (el * 2).to_i(16) }
+            when 6
+              colors = html.scan(%r<[0-9A-Fa-f]{2}>).map { |el| el.to_i(16) }
+          end
+          rgb = 'rgb'
+          rgb << 'a' if a
+          rgb << '('
+          colors.each do |c|
+            rgb << "#{c}, "
+          end
+          if a
+            if opacity
+              opacity = normalize_opacity(opacity)
+              rgb << opacity
+            else
+              rgb << '1'
+            end
+            rgb << ')'
+          else
+            rgb.strip!.chop!
+            rgb << ')'
+          end
+          rgb
+        else
+          html
+        end
+      rescue
+        failed_to_log(unable_to(RDTL))
+      end
+
+      def normalize_opacity(a, int = true)
+        opacity = a.dup
+        case opacity
+          when /%/
+            opacity = opacity.sub(/%/, '').to_f / 100.0
+          when /(-?[\d\.]+)\w+/
+            opacity = $1.to_f
+          else
+            opacity = opacity.to_f
+        end
+        # case opacity
+        #   when 0.0
+        #     opacity = 0
+        #   when 1.0
+        #     opacity = 1
+        # end
+        opacity = opacity.round if int
+        opacity.to_s
+      rescue
+        failed_to_log(unable_to(RDTL))
+      end
+
+      def normalize_color_value(value, rgba = true, int = true)
+        case value
+          when /^#/
+            html_to_rgb(value, rgba)
+          when /^rgba/i
+            if rgba
+              value =~ /^rgba\(0,\s*0,\s*0,\s*0\)/ ? 'rgba(255, 255, 255, 0)' : value
+            else
+              html_to_rgb(rgb_to_html(value), rgba)
+            end
+          when /^rgb\s*\(/i
+            if rgba
+              rgb_to_rgba(value, int)
+            else
+              value
+            end
+          when /^transparent/i, /^0$/i
+            if rgba
+              'rgba(255, 255, 255, 0)'
+            else
+              'rgb(255, 255, 255)'
+            end
+          when /white/
+            if rgba
+              'rgba(255, 255, 255, 1)'
+            else
+              'rgb(255, 255, 255)'
+            end
+          else
+            html_to_rgb(translate_color_name(value), rgba)
+        end
+      rescue
+        failed_to_log(unable_to(RDTL))
+      end
+
+      def contrast_ratio(color1, color2)
+        # Calculate contrast ratio acording to WCAG 2.0 formula
+        # Will return a value between 1 (no contrast) and 21 (max contrast)
+        # @link http://www.w3.org/TR/WCAG20/#contrast-ratiodef
+        # Credit: Marcus Bointon <marcus@synchromedia.co.uk>
+        lum1 = relative_luminance(color1)
+        lum2 = relative_luminance(color2)
+        if lum1 < lum2
+          lum3 = lum1
+          lum1 = lum2
+          lum2 = lum3
+        end
+        (lum1 + 0.05) / (lum2 + 0.05);
+      end
+
+      def relative_luminance(color)
+        # Calculate relative luminance in sRGB colour space for use in WCAG 2.0 compliance
+        # @link http://www.w3.org/TR/WCAG20/#relativeluminancedef
+        # Credit: Marcus Bointon <marcus@synchromedia.co.uk>
+        rgb = normalize_color_value(color, false)
+        rgb =~ /rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\)/i
+        arr = [($1.to_i / 255.0), ($2.to_i / 255.0), ($3.to_i / 255.0)]
+        cor = []
+        arr.each do |raw|
+          if raw <= 0.03928
+            new = raw / 12.92
+          else
+            new = ((raw + 0.055) / 1.055) ** 2.4
+          end
+          cor << new
+        end
+        r   = (cor[0] * 0.2126)
+        g   = (cor[1] * 0.7152)
+        b   =(cor[2] * 0.0722)
+        lum = r + g + b
+        lum
+      end
+
+      def rgb_to_html(rgb)
+        rgb =~ /rgba?\((.+)\)/
+        if $1
+          r, g, b, a = $1.split(/,\s*/)
+          if a and a.to_i == 0
+            '#ffffff'
+          else
+            "#%02x%02x%02x" % [r, g, b]
+          end
+        else
+          rgb
+        end
+      end
+
+      def rgb_to_rgba(rgb, int = true)
+        target = rgb.dup
+        if target.match(/^(rgb\(\s*(\d+),\s*(\d+),\s*(\d+)\s*\))/i)
+          hit = $1
+          r   = $2
+          g   = $3
+          b   = $4
+          op  = target.sub(hit, '')
+          op.strip! if op
+          if op.length > 0
+            op = normalize_opacity(op, int)
+          else
+            op = '1'
+          end
+          rtrn = "rgba(#{r}, #{g}, #{b}, #{op})" #waft-1148
+        else
+          rtrn = rgb
+        end
+        rtrn
+      end
+
+      # TODO: translate this to ruby to calculate relative luminance and contrast ratio.
+      #       /**
+      #  * Calculate relative luminance in sRGB colour space for use in WCAG 2.0 compliance
+      #  * @link http://www.w3.org/TR/WCAG20/#relativeluminancedef
+      #       * @param string $col A 3 or 6-digit hex colour string
+      #       * @return float
+      #       * @author Marcus Bointon <marcus@synchromedia.co.uk>
+      #       */
+      # function relativeluminance($col) {
+      #     //Remove any leading #
+      #       $col = trim($col, '#');
+      #       //Convert 3-digit to 6-digit
+      #       if (strlen($col) == 3) {
+      #           $col = $col[0] . $col[0] . $col[1] . $col[1] . $col[2] . $col[2];
+      #       }
+      #       //Convert hex to 0-1 scale
+      #       $components = array(
+      #           'r' => hexdec(substr($col, 0, 2)) / 255,
+      #           'g' => hexdec(substr($col, 2, 2)) / 255,
+      #           'b' => hexdec(substr($col, 4, 2)) / 255
+      #       );
+      #       //Correct for sRGB
+      #                 foreach($components as $c => $v) {
+      #             if ($v <= 0.03928) {
+      #                 $components[$c] = $v / 12.92;
+      #             } else {
+      #                 $components[$c] = pow((($v + 0.055) / 1.055), 2.4);
+      #             }
+      #             }
+      #             //Calculate relative luminance using ITU-R BT. 709 coefficients
+      #             return ($components['r'] * 0.2126) + ($components['g'] * 0.7152) + ($components['b'] * 0.0722);
+      #             }
+      #
+      #             /**
+      #  * Calculate contrast ratio acording to WCAG 2.0 formula
+      #  * Will return a value between 1 (no contrast) and 21 (max contrast)
+      #  * @link http://www.w3.org/TR/WCAG20/#contrast-ratiodef
+      #             * @param string $c1 A 3 or 6-digit hex colour string
+      #             * @param string $c2 A 3 or 6-digit hex colour string
+      #             * @return float
+      #             * @author Marcus Bointon <marcus@synchromedia.co.uk>
+      #             */
+      # function contrastratio($c1, $c2) {
+      #     $y1 = relativeluminance($c1);
+      #     $y2 = relativeluminance($c2);
+      #     //Arrange so $y1 is lightest
+      #             if ($y1 < $y2) {
+      #                 $y3 = $y1;
+      #             $y1 = $y2;
+      #             $y2 = $y3;
+      #             }
+      #             return ($y1 + 0.05) / ($y2 + 0.05);
+      #             }
+
+      def px_to_fixnum(px, int = true)
+        if px =~ /px/i
+          strg = px.sub('px', '').strip
+          if int
+            nbr = strg.to_i
+          else
+            nbr = strg.to_f
+          end
+        else
+          nbr = nil
+        end
+        nbr
+      end
+
+      def unable_to(message = '', no_dolbang = false, verify_that = false, caller_index = 1)
+        call_arr = get_call_array
+        puts call_arr
+        call_script, call_line, call_meth = parse_caller(call_arr[caller_index])
+        strg                              = build_message(RDTL, 'Unable to')
+        strg << ' verify' if verify_that
+        strg << " #{call_meth.titleize}:"
+        strg << '?' if call_meth =~ /\?/
+        strg << ':'
+        strg << " #{message}" if message.length > 0
+        strg << " '#{$!}'" unless no_dolbang
+        strg << ' *** waft011 ***' if message and message =~ /undefined method/i
+        strg
+      end
+
+      def thread_counts
+        list    = Thread.list
+        total   = list.count
+        running = list.select { |thread| thread.status == 'run' }.count
+        [total, running]
+      end
+
+      def explore_focus(container, limit = 20)
+
+        (1..limit).each do |cnt|
+          active = get_active_element(container)
+          debug_to_report(with_caller(RDTL, "#{cnt}: #{active}",
+                                      "class:'#{active.attribute_value('class')}'",
+                                      ("html:#{active.html}" if active.tag_name == 'a')
+                          ))
+          send_a_key(container, :tab)
+          sleep(3)
+        end
+
+      end
+
+      def nice_percent(numerator, denominator, decimals = 2)
+        percent = denominator > 0 ? (numerator.to_f/denominator.to_f) * 100.0 : 0.0
+        sprintf("%.#{decimals}f", percent)
+      end
+
+      def truncate_string(strg, side = 'right', max = 30)
+        trgt = strg.to_s
+        if side == 'right'
+          trgt.to_s.length <= max ? trgt : "#{trgt.slice(0, max - 3)}..."
+        else
+          trgt.to_s.length <= max ? trgt : "...#{trgt.slice(-(max - 3), trgt.size)}"
+        end
+      end
 
       def element_action_message(element, action, how = nil, what = nil, value = nil, desc = '', refs = '')
         if element.respond_to?(:tag_name)
@@ -139,15 +1229,14 @@ module Awetestlib
           name = element.to_s
         end
         how, what = extract_locator(element, how)[1, 2] unless how and what
-        build_message(desc, action, "#{name}",
+        build_message(RDTL, desc, action, "#{name}",
                       (what ? "with #{how}=>'#{what}'" : nil),
                       (value ? "and value=>'#{value}'" : nil), refs)
       rescue
-        failed_to_log(unable_to)
+        failed_to_log(unable_to(RDTL))
       end
 
-      def extract_locator(element, how = nil)
-        # html_to_log(element)
+      def extract_locator(element, how = nil, desc = '', refs = '', sctn = RDTL)
         if element.respond_to?(:tag_name)
           tag = element.tag_name.to_sym
         else
@@ -157,29 +1246,63 @@ module Awetestlib
         what = nil
         case how
           when nil
-            [:id, :name, :title, :class, :value].each do |attr|
-              what = element.attribute_value(attr.to_s)
+            [:id, :name, :title, :class, :value, :text, :index].each do |attr|
+              case attr
+                when :id
+                  what = element.id
+                when :text
+                  what = element.text
+                when :index
+                  what = element.index
+                else
+                  what = element.attribute_value(attr.to_s)
+              end
               if what and what.length > 0 and what != 'undefined'
                 how = attr
                 break
               end
             end
           else
-            what = element.attribute_value(how.to_s)
+            if how.is_a?(Symbol)
+              if [:id, :name, :title, :class, :value, :text, :index].include?(how)
+                case how
+                  when :text
+                    what = element.text
+                  when :index
+                    what = element.index
+                  else
+                    what = element.attribute_value(how.to_s)
+                end
+              else
+                failed_to_log(with_caller(sctn, desc, "Parameter 'how' must be :id, :name, :title, :class, :value, :text, or :index. Found ('#{how}')",
+                                          refs, '*** waft015 ***'))
+              end
+            else
+              failed_to_log(with_caller(sctn, desc, "Parameter 'how' must be Symbol or nil. Found ('#{how}')",
+                                        refs, '*** waft015 ***'))
+            end
         end
-        # debug_to_log(with_caller("#{tag}:#{how}:#{what}"))
+        debug_to_log(with_caller("#{tag}:#{how}:#{what} Index may not reflect context.")) if how == :index
         [tag, how, what]
       rescue
-        failed_to_log(unable_to(build_message(":#{tag}, :#{how}='#{what}'")))
+        failed_to_log(unable_to(build_message(sctn, ":#{tag}, :#{how}='#{what}'", desc, refs)))
+      end
+
+      def format_locator(tag, how = nil, what = nil)
+        if tag.is_a?(Array)
+          "#{tag[0]}:#{tag[1]}:#{tag[2]}"
+        else
+          "#{tag}:#{how}:#{what}"
+        end
       end
 
       alias nbr2wd number_to_word
 
       def get_project_git(proj_name, proj_dir = Dir.pwd)
         debug_to_log(with_caller(proj_dir))
-        sha    = nil
-        branch = nil
-        date   = nil
+        branch   = nil
+        git_data = nil
+        git_hash = {}
 
         curr_dir     = Dir.pwd
         version_file = "#{proj_name.downcase.gsub(' ', '_')}_version"
@@ -196,10 +1319,15 @@ module Awetestlib
             sha    = commit.sha
             date   = commit.date
 
-            version_file = File.join(curr_dir, version_file)
-            file         = File.open(version_file, 'w')
-            file.puts "#{proj_name}: #{branch}, #{date}, #{sha}"
-            file.close
+            git_data = "#{proj_name}: #{branch}, #{date}, #{sha}"
+
+            git_hash[:branch]    = branch
+            git_hash[:commit]    = commit
+            git_hash[:date]      = date
+            git_hash[:sha]       = sha
+            git_hash[:short_sha] = sha.to_s.slice(0, 8)
+
+            write_project_version_file(curr_dir, git_data, version_file)
 
           end
 
@@ -210,12 +1338,60 @@ module Awetestlib
         unless branch
           version_file = File.join(Dir.pwd, version_file)
           if File.exists?(version_file)
-            vers              = File.open(version_file).read
-            branch, date, sha = parse_list(vers.chomp)
+            vers                 = File.open(version_file).read
+            branch, date, sha    = parse_list(vers.chomp)
+            git_hash[:branch]    = branch
+            git_hash[:commit]    = ''
+            git_hash[:date]      = date
+            git_hash[:sha]       = sha
+            git_hash[:short_sha] = sha.to_s.slice(0, 8)
+
+            git_data = "#{branch}, #{date}, #{sha}"
           end
         end
 
-        [branch, date, sha]
+        [git_data, git_hash]
+      end
+
+      def write_project_version_file(curr_dir, git_data, version_file)
+        version_file = File.join(curr_dir, version_file)
+        file         = File.open(version_file, 'w')
+        file.puts git_data
+        file.close
+        version_file
+      end
+
+      def who_is_in_front(high, low, sctn = RDTL)
+        # Order matters, high is above low in html
+        h_who, h_z, h_pos = high
+        l_who, l_z, l_pos = low
+
+        front = l_who
+
+        unless h_z == l_z
+          if h_pos =~ /fixed|absolute|relative/i and l_pos =~ /fixed|absolute|relative/i
+            if h_z.to_i > l_z.to_i
+              front = h_who
+            end
+          else
+            if h_pos =~ /fixed|absolute|relative/i
+              if h_z =~ /-?\d+/
+                front = h_who
+              end
+            end
+          end
+        end
+
+        front
+
+      rescue
+        failed_to_log(unable_to(sctn))
+      end
+
+      def normalize_background_style(value, rgba = true)
+        weight, style, color = parse_list(value, ' ', 3)
+        norm_color           = normalize_color_value(color, rgba)
+        "#{weight} #{style} #{norm_color}"
       end
 
       def normalize_border_style(value, rgba = true)
@@ -224,18 +1400,315 @@ module Awetestlib
         "#{weight} #{style} #{norm_color}"
       end
 
+      def normalize_outline(value, rgba = false)
+        if value == '0'
+          'rgb(255, 255, 255) none 0px'
+        else
+          style, color, weight = parse_list(value, ' ', 3)
+          norm_color           = normalize_color_value(color, rgba)
+          "#{weight} #{style} #{norm_color}"
+        end
+      end
+
+      def pixel_to_fixnum(value)
+        if value
+          rtrn = value.dup
+          rtrn.gsub!('px', '')
+          rtrn.to_f
+        end
+      end
+
+      def normalize_pixel_size(value)
+        mtch = value.match(/^(\d+)\.?\d*?\s*px/)
+        norm = mtch[1]
+        "#{norm}px"
+      end
+
+      alias normalize_border_width normalize_pixel_size
+
+      def normalize_font_size(size, to_unit = 'px', desc = '', refs = '', prnt_px = $default_font_size)
+        convert_font_size(size, to_unit, prnt_px, desc, refs)
+      end
+
+      def convert_font_size(size, to, prnt_px = $default_font_size, desc = '', refs = '', formatted = false, sctn = RDTL)
+        size.match(/^([-+\d\.]+)\s*(px|em|rem|pt|%)$/)
+        value = $1
+        from  = $2
+        cnvt  = nil
+        unit  = nil
+        case from
+          when 'px'
+            cnvt, unit = px_to(value, to, prnt_px)
+          when 'em'
+            cnvt, unit = em_to(value, to, prnt_px)
+          when 'rem'
+            cnvt, unit = rem_to(value, to, prnt_px)
+          when 'pt'
+            cnvt, unit = pt_to(value, to, prnt_px)
+          when '%'
+            cnvt, unit = pct_to(value, to, prnt_px)
+          else
+            # CSS absolute size keywords:	xx-small	x-small	small	medium	large	x-large	xx-large
+            # HTML absolute font sizes:
+            # (interpolated Mozilla values)	1	 	2	3	4	5	6	7
+            # HTML headings:
+            # (interpolated Mosaic values)	h6	 	h5	h4	h3	h2	h1
+            # normalized scaling factor:	60% - 3:5	75% - 3:4	89% - 8:9	100% - 1:1	120% - 6:5	150% - 3:2	200% - 2:1	300% - 3:1
+            # px computed from a 16 ppem base: e.g., 12pt @ 96ppi or 16pt @ 72ppi
+            # (XP 5.0 UA default)	10px 12px 14px 16px 19px 24px 32px 48px
+            if size =~ /^0$|^initial$|^inherit$|^none$/
+              cnvt = size
+            else
+              failed_to_log(with_caller(RDTL, "'#{value}' #{from} to #{to} not supported.", desc, refs))
+            end
+        end
+
+        if cnvt
+          if unit
+            if formatted
+              rtrn = "#{'%.4g' % cnvt}#{unit}"
+            else
+              rtrn = "#{'%.4g' % cnvt}"
+            end
+          else
+            rtrn = cnvt
+          end
+        else
+          failed_to_log(unable_to(with_caller(RDTL, "'#{value}' #{from} to #{to}.", desc, refs)))
+          rtrn = nil
+        end unless cnvt == 'nil'
+        [rtrn, unit]
+      end
+
+      def px_to(value, to, prnt_px = $default_font_size)
+        # debug_to_log(with_caller(value, to))
+        unit = nil
+        case to
+          when 'px', :px
+            unit = 'px'
+          when 'em', :em
+            value = (value.to_f / prnt_px)
+            unit  = 'em'
+          when 'rem', :rem
+            value = (value.to_f / $default_font_size)
+            unit  = 'rem'
+          when 'pt', :pt
+            value = (value.to_f * (72.0 / $default_screen_dpi)).round
+            unit  = 'pt'
+          when '%', 'pct', 'percent', :pct, :percent
+            value = (value.to_f / prnt_px) * 100.0
+            unit  = '%'
+          else
+            failed_to_log(with_caller(RDTL, "px to #{to} not supported."))
+            value = 'nil'
+        end
+        [value, unit]
+      end
+
+      def em_to(value, to, prnt_px = $default_font_size)
+        # debug_to_log(with_caller(value, to))
+        unit = nil
+        case to
+          when 'px', :px
+            value = (value.to_f * prnt_px)
+            unit  = 'px'
+          when 'em', :em
+            unit = 'em'
+          when 'rem', :rem
+            value = (value.to_f * $default_font_size)
+            unit  = 'rem'
+          when 'pt', :pt
+            value = ((value.to_f * prnt_px) * (72.0 / $default_screen_dpi)).round
+            unit  = 'pt'
+          when '%', 'pct', 'percent', :pct, :percent
+            value = (value.to_f * 100.0)
+            unit  = '%'
+          else
+            failed_to_log(with_caller(RDTL, "em to #{to} not supported."))
+            value = 'nil'
+        end
+        [value, unit]
+      end
+
+      def rem_to(value, to, prnt_px = $default_font_size)
+        # debug_to_log(with_caller(value, to))
+        unit = nil
+        case to
+          when 'px', :px
+            value = (value.to_f * $default_font_size)
+            unit  = 'px'
+          when 'em', :em
+            unit = 'em'
+          when 'rem', :rem
+            unit = 'rem'
+          when 'pt', :pt
+            value = ((value.to_f * $default_font_size) * (72.0 / $default_screen_dpi)).round
+            unit  = 'pt'
+          when '%', 'pct', 'percent', :pct, :percent
+            value = (value.to_f * 100.0)
+            unit  = '%'
+          else
+            failed_to_log(with_caller(RDTL, "rem to #{to} not supported."))
+            value = 'nil'
+        end
+        [value, unit]
+      end
+
+      def pt_to(value, to, prnt_px = $default_font_size)
+        # debug_to_log(with_caller(value, to))
+        unit = nil
+        case to
+          when 'px', :px
+            value = (value.to_f / (72.0 / $default_screen_dpi)).round
+            unit  = 'px'
+          when 'em', :em
+            value = ((prnt_px * value.to_f) / (72.0 / $default_screen_dpi))
+          when 'rem', :rem
+            value = (($default_font_size * value.to_f) / (72.0 / $default_screen_dpi))
+            unit  = 'rem'
+          when 'pt', :pt
+            unit = 'pt'
+          when '%', 'pct', 'percent', :pct, :percent
+            value = (((prnt_px) * (value.to_f / 100.0)) / (72.0 / $default_screen_dpi))
+            unit  = '%'
+          else
+            failed_to_log(with_caller(RDTL, "pt to #{to} not supported."))
+            value = 'nil'
+        end
+        [value, unit]
+      end
+
+      def pct_to(value, to, prnt_px = $default_font_size)
+        # debug_to_log(with_caller(value, to))
+        unit = nil
+        case to
+          when 'px', :px
+            ((value.to_f * prnt_px) / 100).round
+            unit = 'px'
+          when 'em', :em
+            (value.to_f / 100.0)
+          when 'rem', :rem
+            (value.to_f / 100.0)
+            unit = 'rem'
+          when 'pt', :pt
+            value = nil
+            unit  = 'pt'
+          when '%', 'pct', 'percent', :pct, :percent
+            unit = '%'
+          else
+            failed_to_log(with_caller(RDTL, "% to #{to} not supported."))
+            value = 'nil'
+        end
+
+        [value, unit]
+      end
+
+      def parse_border(value, rgba = true)
+        weight, style, color = parse_list(value, ' ', 3)
+        [weight, style, normalize_color_value(color, rgba)]
+      end
+
+      def normalize_gradient_value(value, rgba = true, structure = 'linear')
+        gradient = nil
+
+        # linear-gradient(to bottom, #2f6e97 0, #0b4e79 100%)
+        # linear-gradient(rgba(11, 78, 121, 1), rgba(47, 110, 151, 0))
+        debug_to_log(with_caller("input:  '#{value}'"))
+
+        if value.match(/^#{structure}-gradient\((.+)\)/i)
+          content = $1.dup
+          # puts "'#{content}'"
+          mtch1   = content.match(REG_COLOR)
+          # puts "'#{mtch1}'"
+          content.sub!(/#{Regexp.escape(mtch1.to_s.strip)}/, '')
+          # puts "'#{content}'"
+          mtch2 = content.match(REG_COLOR)
+          # puts "'#{mtch2}'"
+          content.sub!(/#{Regexp.escape(mtch2.to_s.strip)}/, '')
+          # puts "'#{content}'"
+
+          arr = content.split(/,\s*/)
+          debug_to_log(with_caller(nice_array(arr)))
+
+          case arr.length
+            when 3
+              if arr[0] =~ /to top/i
+                left  = "#{mtch2}#{arr[2].strip}"
+                right = "#{mtch1}#{arr[1].strip}"
+              else
+                left  = "#{mtch1}#{arr[1].strip}"
+                right = "#{mtch2}#{arr[2].strip}"
+              end
+            when 2
+              left  = "#{mtch1}#{arr[0].strip}"
+              right = "#{mtch2}#{arr[1].strip}"
+            else
+              left  = "#{mtch1.strip}"
+              right = "#{mtch2.strip}"
+          end
+
+          debug_to_log(with_caller("left:  '#{left}'", "right: '#{right}'"))
+
+          norm_left  = normalize_color_value(left, rgba)
+          norm_right = normalize_color_value(right, rgba)
+
+          gradient = "#{structure}-gradient(#{norm_left}, #{norm_right})"
+
+          # if value =~ /\#/
+          #   if value.match(/^linear-gradient\((.+)\)/)
+          #     dir, one, two = parse_list($1)
+          #     norm_one      = normalize_color_value(one, rgba)
+          #     norm_two      = normalize_color_value(two, rgba)
+          #     if dir == 'top'
+          #       gradient = "linear-gradient(#{norm_one}, #{norm_two})"
+          #     else
+          #       gradient = "linear-gradient(#{norm_two}, #{norm_one})"
+          #     end
+          #   end
+          # end
+          # debug_to_log(with_caller("'#{value}' => '#{gradient}'"))
+          # gradient ? gradient : value
+
+        end
+        gradient
+      end
+
+      def normalize_box_shadow_value(value, rgba = false)
+        box_shadow = nil
+        ok         = true
+
+        # rgb(141, 200, 19) 0px 0px 0px 2px
+        # 0px 0px 0px 2px #8dc813
+
+        rgb_ptrn   = /rgb\((\d+),\s+(\d+),\s+(\d+)\)\s+(\d+)px\s+(\d+)px\s+(\d+)px\s+(\d+)px/
+        hex_ptrn   = /(\d+)px\s+(\d+)px\s+(\d+)px\s+(\d+)px\s+#([\d\w]+)/
+
+        if value.match(hex_ptrn)
+          rgb        = html_to_rgb($5, rgba)
+          box_shadow = "#{rgb} #{$1}px #{$2}px #{$3}px #{$4}px"
+        elsif value.match(rgb_ptrn)
+          box_shadow = value
+        elsif value =~ /none/i
+          box_shadow = value
+        else
+          failed_to_log("Unrecognized box-shadow value '#{value}'  *** waft015 ***")
+          ok = false
+        end
+        [ok, box_shadow]
+      end
+
       def rescue_me(e, me = nil, what = nil, where = nil, who = nil)
         #TODO: these are rescues from exceptions raised in Watir or Watir-webdriver
-        debug_to_log("#{__method__}: Begin rescue")
+        debug_to_log(with_caller('Begin rescue'))
         ok = false
         begin
           gaak    = who.inspect
           located = gaak =~ /located=true/i
         rescue
-          debug_to_log("#{__method__}: gaak: '#{gaak}'")
+          debug_to_log(with_caller(" gaak: '#{gaak}'"))
         end
         msg = e.message
-        debug_to_log("#{__method__}: msg = #{msg}")
+        debug_to_log(with_caller(" msg = #{msg}"))
         if msg =~ /undefined method\s+.join.\s+for/i # firewatir to_s implementation error
           ok = true
         elsif msg =~ /the server refused the connection/i
@@ -268,26 +1741,37 @@ module Awetestlib
         end
         call_list = get_call_list(6, true)
         if ok
-          debug_to_log("#{__method__}: RESCUED: \n#{who.to_yaml}=> #{what} in #{me}()\n=> '#{$!}'")
-          debug_to_log("#{__method__}: #{who.inspect}") if who
-          debug_to_log("#{__method__}: #{where.inspect}")
-          debug_to_log("#{__method__}: #{call_list}")
-          failed_to_log("#{to_report}  #{call_list}")
+          debug_to_log(with_caller("RESCUED: \n#{who.to_yaml}=> #{what} in #{me}()\n=> '#{$!}'"))
+          debug_to_log(with_caller("#{who.inspect}")) if who
+          debug_to_log(with_caller("#{where.inspect}"))
+          debug_to_log(with_caller("#{call_list}"))
+          failed_to_log(with_caller("#{to_report}  #{call_list}"))
         else
-          debug_to_log("#{__method__}: NO RESCUE: #{e.message}")
-          debug_to_log("#{__method__}: NO RESCUE: \n#{call_list}")
+          debug_to_log(with_caller("NO RESCUE: #{e.message}"))
+          debug_to_log(with_caller("NO RESCUE: \n#{call_list}"))
         end
-        debug_to_log("#{__method__}: Exit")
+        debug_to_log(with_caller('Exit'))
         ok
       end
 
       def get_element_properties(element, list = [])
         hash = {}
+
         list.each do |prop|
           style = nil
           attr  = nil
           begin
             style = element.style(prop)
+            if style
+              case prop
+                when /color/i
+                  style = normalize_color_value(style)
+                when 'border'
+                  style = normalize_border_style(style)
+                when 'background-image'
+                  style = normalize_gradient_value(style)
+              end
+            end
           rescue
             debug_to_log(with_caller("Can't find style '#{prop}"))
           end
@@ -298,6 +1782,14 @@ module Awetestlib
           end
 
           hash[prop] = style ? style : attr
+        end
+
+        # NOTE: tweaks to handle outliers, especially for initial and inherit
+        if hash['outline-style'] == 'none' and hash['outline-width'] == '0px'
+          if hash['outline-color'] == 'rgba(0, 0, 0, 1)'
+            hash['outline-color'] = 'rgba(255, 255, 255, 1)'
+            debug_to_log(with_caller(element, 'outline-color'))
+          end
         end
 
         hash
@@ -329,17 +1821,21 @@ module Awetestlib
       end
 
       def element_query_message(element, query, how = nil, what = nil, value = nil, desc = '', refs = '', tag = '')
+        who  = nil
+        name = '(unknown)'
         if element.exists?
-          name = element.respond_to?(:tag_name) ? element.tag_name.upcase : element.to_s
+          # name = element.respond_to?(:tag_name) ? element.tag_name.upcase : element.to_s
+          who, how, what = extract_locator(element)
+          name           = who.to_s.upcase if who
         else
           if tag and tag.length > 0
             name = tag.upcase
-          else
-            name = '(unknown)'
+          elsif who
+            name = who.to_s.upcase
           end
         end
         build_message(desc, "#{name}",
-                      (what ? "with #{how}=>' #{what}'" : nil),
+                      (what ? "with #{how}=>'#{what}'" : nil),
                       (value ? "and value=>'#{value}'" : nil),
                       query, refs)
       rescue
@@ -347,7 +1843,6 @@ module Awetestlib
       end
 
     end
-
 
     module Find
 
@@ -384,7 +1879,7 @@ module Awetestlib
       end
 
       def get_element_attribute(element, attribute, desc = '', refs = '', how = '', what = nil)
-        msg   = build_message(desc, "Get '#{attribute}' for #{element.tag_name.upcase}", (":#{how}=>'#{what}'" if what), refs)
+        msg   = build_message(RDTL, desc, "Get '#{attribute}' for #{element.tag_name.upcase}", (":#{how}=>'#{what}'" if what), refs)
         value = element.attribute_value(attribute)
         if value
           passed_to_log(with_caller(msg))
@@ -440,27 +1935,27 @@ module Awetestlib
 
       def get_directory(path)
         if File.directory?(path)
-          debug_to_log("Directory already exists, '#{path}'.")
+          debug_to_log("Directory already exists, '#{path}'.") if @debug_dsl
         else
           Dir::mkdir(path)
-          debug_to_log("Directory was created, '#{path}'.")
+          debug_to_log("Directory was created, '#{path}'.") if @debug_dsl
         end
         path
       end
 
       def get_element(container, element, how, what, value = nil, desc = '', refs = '', options = {})
         value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
-        msg                        = build_message(desc, "Return #{element.to_s.upcase} with :#{how}='#{what}'", value, refs)
+        msg                        = build_message(RDTL, desc, "Return #{element.to_s.upcase} with :#{how}='#{what}'", value, refs)
         timeout                    = options[:timeout] ? options[:timeout] : 30
         code                       = build_webdriver_fetch(element, how, what, options)
         code                       = "#{code}.when_present(#{timeout})" unless options[:exists_only] or container.to_s =~ /noko/i
         debug_to_log(with_caller("{#{code}")) if $mobile
         target = eval(code)
         if target and target.exists?
-          if options[:flash] and target.respond_to?(:flash)
-            target.wd.location_once_scrolled_into_view
-            target.flash
-          end
+          # if options[:flash] and target.respond_to?(:flash)
+          #   target.wd.location_once_scrolled_into_view
+          #   target.flash
+          # end
           if target.class =~ /element/i
             target = target.to_subtype
             msg.sub!(element.tag_name, target.tag_name)
@@ -509,7 +2004,7 @@ module Awetestlib
 
       def ancestor_is_a?(descendant, tag_name, generation = 1, desc = '', refs = '')
         tag_name = 'a' if tag_name == 'link'
-        msg      = build_message(desc, "#{descendant.tag_name.upcase} with id '#{descendant.attribute_value('id')}' has", "tag: '#{tag_name}'", "#{generation} level above")
+        msg      = build_message(RDTL, desc, "#{descendant.tag_name.upcase} with id '#{descendant.attribute_value('id')}' has", "tag: '#{tag_name}'", "#{generation} level above")
         ancestor = descendant.dup
         count    = 0
         while count < generation
@@ -523,10 +2018,54 @@ module Awetestlib
           failed_to_log(with_caller(msg, desc, refs))
         end
       rescue
-        failed_to_log(unable_to, false, true)
+        failed_to_log(unable_to(RDTL), false, true)
       end
 
-      def get_ancestor(descendant, element, how, what, desc = '', refs = '', dbg = $debug)
+      def scroll_to_page_top(browser, desc = '', refs = '')
+        send_a_key(browser, :home, :control, with_caller(desc), refs)
+      end
+
+      def scroll_to_page_bottom(browser, desc = '', refs = '')
+        send_a_key(browser, :end, :control, with_caller(desc), refs)
+      end
+
+      def gather_ancestors(descendant, targets = [], dbg = @debug_dsl)
+        hash       = nil
+        ancestor   = descendant
+        generation = 0
+        hit_count  = 0
+        hits       = {}
+        debug_to_log("#{ancestor.tag_name}: :class=>'#{ancestor.class_name}' :id=>'#{descendant.attribute_value('id')}'") if dbg
+
+        until ancestor.tag_name =~ /html/i do
+          ancestor = ancestor.parent
+          debug_to_log("#{ancestor.tag_name}: :class=>'#{ancestor.class_name}' :id=>'#{descendant.attribute_value('id')}'") if dbg
+          generation -= 1
+          type       = ancestor.respond_to?(:type) ? ancestor.type : ''
+          hash       = Hash.new unless hash
+          class_name = ancestor.class_name
+          hit_on     = []
+          targets.each do |tgt|
+            if class_name =~ /#{tgt}/i
+              hit_count += 1
+              hit_on << tgt
+              hits[tgt] ? hits[tgt] += 1 : hits[tgt] = 1
+            end
+          end
+          hash[generation] = { :id         => ancestor.attribute_value('id'),
+                               :class_name => class_name,
+                               :tag        => ancestor.tag_name,
+                               :type       => type,
+                               :hit_on     => hit_on
+          }
+        end
+
+        [hash, hit_count, hits]
+      rescue
+        failed_to_log(unable_to(RDTL))
+      end
+
+      def get_ancestor(descendant, element, how, what, desc = '', refs = '', dbg = @debug_dsl)
         found = false
         how   = 'class_name' if how.to_s == 'class'
         tag   = element.to_s.downcase
@@ -550,9 +2089,9 @@ module Awetestlib
           ancestor = ancestor.parent
         end
         msg = build_message(
-            with_caller(desc),
+            with_caller(RDTL, desc),
             "- Descendant is #{descendant.tag_name.upcase} :id=>#{descendant.attribute_value('id')}.",
-            "Find ancestor #{tag.upcase} :#{how}='#{what}'?"
+            "Find ancestor #{tag.upcase} :#{how}='#{what}'."
         )
         if found
           passed_to_log(msg)
@@ -566,7 +2105,7 @@ module Awetestlib
         failed_to_log(unable_to)
       end
 
-      def get_ancestor2(descendant, element, how, what, desc = '', dbg = $DEBUG)
+      def get_ancestor2(descendant, element, how, what, desc = '', dbg = @debug_dsl)
         elements = Array.new
         if element.is_a?(Array)
           element.each do |e|
@@ -605,10 +2144,10 @@ module Awetestlib
 
         [ancestor, (ancestor.tag_name.downcase if ancestor)]
       rescue
-        failed_to_log(unable_to)
+        failed_to_log(unable_to(RDTL))
       end
 
-      def get_ancestor3(descendant, elements = [:any], hows = [], whats = [], desc = '', dbg = $DEBUG)
+      def get_ancestor3(descendant, elements = [:any], hows = [], whats = [], desc = '', dbg = @debug_dsl)
         fail 'Parameter \'elements\' must be an array.' unless elements.is_a?(Array)
         fail 'Parameter \'hows\' must be an array.' unless hows.is_a?(Array)
         fail 'Parameter \'whats\'  must be an array.' unless whats.is_a?(Array)
@@ -642,7 +2181,7 @@ module Awetestlib
         end
         [ancestor, ancestor.tag_name.downcase]
       rescue
-        failed_to_log(unable_to)
+        failed_to_log(unable_to(RDTL))
       end
 
       def get_ancestor4(descendant, args = {})
@@ -674,11 +2213,11 @@ module Awetestlib
             code      = "ancestor.#{how}"
             whats[idx].is_a?(Regexp) ? code << " =~ /#{whats[idx].source}/" : code << " == '#{whats[idx]}'"
             code << ' and ' if idx < hows.length
-            debug_to_log("#{code}") if dbg
+            debug_to_log("#{code}") if @debug_dsl
           end
           until found do
             break unless ancestor
-            debug_to_log("#{ancestor.tag_name}: :class=>'#{ancestor.class_name}' :id=>'#{descendant.attribute_value('id')}'") if dbg
+            debug_to_log("#{ancestor.tag_name}: :class=>'#{ancestor.class_name}' :id=>'#{descendant.attribute_value('id')}'") if @debug_dsl
             if elements.include?(ancestor.tag_name.downcase.to_sym)
               if eval(code)
                 found = true
@@ -690,43 +2229,302 @@ module Awetestlib
           [ancestor, ancestor.tag_name.downcase]
         end
       rescue
-        failed_to_log(unable_to)
+        failed_to_log(unable_to(RDTL))
       end
 
-      # def find_element_with_focus(container)
-      #   container.driver.browser.switch_to.active_element
-      # end
-
       def get_active_element(container)
-        container.execute_script("return document.activeElement")
+        container.browser.execute_script('return document.activeElement')
       end
 
       alias find_element_with_focus get_active_element
 
-      def identify_active_element(container, desc = '', parent = false)
-        element = get_active_element(container)
-        element = element.parent if parent
-        tag     = element.respond_to?(:tag_name) ? element.tag_name : 'no tag name'
-        id      = element.respond_to?(:id) ? element.id : 'no id'
-        cls     = element.respond_to?(:class_name) ? element.class_name : 'no class'
-        text    = element.respond_to?(:text) ? element.text : 'no text'
-        debug_to_report(with_caller(desc, ":tag_name=>#{tag}", ":id=>#{id}", ":text=>'#{text}'", "is parent?=>#{parent}"))
-        [element, tag.to_sym, :id, cls]
+      def identify_active_element(container, desc = '', refs = '', no_fail = false, parent = false)
+        element        = get_active_element(container)
+        element        = element.parent if parent
+        tag, how, what = extract_locator(element, nil, with_caller(desc), refs)
+        msg            = with_caller(RDTL, desc, "#{tag}:#{how}:#{what}'", "is parent?=>#{parent}", refs)
+        if tag and how and what
+          no_fail ? message_to_report(msg) : passed_to_log(msg)
+          [element, tag, how, what]
+        else
+          no_fail ? message_to_report(msg) : failed_to_log(msg)
+          nil
+        end
       rescue
         failed_to_log(unable_to)
       end
 
-      def highlight_element(element)
-        # not really different than .flash unless the two js scripts are separated by a sleep.
-        # probably needs to make sure that original color and border can be restored.
-        #public void highlightElement(WebDriver driver, WebElement element)
-        # { for (int i = 0; i < 2; i++)
-        # { JavascriptExecutor js = (JavascriptExecutor) driver;
-        # js.executeScript("arguments[0].setAttribute('style', arguments[1]);", element, "color: yellow; border: 2px solid yellow;");
-        # js.executeScript("arguments[0].setAttribute('style', arguments[1]);", element, "");
-        # }
-        # }
-        # - See more at: http://selenium.polteq.com/en/highlight-elements-with-selenium-webdriver/#sthash.JShjPbsj.dpuf
+      # def highlight_element(element)
+      #   # not really different than .flash unless the two js scripts are separated by a sleep.
+      #   # probably needs to make sure that original color and border can be restored.
+      #   #public void highlightElement(WebDriver driver, WebElement element)
+      #   # { for (int i = 0; i < 2; i++)
+      #   # { JavascriptExecutor js = (JavascriptExecutor) driver;
+      #   # js.executeScript("arguments[0].setAttribute('style', arguments[1]);", element, "color: yellow; border: 2px solid yellow;");
+      #   # js.executeScript("arguments[0].setAttribute('style', arguments[1]);", element, "");
+      #   # }
+      #   # }
+      #   # - See more at: http://selenium.polteq.com/en/highlight-elements-with-selenium-webdriver/#sthash.JShjPbsj.dpuf
+      # end
+
+      # ALM synch methods
+      def alm_doc_to_hash(doc, entity_type, page_id, page_count, ptrn = nil, collection = 'entities')
+        # beg = Time.now.to_f
+
+        filtered       = ptrn ? true : false
+        entity_count   = 0
+        filtered_count = 0
+        entity_hash    = { :alias => {}, :entities => {}, :ids => {}, :names => {} }
+
+        alm_hash = Hash.from_xml(doc.to_s)
+
+        if collection == 'entities'
+          entity_hash    = { :alias => {}, :entities => {}, :ids => {}, :names => {} }
+          entity_count   = alm_hash['Entities']['TotalResults'].to_i
+          filtered_count = 0
+
+          case
+            when entity_count == 1
+              entity = alm_hash['Entities']['Entity']
+              if entity['Type'].downcase == entity_type.downcase
+                filtered_count, take_it = capture_entity(entity, entity_hash, entity_type, filtered_count, page_id, ptrn)
+                entity_count            -= 1 unless take_it
+              end
+            when entity_count > 1
+              if ptrn
+                alm_hash['Entities']['Entity'].each do |item|
+                  if item['Type'].downcase == entity_type.downcase
+                    filtered_count, take_it = capture_entity(item, entity_hash, entity_type, filtered_count, page_id, ptrn)
+                    entity_count            -= 1 unless take_it
+                  end
+                end
+
+              else
+                alm_hash['Entities']['Entity'].each do |item|
+                  if item['Type'].downcase == entity_type.downcase
+                    filtered_count, take_it = capture_entity(item, entity_hash, entity_type, filtered_count, page_id, ptrn)
+                    entity_count            -= 1 unless take_it
+                  end
+                end
+              end
+            else
+              debug_to_log(with_caller('Entity collection is empty'))
+          end
+          debug_to_log(with_caller("entity: #{entity_type},", "entity count: #{entity_count},",
+                                   "captured count: #{entity_hash[:entities].length}",
+                                   "filtered count: #{filtered_count}",
+                                   "pattern: [#{ptrn}]", "rest page #{page_count}"))
+        else
+          case collection
+            when 'lists', 'fields'
+              entity_hash  = alm_hash
+              entity_count = filtered_count = entity_hash.first.second.first.second.length
+            when 'entity'
+              entity_count            = 1
+              entity_hash             = { :alias => {}, :entities => {}, :ids => {}, :names => {} }
+              filtered_count, take_it = capture_entity(alm_hash['Entity'], entity_hash, entity_type, filtered_count, page_id, ptrn)
+            else
+              debug_to_log(with_caller("Unknown collection type: '#{collection}'"))
+          end
+        end
+
+        [entity_hash, entity_count, filtered_count, filtered]
+
+      rescue
+        failed_to_log(unable_to('*** waft014 ***'))
+        # ensure
+        #   debug_to_log(with_caller("Elapsed: #{Time.now.to_f - beg}"))
+      end
+
+      def capture_entity(entity, entity_hash, entity_type, filtered_count, page_id, ptrn)
+        take_it, id, name, fields, aliases = capture_alm_fields(entity, page_id, entity_hash, ptrn)
+
+        if take_it
+          entity_hash[:alias] = aliases unless entity_hash[:alias]
+
+          if name
+            entity_hash[:names][id]          = name
+            name_key                         = to_valid_symbol(name)
+            entity_hash[:ids][name_key]      = id
+            entity_hash[:entities][name_key] = fields
+          else
+            entity_hash[:entities][id] = fields
+          end
+
+          filtered_count += 1
+          debug_to_log(with_caller("Taking entity #{entity_type}:#{id}:#{name}")) if $waft_debug
+        end
+
+        [filtered_count, take_it]
+      end
+
+      def capture_alm_fields(entity, page_id, entity_hash, ptrn = nil)
+        id      = nil
+        name    = nil
+        take_it = true
+        fields  = {}
+        aliases = {}
+
+        entity['Fields']['Field'].each do |field|
+          field_symb          = to_valid_symbol(field['Name'])
+          aliases[field_symb] = field['Name'] unless aliases[field_symb]
+          name                = field['Value'] if field_symb == :name
+          id                  = field['Value'] if field_symb == :id
+          fields[field_symb]  = field['Value']
+        end
+
+        if page_id
+          unless fields[:parent_id] == page_id or fields[:cycle_id] == page_id
+            take_it = false
+          end
+        end
+
+        if take_it
+          case ptrn.class.to_s
+            when 'Regexp'
+              take_it = false unless name =~ ptrn
+            when 'Array'
+              take_it = false unless ptrn.include?(id.to_s)
+            when 'String'
+              take_it = false unless ptrn.strip =~ /^#{name}$|^#{id}$/
+            when 'Fixnum'
+              take_it = false unless ptrn == id
+            when 'NilClass'
+              take_it = true
+            else
+              debug_to_log(with_caller("Unexpected pattern type: #{ptrn.inspect}"))
+          end
+
+        else
+          debug_to_log(with_caller("Parent id '#{fields[:parent_id]}' does not match Page id '#{page_id}'"))
+        end
+
+        [take_it, id, name, fields, aliases]
+
+      rescue
+        failed_to_log(unable_to('*** waft014 ***'))
+      end
+
+      def id_list_from_collection(input_arr, collection, as_array = false)
+
+        output_arr = []
+        if input_arr.empty?
+          collection[:ids].each_key { |key| output_arr << collection[:ids][key] }
+        else
+          input_arr.each do |tgt|
+            if tgt =~ /^\d+$/
+              output_arr << tgt.to_i
+            elsif tgt.match(/^(\w\w?)-?/i)
+              page = $1
+              collection[:ids].each_key do |key|
+                if key =~ /^#{page}_/i
+                  output_arr << collection[:ids][key].to_i
+                  break
+                end
+              end
+            else
+              output_arr << collection[:ids][to_valid_symbol(tgt)].to_i
+            end
+          end
+        end
+
+        if as_array
+          output_arr.sort!
+        else
+          array_to_list(output_arr.sort, ',', false)
+        end
+      rescue
+        failed_to_log(unable_to('*** waft014 ***'))
+      end
+
+      def build_alm_acro_lookup
+        hash = {}
+        @wf2_components.each do |key, comp|
+          hash[comp[:alm_acro]] = key
+        end
+        hash
+      end
+
+      def define_alm_queries
+        @queries = {
+            :tc_master_folder      => { :query  => 'test-folders?query={name[WRIA2_Master_Suite]}',
+                                        :entity => 'test-folder', :field => 'name', :collection => 'entities' },
+
+            :tc_component_folders  => { :query  => 'test-folders?query={parent-id[IIIII]}',
+                                        :entity => 'test-folder', :field => 'parent-id', :collection => 'entities' },
+
+            :tc_component          => { :query  => 'test-folders?query={name[NNNNN]}',
+                                        :entity => 'test-folder', :field => 'name', :collection => 'entities' },
+
+            :tc_page_folders       => { :query  => 'test-folders?query={parent-id[IIIII]}',
+                                        :entity => 'test-folder', :field => 'parent-id', :collection => 'entities' },
+
+            :tc_cases_in_page      => { :query  => "tests?query={parent-id[IIIII]}&page-size=#{@page_size}&start-index=#####",
+                                        :entity => 'test', :field => 'parent-id', :collection => 'entities' },
+
+            :tc_cases_by_name      => { :query  => "tests?query={name[NNNNN]}&page-size=#{@page_size}&start-index=#####",
+                                        :entity => 'test', :field => 'name', :collection => 'entities' },
+            :tc_cases_by_type      => { :query  => "tests?query={subtype_id[NNNNN]}&page-size=#{@page_size}&start-index=#####",
+                                        :entity => 'test', :field => 'name', :collection => 'entities' },
+
+            :test_configs          => { :query  => 'test-configs?query={parent-id[IIIII]}',
+                                        :entity => 'test-config', :field => 'parent-id', :collection => 'entities' },
+
+            :component_test_defs   => { :query  => 'tests?query={name[NNNNN_A_01*]}',
+                                        :entity => 'test', :field => 'name', :collection => 'entities' },
+
+            :component_test_cases  => { :query  => 'tests?query={name[NNNNN*]}',
+                                        :entity => 'test', :field => 'name', :collection => 'entities' },
+
+            :set_master_folder     => { :query  => "test-set-folders?query={name[#{@target_options[:set_root]}]}",
+                                        :entity => 'test-set-folder', :field => 'name', :collection => 'entities' },
+            :set_component_folders => { :query  => 'test-set-folders?query={parent-id[IIIII]}',
+                                        :entity => 'test-set-folder', :field => 'parent-id', :collection => 'entities' },
+            :set_page_folders      => { :query  => 'test-set-folders?query={parent-id[IIIII]}',
+                                        :entity => 'test-set-folder', :field => 'parent-id', :collection => 'entities' },
+            :sets                  => { :query  => 'test-sets?query={parent-id[IIIII]}',
+                                        :entity => 'test-set', :field => 'parent-id', :collection => 'entities' },
+            :sets_by_id            => { :query  => 'test-sets?query={id[IIIII]}',
+                                        :entity => 'test-set', :field => 'parent-id', :collection => 'entities' },
+            :test_instances        => { :query  => "test-instances?query={cycle-id[IIIII]}&page-size=#{@page_size}&start-index=#####",
+                                        :entity => 'test-instance', :field => 'cycle_id', :collection => 'entities' },
+
+            :template_runs         => { :query  => "runs?query={name[WRIA2*]}&page-size=#{@page_size}&start-index=#####",
+                                        :entity => 'run', :field => 'name', :collection => 'entities' },
+            :template_runs_cmpnt   => { :query  => "runs?query={name[\"WRIA2 Template NNNNN*\"]}&page-size=#{@page_size}&start-index=#####",
+                                        :entity => 'run', :field => 'name', :collection => 'entities' },
+
+
+            :releases              => { :query  => 'releases',
+                                        :entity => 'release', :ptrn => /^\d\.\d+\.\d$/, :collection => 'entities' },
+            :cycles                => { :query  => 'release-cycles?query={parent-id[IIIII]}',
+                                        :entity => 'release-cycle', :field => 'parent-id', :collection => 'entities' },
+
+            :test_fields           => { :query  => 'customization/entities/test/fields',
+                                        :entity => 'test', :collection => 'fields' },
+            :config_fields         => { :query  => 'customization/entities/test-config/fields',
+                                        :entity => 'test-config', :collection => 'fields' },
+            :set_fields            => { :query  => 'customization/entities/test-set/fields',
+                                        :entity => 'test-set', :collection => 'fields' },
+            :set_folder_fields     => { :query  => 'customization/entities/test-set-folder/fields',
+                                        :entity => 'test-set-folder', :collection => 'fields' },
+            :instance_fields       => { :query  => 'customization/entities/test-instance/fields',
+                                        :entity => 'test-instance', :collection => 'fields' },
+            :run_fields            => { :query  => 'customization/entities/run/fields',
+                                        :entity => 'run', :collection => 'fields' },
+            :test_lists            => { :query  => 'customization/entities/test/lists',
+                                        :entity => 'test', :collection => 'lists' },
+            :config_lists          => { :query  => 'customization/entities/test-config/lists',
+                                        :entity => 'test-config', :collection => 'lists' },
+            :set_lists             => { :query  => 'customization/entities/test-set/lists',
+                                        :entity => 'test-set', :collection => 'lists' },
+            :instance_lists        => { :query  => 'customization/entities/test-instance/lists',
+                                        :entity => 'test-instance', :collection => 'lists' },
+            :run_lists             => { :query  => 'customization/entities/run/lists',
+                                        :entity => 'run', :collection => 'lists' },
+            :checkout_test         => { :query  => 'tests/4403/versions/check-out',
+                                        :entity => 'test', :collection => 'tests' }
+        }
       end
 
     end
@@ -734,6 +2532,98 @@ module Awetestlib
     module Validations
 
       include W3CValidators
+
+      def meets_wcag_contrast_standard?(color1, color2, font_size, font_weight, desc = '', refs = '')
+        ratio = contrast_ratio(color1, color2)
+        if font_weight =~ /bold/i
+          standard = font_size >= 14.0 ? 3 : 4.5
+        else
+          standard = font_size >= 18.0 ? 3 : 4.5
+        end
+        msg = with_caller(desc, "colors: #{color1}, #{color2}", "font: #{font_size}pt #{font_weight}",
+                          "wcag minimum: #{standard}", "actual: #{sprintf('%.1f', ratio)}", refs)
+        if ratio >= standard
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log(msg)
+          false
+        end
+      rescue
+        failed_to_log(unable_to('verify that'))
+      end
+
+      def focused_element_in_locators(container, locators, desc = '', refs = '')
+        focused = get_active_element(container)
+        if focused
+          focus_locator, found, index, longest = locator_in_array(focused, locators, desc, refs)
+          if focus_locator.length > longest
+            focus_locator = "#{focus_locator.slice(0, (longest + 15))}..."
+          end
+          msg = build_msg("Focused element locator (#{focus_locator})",
+                          ("(#{focused.text})" if focused.respond_to?(:text) and focused.text),
+                          'is found in locators array', refs)
+          if found
+            passed_to_log("#{msg} at index #{index}.")
+            true
+          else
+            failed_to_log(msg)
+            false
+          end
+        else
+          failed_to_log("Cannot locate focused element in DOM (#{focused})")
+          false
+        end
+        focused
+      rescue
+        failed_to_log(unable_to('verify that'))
+      end
+
+      def locator_in_array(focused, locators, desc = '', refs = '')
+        found         = false
+        focus_locator = nil
+        index         = 0
+        longest       = 0
+        locators.each do |loc|
+          who, how, what = parse_locator(loc)
+          focus_locator  = format_locator(extract_locator(focused, how, with_caller(desc), refs))
+          target_locator = format_locator(who, how, what)
+
+          if focus_locator == target_locator
+            found = true
+            break
+          end
+          longest = loc.length > longest ? loc.length : longest
+          index   += 1
+        end
+        [focus_locator, found, index, longest]
+      rescue
+        failed_to_log(unable_to('verify that'))
+      end
+
+      def focused_element_not_in_locators(container, locators, desc = '', refs = '')
+        focused = get_active_element(container)
+        if focused
+          focus_locator, found, index, longest = locator_in_array(focused, locators, desc, refs)
+          if focus_locator.length > longest
+            focus_locator = "#{focus_locator.slice(0, (longest + 15))}..."
+          end
+          msg = build_msg("Focused element locator (#{focus_locator})",
+                          "is not found in locators array (#{locators}", refs)
+          if found
+            failed_to_log("#{msg} Found at index #{index}.")
+            false
+          else
+            passed_to_log(msg)
+            true
+          end
+        else
+          passed_to_log("Cannot locate focused element in DOM (#{focused})")
+          true
+        end
+      rescue
+        failed_to_log(unable_to('verify that'))
+      end
 
       def is_true?(actual, message, desc = '', refs = '')
         msg = build_message(desc, "Is '#{message}' true?", refs)
@@ -756,7 +2646,7 @@ module Awetestlib
       end
 
       def verify_months(list, language = 'English', abbrev = 0, desc = '', refs = '')
-        msg         = build_message(desc, "List of xxxx months in #{language} is correct and in order?")
+        msg         = build_message(desc, "List of xxxx months in #{language} is correct and in order.")
         list        = [nil].concat(list)
         month_names = get_months(language, abbrev)
         if abbrev > 0
@@ -776,7 +2666,7 @@ module Awetestlib
 
       def verify_days(list, language = 'English', abbrev = 0, offset = 0, desc = '', refs = '')
         #TODO: Handle different starting day: rotate_array(arr, target, index = 0, stop = 0)
-        msg       = build_message(desc, "List of xxxx weekdays in #{language} is correct and in order?")
+        msg       = build_message(desc, "List of xxxx weekdays in #{language} is correct and in order.")
         day_names = get_days(language, abbrev)
         day_names = rotate_array(day_names, offset) if offset > 0
         if abbrev > 0
@@ -794,8 +2684,10 @@ module Awetestlib
         failed_to_log(unable_to(msg))
       end
 
-      def greater_than?(actual, expected, desc = '', refs = '')
-        msg = build_message(desc, "Actual '#{actual}' greater than expected '#{expected}'?", refs)
+      def greater_than?(actual, expected, desc = '', refs = '', act = nil, exp = nil)
+        act_name = act ? act : 'Actual'
+        exp_name = exp ? exp : 'expected'
+        msg      = build_message(desc, "#{act_name} '#{actual}' greater than #{exp_name} '#{expected}'.", refs)
         if actual > expected
           passed_to_log("#{msg}")
           true
@@ -806,8 +2698,10 @@ module Awetestlib
         rescue_msg_for_validation(msg)
       end
 
-      def greater_than_or_equal_to?(actual, expected, desc = '', refs = '')
-        msg = build_message(desc, "Actual '#{actual}' greater than or equal to expected '#{expected}'?", refs)
+      def greater_than_or_equal_to?(actual, expected, desc = '', refs = '', act = nil, exp = nil)
+        act_name = act ? act : 'Actual'
+        exp_name = exp ? exp : 'expected'
+        msg      = build_message(desc, "#{act_name} '#{actual}' greater than or equal to #{exp_name} '#{expected}'.", refs)
         if actual >= expected
           passed_to_log("#{msg}")
           true
@@ -822,8 +2716,10 @@ module Awetestlib
       alias greater_or_equal? greater_than_or_equal_to?
       alias count_greater_or_equal? greater_than_or_equal_to?
 
-      def less_than?(actual, expected, desc = '', refs = '')
-        msg = build_message(desc, "Actual '#{actual}' less than expected '#{expected}'?", refs)
+      def less_than?(actual, expected, desc = '', refs = '', act = nil, exp = nil)
+        act_name = act ? act : 'Actual'
+        exp_name = exp ? exp : 'expected'
+        msg      = build_message(desc, "#{act_name} '#{actual}' less than #{exp_name} '#{expected}'.", refs)
         if actual < expected
           passed_to_log("#{msg}")
           true
@@ -834,8 +2730,10 @@ module Awetestlib
         rescue_msg_for_validation(msg)
       end
 
-      def less_than_or_equal_to?(actual, expected, desc = '', refs = '')
-        msg = build_message(desc, "Actual '#{actual}' less than or equal to expected '#{expected}'?", refs)
+      def less_than_or_equal_to?(actual, expected, desc = '', refs = '', act = nil, exp = nil)
+        act_name = act ? act : 'Actual'
+        exp_name = exp ? exp : 'expected'
+        msg      = build_message(desc, "#{act_name} '#{actual}' less than or equal to #{exp_name} '#{expected}'.", refs)
         if actual <= expected
           passed_to_log("#{msg}")
           true
@@ -850,8 +2748,10 @@ module Awetestlib
       alias less_than_or_equal? less_than_or_equal_to?
       alias less_or_equal? less_than_or_equal_to?
 
-      def number_equals?(actual, expected, desc = '', refs = '')
-        msg = build_message(desc, "Actual '#{actual}' equals expected '#{expected}'?", refs)
+      def number_equals?(actual, expected, desc = '', refs = '', act = nil, exp = nil)
+        act_name = act ? act : 'Actual'
+        exp_name = exp ? exp : 'expected'
+        msg      = build_message(desc, "#{act_name} '#{actual}' equals #{exp_name} '#{expected}'.", refs)
         if actual == expected
           passed_to_log("#{msg}")
           true
@@ -864,8 +2764,10 @@ module Awetestlib
 
       alias count_equals? number_equals?
 
-      def number_does_not_equal?(actual, expected, desc = '', refs = '')
-        msg = build_message(desc, "Actual '#{actual}' does not equal expected '#{expected}'?", refs)
+      def number_does_not_equal?(actual, expected, desc = '', refs = '', act = nil, exp = nil)
+        act_name = act ? act : 'Actual'
+        exp_name = exp ? exp : 'expected'
+        msg      = build_message(desc, "#{act_name} '#{actual}' does not equal #{exp_name} '#{expected}'.", refs)
         if actual == expected
           failed_to_log("#{msg}")
         else
@@ -878,21 +2780,33 @@ module Awetestlib
 
       alias count_does_not_equal? number_does_not_equal?
 
-      def within_range?(actual, target, min, max = nil)
-        if max
-          (min..max).include?(actual)
+      def within_range?(actual, min, max)
+        (min..max).include?(actual)
+      rescue
+        failed_to_log(unable_to, false, true)
+      end
+
+      alias number_within_range? within_range?
+      alias count_within_range? within_range?
+
+      def within_target_range?(actual, target, low, high = nil)
+        if high
+          ((target - low)..(target + high)).include?(actual)
         else
-          ((target - min)..(target + min)).include?(actual)
+          ((target - low)..(target + low)).include?(actual)
         end
       rescue
         failed_to_log(unable_to, false, true)
       end
 
+      alias number_within_target_range? within_target_range?
+      alias count_within_target_range? within_target_range?
+
       def within_tolerance?(actual, expected, tolerance, desc = '', refs = '')
         min = expected - tolerance
         max = expected + tolerance
-        msg = build_message(desc, "#{actual} is between #{min} and #{max}?", refs)
-        if within_range?(actual, expected, tolerance)
+        msg = build_message(desc, "#{actual} is between #{min} and #{max}.", refs)
+        if min <= actual and max >= actual
           passed_to_log("#{msg}")
           true
         else
@@ -906,7 +2820,7 @@ module Awetestlib
       alias count_within_tolerance? within_tolerance?
 
       def dimensions_equal?(first_name, first_value, second_name, second_value, desc = '', refs = '')
-        msg = build_message(desc, "#{first_name}: #{first_value} equals #{second_name}: #{second_value}?", refs)
+        msg = build_message(desc, "#{first_name}: #{first_value} equals #{second_name}: #{second_value}.", refs)
         if first_value == second_value
           passed_to_log("#{msg}")
           true
@@ -918,7 +2832,7 @@ module Awetestlib
       end
 
       def dimensions_not_equal?(first_name, first_value, second_name, second_value, desc = '', refs = '')
-        msg = build_message(desc, "#{first_name}: #{first_value} does not equal #{second_name}: #{second_value}?", refs)
+        msg = build_message(desc, "#{first_name}: #{first_value} does not equal #{second_name}: #{second_value}.", refs)
         if first_value == second_value
           failed_to_log("#{msg}")
         else
@@ -933,9 +2847,17 @@ module Awetestlib
         within_tolerance?(actual, expected, tolerance, with_caller("#{desc}, Dimension", name), refs = '')
       end
 
+      # def centered_horizontally?(container, element, desc = '', refs = '', tolerance = 2)
+      #   c_tag, c_how, c_what = extract_locator(container, nil, with_caller(desc), refs)
+      #   e_tag, e_how, e_what = extract_locator(element, nil, with_caller(desc), refs)
+      #   msg                  = build_message(with_caller(desc), format_locator(e_tag, e_how, e_what),
+      #                                        'centered horizontally in', format_locator(c_tag, c_how, c_what), refs)
+      #
+      # end
+
       # def centered?(container, element, desc = '', refs = '')
       #   name                      = element.respond_to?(:tag_name) ? element.tag_name.upcase : 'DOM'
-      #   msg                       = build_message(desc, "is centered @@@?", refs)
+      #   msg                       = build_message(desc, "is centered @@@.", refs)
       #
       #   element_x, element_y      = element.dimensions
       #   element_left, element_top = element.client_offset
@@ -980,7 +2902,7 @@ module Awetestlib
       end
 
       def element_class_equals?(container, element, expected, desc = '', refs = '', how = nil, what = nil)
-        msg = element_query_message(element, ":class equals '#{expected}'?", how, what, nil, desc, refs)
+        msg = element_query_message(element, ":class equals '#{expected}'.", how, what, nil, desc, refs)
         element_wait(element)
         if element.class_name == expected
           passed_to_log(msg)
@@ -1001,7 +2923,7 @@ module Awetestlib
       end
 
       def element_class_does_not_contain?(element, expected, desc = '', refs = '', how = nil, what = nil)
-        msg = element_query_message(element, ":class does not contain '#{expected}'?", how, what, nil, desc, refs)
+        msg = element_query_message(element, ":class does not contain '#{expected}'.", how, what, nil, desc, refs)
         element_wait(element)
         if element.class_name.match(expected)
           failed_to_log(msg)
@@ -1024,7 +2946,7 @@ module Awetestlib
       alias verify_class class_contains?
 
       def element_class_contains?(element, expected, desc = '', refs = '', how = nil, what = nil)
-        msg        = element_query_message(element, ":class contains '#{expected}'?", how, what, nil, desc, refs)
+        msg        = element_query_message(element, ":class contains '#{expected}'.", how, what, nil, desc, refs)
         class_name = element.class_name
         if class_name.match(expected)
           passed_to_log(msg)
@@ -1039,7 +2961,7 @@ module Awetestlib
       alias verify_class class_contains?
 
       def columns_match?(exp, act, dir, col, org = nil, desc = '', refs = '')
-        msg = build_message(desc, "Click on #{dir} column '#{col}' produces expected sorted list?", refs)
+        msg = build_message(desc, "Click on #{dir} column '#{col}' produces expected sorted list.", refs)
         ok  = arrays_match?(exp, act, msg)
         unless ok
           debug_to_log("Original order ['#{org.join("', '")}']") if org
@@ -1064,7 +2986,7 @@ module Awetestlib
       end
 
       def array_includes?(array, expected, desc = '', refs = '')
-        msg = build_message(desc, "Array includes '#{expected}'?", refs)
+        msg = build_message(desc, "Array includes '#{expected}'.", refs)
         if array.include?(expected)
           passed_to_log(msg)
           true
@@ -1076,7 +2998,7 @@ module Awetestlib
       end
 
       def array_does_not_include?(array, expected, desc = '', refs = '')
-        msg = build_message(desc, "Array does not include '#{expected}'?", refs)
+        msg = build_message(desc, "Array does not include '#{expected}'.", refs)
         if array.include?(expected)
           failed_to_log(msg)
         else
@@ -1104,7 +3026,7 @@ module Awetestlib
       alias arrays_match arrays_match?
 
       def attribute_contains?(container, element, how, what, attribute, expected, desc = '', refs = '')
-        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", ";#{attribute}", "contains '#{expected}'?", refs)
+        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", ";#{attribute}", "contains '#{expected}'.", refs)
         actual = container.element(how, what).attribute_value(attribute)
         if actual
           if actual.match(expected)
@@ -1121,7 +3043,7 @@ module Awetestlib
       end
 
       def attribute_does_not_contain?(container, element, how, what, attribute, expected, desc = '', refs = '')
-        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", "attribute '#{attribute}", "does not contain '#{expected}'?", refs)
+        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", "attribute '#{attribute}", "does not contain '#{expected}'.", refs)
         actual = container.element(how, what).attribute_value(attribute)
         if actual
           if actual.match(expected)
@@ -1138,7 +3060,7 @@ module Awetestlib
       end
 
       def attribute_equals?(container, element, how, what, attribute, expected, desc = '', refs = '')
-        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", "attribute '#{attribute}", "equals '#{expected}'?", refs)
+        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", "attribute '#{attribute}", "equals '#{expected}'.", refs)
         actual = container.element(how, what).attribute_value(attribute)
         if actual
           if actual == expected
@@ -1155,7 +3077,7 @@ module Awetestlib
       end
 
       def attribute_does_not_equal?(container, element, how, what, attribute, expected, desc = '', refs = '')
-        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", "attribute '#{attribute}", "does not equal '#{expected}?", refs)
+        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", "attribute '#{attribute}", "does not equal '#{expected}.", refs)
         actual = container.element(how, what).attribute_value(attribute)
         if actual
           if actual == expected
@@ -1184,7 +3106,7 @@ module Awetestlib
       alias checkbox_set? checked?
 
       def element_checked?(element, desc = '', refs = '', how = nil, what = nil, value = nil)
-        msg = element_query_message(element, "is checked?", how, what, value, desc, refs)
+        msg = element_query_message(element, "is checked.", how, what, value, desc, refs)
         if element.checked?
           passed_to_log(msg)
           true
@@ -1208,7 +3130,7 @@ module Awetestlib
       alias checkbox_not_set? not_checked?
 
       def element_not_checked?(element, desc = '', refs = '', how = nil, what = nil, value = nil)
-        msg = element_query_message(element, "is not checked?", how, what, value, desc, refs)
+        msg = element_query_message(element, "is not checked.", how, what, value, desc, refs)
         if element.checked?
           failed_to_log(msg)
         else
@@ -1253,10 +3175,10 @@ module Awetestlib
       end
 
       def element_attribute_in_html?(element, attribute, desc = '', refs = '', how = nil, what = nil)
-        msg  = element_query_message(element, "attribute '#{attribute}' exists in html?", how, what, nil, desc, refs)
+        msg  = element_query_message(element, "attribute '#{attribute}' exists in html.", how, what, nil, desc, refs)
         # element_wait(element)
         ptrn = /#{attribute}(?:\s|>|=|$)/
-        # debug_to_log(with_caller("[#{element.html}]::", "[#{ptrn}"))
+        debug_to_log(with_caller("[#{element.html}]::", "[#{ptrn}")) if @debug_dsl
         if element.html =~ ptrn
           attr_vlu = element.attribute_value(attribute)
           passed_to_log("#{msg} Value = '#{attr_vlu}'")
@@ -1276,9 +3198,9 @@ module Awetestlib
       end
 
       def element_attribute_not_in_html?(element, attribute, desc = '', refs = '', how = nil, what = nil)
-        msg  = element_query_message(element, "attribute '#{attribute}' does not exist in html?", how, what, nil, desc, refs)
+        msg  = element_query_message(element, "attribute '#{attribute}' does not exist in html.", how, what, nil, desc, refs)
         ptrn = /#{attribute}(?:\s|>|=|$)/
-        # debug_to_log(with_caller("[#{element.html}]::", "[#{ptrn}"))
+        debug_to_log(with_caller("[#{element.html}]::", "[#{ptrn}")) if @debug_dsl
         if element.html =~ ptrn
           attr_vlu = element.attribute_value(attribute)
           failed_to_log("#{msg} Value = '#{attr_vlu}'")
@@ -1298,7 +3220,7 @@ module Awetestlib
       end
 
       def element_attribute_exists?(element, attribute, desc = '', refs = '', how = nil, what = nil)
-        msg  = element_query_message(element, "attribute '#{attribute}' exists?", how, what, nil, desc, refs)
+        msg  = element_query_message(element, "attribute '#{attribute}' exists.", how, what, nil, desc, refs)
         # element_wait(element)
         ptrn = /(?:<|\s)#{attribute}(?:\s|>|=|$)/
         if element.html =~ ptrn
@@ -1320,7 +3242,7 @@ module Awetestlib
       end
 
       def element_attribute_does_not_exist?(element, attribute, desc = '', refs = '', how = nil, what = nil)
-        msg  = element_query_message(element, "attribute '#{attribute}' does not exist?", how, what, nil, desc, refs)
+        msg  = element_query_message(element, "attribute '#{attribute}' does not exist.", how, what, nil, desc, refs)
         # element_wait(element)
         ptrn = /(?:<|\s)#{attribute}(?:\s|>|=|$)/
         if element.html =~ ptrn
@@ -1335,7 +3257,7 @@ module Awetestlib
       end
 
       def element_inline_attribute_contains?(element, attribute, expected, desc = '', refs = '', how = nil, what = nil)
-        msg          = element_query_message(element, "Inline attribute '#{attribute}' contains '#{force_string(expected)}'?", how, what, nil, desc, refs)
+        msg          = element_query_message(element, "Inline attribute '#{attribute}' contains '#{force_string(expected)}'.", how, what, nil, desc, refs)
         element_html = element.html
         if element_html.include? attribute
           inline_attr = "#{attribute}" + '=' + '"' + "#{expected}" + '"'
@@ -1362,7 +3284,7 @@ module Awetestlib
       # end
 
       def element_attribute_equals?(element, attribute, expected, desc = '', refs = '', how = nil, what = nil)
-        msg    = element_query_message(element, "attribute '#{attribute}' equals '#{force_string(expected)}'?", how, what, nil, desc, refs)
+        msg    = element_query_message(element, "attribute '#{attribute}' equals '#{force_string(expected)}'.", how, what, nil, desc, refs)
         actual = element.attribute_value(attribute)
         if actual
           if actual == expected
@@ -1379,7 +3301,7 @@ module Awetestlib
       end
 
       def element_attribute_does_not_equal?(element, attribute, expected, desc = '', refs = '', how = nil, what = nil)
-        msg    = element_query_message(element, "attribute '#{attribute}' does not equal '#{force_string(expected)}'?", how, what, nil, desc, refs)
+        msg    = element_query_message(element, "attribute '#{attribute}' does not equal '#{force_string(expected)}'.", how, what, nil, desc, refs)
         actual = element.attribute_value(attribute)
         if actual
           if actual == expected
@@ -1398,7 +3320,7 @@ module Awetestlib
       alias element_attribute_not_equal? element_attribute_does_not_equal?
 
       def element_attribute_contains?(element, attribute, expected, desc = '', refs = '', how = nil, what = nil)
-        msg    = element_query_message(element, "attribute '#{attribute}' contains '#{force_string(expected)}'?", how, what, nil, desc, refs)
+        msg    = element_query_message(element, "attribute '#{attribute}' contains '#{force_string(expected)}'.", how, what, nil, desc, refs)
         actual = element.attribute_value(attribute)
         if actual
           if actual.match(expected)
@@ -1415,7 +3337,7 @@ module Awetestlib
       end
 
       def element_attribute_does_not_contain?(element, attribute, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "attribute '#{attribute}' does not contain '#{force_string(expected)}'?", nil, nil, nil, desc, refs)
+        msg    = element_query_message(element, "attribute '#{attribute}' does not contain '#{force_string(expected)}'.", nil, nil, nil, desc, refs)
         actual = element.attribute_value(attribute)
         if actual
           if actual.match(expected)
@@ -1433,7 +3355,7 @@ module Awetestlib
       end
 
       def element_attribute_greater?(element, attr_name, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "attribute '#{attr_name}' greater than '#{expected}'?", nil, nil, nil, desc, refs)
+        msg    = element_query_message(element, "attribute '#{attr_name}' greater than '#{expected}'.", nil, nil, nil, desc, refs)
         actual = element.attribute_value(attr_name)
         if actual
           if actual.to_i > expected.to_i
@@ -1450,7 +3372,7 @@ module Awetestlib
       end
 
       def element_attribute_less?(element, attr_name, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "attribute '#{attr_name}' less than '#{expected}'?", nil, nil, nil, desc, refs)
+        msg    = element_query_message(element, "attribute '#{attr_name}' less than '#{expected}'.", nil, nil, nil, desc, refs)
         actual = element.attribute_value(attr_name)
         if actual
           if actual.to_i < expected.to_i
@@ -1467,7 +3389,7 @@ module Awetestlib
       end
 
       def element_attribute_greater_or_equal?(element, attr_name, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "attribute '#{attr_name}' greater than or equal to '#{expected}'?", nil, nil, nil, desc, refs)
+        msg    = element_query_message(element, "attribute '#{attr_name}' greater than or equal to '#{expected}'.", nil, nil, nil, desc, refs)
         actual = element.attribute_value(attr_name)
         if actual
           if actual.to_i >= expected.to_i
@@ -1484,7 +3406,7 @@ module Awetestlib
       end
 
       def element_attribute_less_or_equal?(element, attr_name, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "attribute '#{attr_name}' less than or equal to '#{expected}'?", nil, nil, nil, desc, refs)
+        msg    = element_query_message(element, "attribute '#{attr_name}' less than or equal to '#{expected}'.", nil, nil, nil, desc, refs)
         actual = element.attribute_value(attr_name)
         if actual
           if actual.to_i <= expected.to_i
@@ -1501,7 +3423,7 @@ module Awetestlib
       end
 
       def element_value_equals?(element, expected, desc = '', refs = '')
-        msg = element_query_message(element, "value equals '#{expected}'?", nil, nil, nil, desc, refs)
+        msg = element_query_message(element, "value equals '#{expected}'.", nil, nil, nil, desc, refs)
 
         if element.responds_to?('value')
           actual = element.value
@@ -1523,25 +3445,25 @@ module Awetestlib
         rescue_msg_for_validation(desc, refs)
       end
 
-      def element_text_equals?(element, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "text equals '#{expected}'?", nil, nil, nil, desc, refs)
+      def element_text_equals?(element, expected, desc = '', refs = '', how = nil, what = nil)
+        msg    = element_query_message(element, "text equals '#{expected}'.", how, what, nil, desc, refs)
         actual = element.text
         if actual
           if actual == expected
             passed_to_log(msg)
             true
           else
-            failed_to_log(msg)
+            failed_to_log("#{msg} Found '#{actual}'")
           end
         else
-          failed_to_log("#{msg} 'text' not found.")
+          failed_to_log("#{msg} element text not found.")
         end
       rescue
         rescue_msg_for_validation(desc, refs)
       end
 
       def element_text_does_not_equal?(element, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "text does not '#{expected}'?", nil, nil, nil, desc, refs)
+        msg    = element_query_message(element, "text does not '#{expected}'.", nil, nil, nil, desc, refs)
         actual = element.text
         if actual
           if actual == expected
@@ -1558,7 +3480,7 @@ module Awetestlib
       end
 
       def element_text_includes?(element, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "text includes '#{expected}'?", nil, nil, nil, desc, refs)
+        msg    = element_query_message(element, "text includes '#{expected}'.", nil, nil, nil, desc, refs)
         actual = element.text
         if actual
           if actual.include?(expected)
@@ -1577,7 +3499,7 @@ module Awetestlib
       alias element_includes_text? element_text_includes?
 
       def element_text_does_not_include?(element, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "text does not include '#{expected}'?", nil, nil, nil, desc, refs)
+        msg    = element_query_message(element, "text does not include '#{expected}'.", nil, nil, nil, desc, refs)
         actual = element.text
         if actual
           if actual.include?(expected)
@@ -1606,7 +3528,7 @@ module Awetestlib
       end
 
       def contains_text?(container, element, how, what, expected, desc = '', refs = '')
-        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}' contains '#{expected}'?", refs)
+        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}' contains '#{expected}'.", refs)
         code   = build_webdriver_fetch(element, how, what)
         target = eval(code)
         if target
@@ -1623,7 +3545,7 @@ module Awetestlib
       end
 
       def does_not_contain_text?(container, element, how, what, expected, desc = '', refs = '')
-        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}' does not contain '#{expected}'?", refs)
+        msg    = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}' does not contain '#{expected}'.", refs)
         code   = build_webdriver_fetch(element, how, what)
         target = eval(code)
         if target
@@ -1640,14 +3562,14 @@ module Awetestlib
       end
 
       def element_contains_text?(element, expected, desc = '', refs = '', how = '', what = '', skip_fail = false)
-        msg = element_query_message(element, "text contains '#{expected}'?", how, what, nil, desc, refs)
+        msg = element_query_message(element, "text contains '#{expected}'.", how, what, nil, desc, refs)
         element_wait(element)
         if element.text.match(expected)
           passed_to_log(msg)
           true
         else
           if skip_fail
-            debug_to_log(build_msg(msg, "(Fail suppressed)"))
+            debug_to_log(build_msg(msg, '(Fail suppressed)'))
           else
             failed_to_log("#{msg} Found '#{element.text}'")
           end
@@ -1659,7 +3581,7 @@ module Awetestlib
       alias element_text_contains? element_contains_text?
 
       def element_does_not_contain_text?(element, expected, desc = '', refs = '', how = '', what = '')
-        msg = element_query_message(element, "text does not contain '#{expected}'?", how, what, nil, desc, refs)
+        msg = element_query_message(element, "text does not contain '#{expected}'.", how, what, nil, desc, refs)
         element_wait(element)
         if element.text.match(expected)
           failed_to_log(msg)
@@ -1677,8 +3599,19 @@ module Awetestlib
         File.directory?(directory)
       end
 
-      def string_contains?(strg, target, desc = '', refs = '')
-        msg = build_message(desc, "String '#{strg}' contains '#{target}'?", refs)
+      def html_contains?(strg, target, desc = '', refs = '', side = 'right')
+        msg = build_message(desc, "HTML '#{truncate_string(strg, side).gsub(/<>/, '%')}'", " contains '#{truncate_string(target)}'.", refs)
+        if strg.match(target)
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log(msg)
+        end
+      end
+
+      def string_contains?(strg, target, desc = '', refs = '', side = 'right', trunc = 30)
+        msg = build_message(desc, "String '#{truncate_string(strg, side, trunc)}'",
+                            "contains '#{truncate_string(target, side, trunc)}'.", refs)
         if strg.match(target)
           passed_to_log(msg)
           true
@@ -1690,8 +3623,9 @@ module Awetestlib
       alias validate_string string_contains?
       alias validate_string_contains string_contains?
 
-      def string_does_not_contain?(strg, target, desc = '', refs = '')
-        msg = build_message(desc, "String '#{strg}' does not contain '#{target}'?", refs)
+      def string_does_not_contain?(strg, target, desc = '', refs = '', side = 'right', trunc = 30)
+        msg = build_message(desc, "String '#{truncate_string(strg, side, trunc)}'",
+                            "does not contain '#{truncate_string(target, side, trunc)}'.", refs)
         if strg.match(target)
           failed_to_log(msg)
           true
@@ -1701,7 +3635,7 @@ module Awetestlib
       end
 
       def boolean_equals?(actual, expected, desc = '', refs = '')
-        msg = build_message(desc, "Boolean '#{actual}' equals expected '#{expected}'?", refs)
+        msg = build_message(desc, "Boolean '#{actual}' equals expected '#{expected}'.", refs)
         if actual == expected
           passed_to_log(msg)
           true
@@ -1722,8 +3656,9 @@ module Awetestlib
       #   end
       # end
 
-      def string_equals?(actual, expected, desc = '', refs = '')
-        msg = build_message(desc, "String '#{actual}' equals expected '#{expected}'?", refs)
+      def string_equals?(actual, expected, desc = '', refs = '', side = 'right', trunc = 30)
+        msg = build_message(desc, "String '#{truncate_string(actual, side, trunc)}'",
+                            "equals expected '#{truncate_string(expected, side, trunc)}'.", refs)
         if actual == expected
           passed_to_log(msg)
           true
@@ -1731,11 +3666,12 @@ module Awetestlib
           failed_to_log(msg)
         end
       rescue
-        rescue_msg_for_validation(msg)
+        rescue_msg_for_validation(msg, refs)
       end
 
-      def string_does_not_equal?(actual, expected, desc = '', refs = '')
-        msg = build_message(desc, "String '#{actual}' does not equal expected '#{expected}'?", refs)
+      def string_does_not_equal?(actual, expected, desc = '', refs = '', side = 'right', trunc = 30)
+        msg = build_message(desc, "String '#{truncate_string(actual, side, trunc)}'",
+                            "does not equal expected '#{truncate_string(expected, side, trunc)}'.", refs)
         if actual == expected
           failed_to_log(msg)
         else
@@ -1750,7 +3686,7 @@ module Awetestlib
 
       def text_does_not_contain?(container, ptrn, desc = '', refs = '')
         name = container.respond_to?(:tag_name) ? container.tag_name.titleize : 'DOM'
-        msg  = build_message(desc, "#{name} text does not contain '#{ptrn}'?", refs)
+        msg  = build_message(desc, "#{name} text does not contain '#{ptrn}'.", refs)
 
         if ptrn.is_a?(Regexp)
           target = ptrn
@@ -1771,22 +3707,13 @@ module Awetestlib
 
       def text_contains?(container, ptrn, desc = '', refs = '', skip_fail = false, skip_sleep = false)
         name = container.respond_to?(:tag_name) ? container.tag_name.titleize : 'DOM'
-        msg  = build_message(desc, "#{name} text contains '#{ptrn}'?", refs)
+        msg  = build_message(desc, "#{name} text contains '#{ptrn}'.", refs)
         if ptrn.is_a?(Regexp)
           target = ptrn
         else
           target = Regexp.new(Regexp.escape(ptrn))
         end
-        # debug_to_log(with_caller(__LINE__))
-        # if container.respond_to?(:wait)
-        #   container.wait
-        # elsif container.respond_to?(:wait_until_present)
-        #   container.wait_until_present
-        # else
-        #   sleep(3)
-        # end
 
-        # sleep_for(10)
         if container.text.match(target)
           passed_to_log("#{msg}")
           true
@@ -1803,7 +3730,8 @@ module Awetestlib
 
       alias text_equals? text_contains?
       alias validate_text text_contains?
-      alias element_text_equals? text_contains?
+      # alias element_text_equals? text_contains?
+      # alias element_text_contains? text_contains?
 
       def validate_html(container, page, force_browser = false, filter = true)
         mark_testlevel(": #{page}")
@@ -2305,7 +4233,7 @@ module Awetestlib
 
       def text_does_not_equal?(container, ptrn, desc = '', refs = '')
         name = container.respond_to?(:tag_name) ? container.tag_name.titleize : 'DOM'
-        msg  = build_message(desc, "#{name} text contains '#{ptrn}'?", refs)
+        msg  = build_message(desc, "#{name} text contains '#{ptrn}'.", refs)
         if ptrn.is_a?(Regexp)
           target = ptrn
         else
@@ -2332,7 +4260,7 @@ module Awetestlib
       alias element_text_does_not_equal? text_does_not_equal?
 
       def textfield_equals?(browser, how, what, expected, desc = '', refs = '')
-        msg    = build_message(desc, "Expected value to equal '#{expected}' in textfield #{how}='#{what}'?", refs)
+        msg    = build_message(desc, "Expected value to equal '#{expected}' in textfield #{how}='#{what}'.", refs)
         actual = browser.text_field(how, what).value
         if actual.is_a?(Array)
           actual = actual[0].to_s
@@ -2363,7 +4291,7 @@ module Awetestlib
       alias text_field_equals? textfield_equals?
 
       def textfield_contains?(container, how, what, expected, desc = '', refs = '')
-        msg      = build_message(desc, "Does text field #{how}='#{what}' contains '#{expected}'?", refs)
+        msg      = build_message(desc, "Does text field #{how}='#{what}' contains '#{expected}'.", refs)
         contents = container.text_field(how, what).when_present.value
         if contents =~ /#{expected}/
           passed_to_log(msg)
@@ -2378,7 +4306,7 @@ module Awetestlib
       alias text_field_contains? textfield_contains?
 
       def textfield_empty?(browser, how, what, desc = '', refs = '')
-        msg      = build_message(desc, "Text field #{how}='#{what}' is empty?", refs)
+        msg      = build_message(desc, "Text field #{how}='#{what}' is empty.", refs)
         contents = browser.text_field(how, what).value
         if contents.to_s.length == 0
           passed_to_log(msg)
@@ -2542,7 +4470,7 @@ module Awetestlib
       end
 
       def expected_url?(container, expected, desc = '', refs = '')
-        msg = build_message(desc, "Is browser at url #{expected}?", refs)
+        msg = build_message(desc, "Is browser at url #{expected}.", refs)
         if container.url == expected
           passed_to_log(msg)
           true
@@ -2590,12 +4518,17 @@ module Awetestlib
 
       def element_focused?(element, how, what, value = nil, desc = '', refs = '')
         msg     = element_query_message(element, 'has focus?', how, what, value, desc, refs)
-        current = element.browser.execute_script("return document.activeElement")
+        current = get_active_element(element)
         if element == current
           passed_to_log(msg)
           true
         else
-          failed_to_log(msg)
+          if current.id and (element.id == current.id)
+            passed_to_log(msg)
+            true
+          else
+            failed_to_log(msg)
+          end
         end
       rescue
         rescue_msg_for_validation(msg)
@@ -2676,7 +4609,7 @@ module Awetestlib
 
       def element_disabled?(element, desc = '', refs = '', how = nil, what = nil, value = nil)
         msg = element_query_message(element, 'is disabled?', how, what, value, desc, refs)
-        element_wait(element)
+        # element_wait(element)
         if element.respond_to?(:disabled?)
           if element.disabled?
             passed_to_log(msg)
@@ -2685,7 +4618,7 @@ module Awetestlib
             failed_to_log(msg)
           end
         else
-          failed_to_log(build_message("#{element} does not respond to .disabled?"), msg)
+          failed_to_log(build_message("#{element} does not respond to .disabled."), msg)
         end
       rescue
         rescue_msg_for_validation(msg)
@@ -2704,7 +4637,7 @@ module Awetestlib
 
       def element_not_disabled?(element, desc = '', refs = '', how = nil, what = nil, value = nil)
         msg = element_query_message(element, 'is enabled?', how, what, value, desc, refs)
-        element_wait(element)
+        # element_wait(element)
         if element.disabled?
           failed_to_log(msg)
         else
@@ -2752,7 +4685,7 @@ module Awetestlib
         end
 
         msg = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", "pixel size '#{style}",
-                            "equals '#{expected}' (with rounding #{rounding})?", refs)
+                            "equals '#{expected}' (with rounding #{rounding}).", refs)
 
         if actual == expected
           failed_to_log("#{msg} Found '#{actual}'")
@@ -2768,23 +4701,55 @@ module Awetestlib
 
       def pixels_equal?(container, element, how, what, style, expected, desc = '', refs = '', rounding = 'up')
         code   = build_webdriver_fetch(element, how, what)
-        actual = eval("#{code}.style('#{style}')")
+        target = eval("#{code}")
+        element_pixels_equal?(target, style, expected, desc, refs, how, what)
+          # actual = eval("#{code}.style('#{style}')")
+          #
+          # if actual =~ /px$/
+          #   expected = expected.to_s + 'px'
+          # else
+          #   case rounding
+          #     when 'ceil', 'up'
+          #       actual = actual.to_f.ceil
+          #     when 'down', 'floor'
+          #       actual = actual.to_f.floor
+          #     else
+          #       actual = actual.to_f.round
+          #   end
+          # end
+          #
+          # msg = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", "attribute '#{style}",
+          #                     "equals '#{expected}' (with rounding #{rounding}).", refs)
+          #
+          # if actual == expected
+          #   passed_to_log(msg)
+          #   true
+          # else
+          #   failed_to_log("#{msg} Found '#{actual}'")
+          # end
+      rescue
+        rescue_msg_for_validation(desc, refs)
+      end
 
-        if actual =~ /px$/
-          expected = expected.to_s + 'px'
-        else
-          case rounding
-            when 'ceil', 'up'
-              actual = actual.to_f.ceil
-            when 'down', 'floor'
-              actual = actual.to_f.floor
-            else
-              actual = actual.to_f.round
-          end
+      def element_pixels_equal?(element, style, expected, desc = '', refs = '', how = nil, what = nil, rounding = 'up')
+        msg      = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", "attribute '#{style}",
+                                 "equals '#{expected}' (with rounding #{rounding}).", refs)
+        actual   = element.style(style)
+
+        # if actual =~ /px$/
+        #   expected = expected.to_s + 'px' unless expected =~ /px$/
+        # else
+        actual   = actual =~ /px$/ ? actual.sub(/px$/, '').to_f : actual.to_f
+        expected = expected =~ /px$/ ? expected.sub(/px$/, '').to_f : expected.to_f
+        case rounding
+          when 'ceil', 'up'
+            actual = actual.to_f.ceil
+          when 'down', 'floor'
+            actual = actual.to_f.floor
+          else
+            actual = actual.to_f.round
         end
-
-        msg = build_message(desc, "Element #{element.to_s.upcase} :#{how}='#{what}'", "attribute '#{style}",
-                            "equals '#{expected}' (with rounding #{rounding})?", refs)
+        # end
 
         if actual == expected
           passed_to_log(msg)
@@ -2792,8 +4757,6 @@ module Awetestlib
         else
           failed_to_log("#{msg} Found '#{actual}'")
         end
-      rescue
-        rescue_msg_for_validation(desc, refs)
       end
 
       def style_does_not_contain?(container, element, how, what, style, expected, desc = '', refs = '')
@@ -2805,7 +4768,7 @@ module Awetestlib
       end
 
       def element_style_does_not_contain?(element, style, expected, desc = '', refs = '', how = nil, what = nil)
-        msg = element_query_message(element, "style '#{style}' does not contain '#{expected}'?", how, what, nil, desc, refs)
+        msg = element_query_message(element, "style '#{style}' does not contain '#{expected}'.", how, what, nil, desc, refs)
         element_wait(element)
         if element.style(style).match(expected)
           failed_to_log(msg)
@@ -2826,7 +4789,7 @@ module Awetestlib
       end
 
       def element_style_contains?(element, style, expected, desc = '', refs = '', how = nil, what = nil)
-        msg = element_query_message(element, "style '#{style}' contains '#{expected}'?", how, what, nil, desc, refs)
+        msg = element_query_message(element, "style '#{style}' contains '#{expected}'.", how, what, nil, desc, refs)
         element_wait(element)
         if element.style(style).match(expected)
           passed_to_log(msg)
@@ -2852,7 +4815,7 @@ module Awetestlib
       alias color_does_not_equal? style_does_not_equal?
 
       def element_style_does_not_equal?(element, style, expected, desc = '', refs = '', how = nil, what = nil)
-        msg           = element_query_message(element, "style '#{style}' does not equal '#{expected}'?", how, what, nil, desc, refs)
+        msg           = element_query_message(element, "style '#{style}' does not equal '#{expected}'.", how, what, nil, desc, refs)
         actual        = element.style(style)
         actual_norm   = style =~ /color/ ? normalize_color_value(actual) : actual
         expected_norm = style =~ /color/ ? normalize_color_value(expected) : expected
@@ -2866,7 +4829,7 @@ module Awetestlib
             true
           end
         else
-          failed_to_log("#{msg} '#{attribute}' not found.")
+          failed_to_log("#{msg} '#{style}' not found.")
         end
 
       rescue
@@ -2888,19 +4851,25 @@ module Awetestlib
       alias color_equals? style_equals?
 
       def element_style_equals?(element, style, expected, desc = '', refs = '', how = nil, what = nil)
-        msg    = element_query_message(element, "style '#{style}' equals '#{expected}'?", how, what, nil, desc, refs)
+        # msg    = element_query_message(element, "style '#{style}' equals '#{expected}'.", how, what, nil, desc, refs)
         actual = element.style(style)
         actual = element.attribute_value(style) unless actual and actual.length > 0
         case style
-          when /color/
+          when /color$/
             actual_norm   = normalize_color_value(actual)
             expected_norm = normalize_color_value(expected)
           when /opacity/
             actual_norm   = actual.to_f
             expected_norm = expected.to_f
-          when /border/
+          when /^border$/
             actual_norm   = normalize_border_style(actual)
             expected_norm = normalize_border_style(expected)
+          when /width$/, /size$/
+            actual_norm   = normalize_pixel_size(actual)
+            expected_norm = normalize_pixel_size(expected)
+          when /box-shadow$/
+            actual_norm   = normalize_box_shadow_value(actual)
+            expected_norm = normalize_box_shadow_value(expected)
           else
             actual_norm   = actual
             expected_norm = expected
@@ -2911,6 +4880,7 @@ module Awetestlib
         #   debug_to_log(with_caller("'#{style}'", "expected: raw: '" + expected + "'  normalized: '" + expected_norm + "'"))
         # end
 
+        msg = element_query_message(element, "style '#{style}' equals '#{expected_norm}'.", how, what, nil, desc, refs)
         if actual and actual.length > 0
           if actual_norm == expected_norm
             passed_to_log(msg)
@@ -2937,17 +4907,18 @@ module Awetestlib
         rescue_msg_for_validation(desc, refs)
       end
 
-      def element_border_colors_equal?(element, how, what, desc, refs, *colors)
-        msg    = element_query_message(element, "Border colors are '#{colors}'?", how, what, nil, desc, refs)
+      def element_border_colors_equal?(element, how = nil, what = nil, desc = '', refs = '', *colors)
+        msg    = element_query_message(element, "Border colors are '#{colors}'.", how, what, nil, desc, refs)
         errors = 0
         errs   = []
 
         sides = ['top', 'bottom', 'left', 'right']
         sides.each do |side|
           idx      = sides.index(side)
-          color    = colors[idx] ? colors[idx] : colors[0]
+          color    = colors[idx] ? colors[idx] : colors[0] # handles situation where all sides are same
           expected = normalize_color_value(color)
-          debug_to_log(with_caller(desc, side, 'expected normalized:', expected))
+          debug_to_log(with_caller(desc, side, 'expected normalized:', expected)) if @debug_dsl
+          # msg    = element_query_message(element, "'border-#{side}-color' equals '#{expected}'.", how, what, nil, desc, refs)
           actual = normalize_color_value(element.style("border-#{side}-color"))
           unless actual == expected
             errors += 1
@@ -2976,36 +4947,77 @@ module Awetestlib
 
       def element_border_sizes_equal?(element, how, what, attribute, desc, refs, *pixels)
         attribute = attribute.downcase.gsub(/s$/, '')
+        msg       = element_query_message(element, "Border #{attribute}s are '#{pixels}'.", how, what, nil, desc, refs)
         errors    = 0
+        errs      = []
 
         sides = ['top', 'bottom', 'left', 'right']
 
         sides.each do |side|
-          msg      = element_query_message(element, "#{attribute}-#{side} equals '#{pixels}'?", how, what, nil, desc, refs)
           idx      = sides.index(side)
           value    = pixels[idx] ? pixels[idx] : pixels[0]
           expected = value =~ /px$/ ? value.to_s : "#{value}px"
-          actual   = element.style("#{attribute}-#{side}")
-          if actual == expected
-            passed_to_log(msg)
-          else
-            failed_to_log(msg)
+          target   = attribute == 'padding' ? "#{attribute}-#{side}" : "border-#{side}-#{attribute}"
+          actual   = element.style(target)
+          unless actual == expected
             errors += 1
+            errs << "#{side}:#{actual}"
           end
         end
 
-        errors == 0
+        if errors == 0
+          passed_to_log(with_caller(msg))
+          true
+        else
+          failed_to_log(with_caller(msg, "Found #{nice_array(errs)}"))
+        end
+
+      rescue
+        rescue_msg_for_validation(desc, refs)
+      end
+
+      def border_styles_equal?(container, element, how, what, desc, refs, *styles)
+        code   = build_webdriver_fetch(element, how, what)
+        target = eval(code)
+        element_border_sizes_equal?(target, how, what, desc, refs, *styles)
+      rescue
+        rescue_msg_for_validation(desc, refs)
+      end
+
+      def element_border_styles_equal?(element, how, what, desc, refs, *styles)
+        msg    = element_query_message(element, "Border styles are '#{styles}'.", how, what, nil, desc, refs)
+        errors = 0
+        errs   = []
+
+        sides = ['top', 'bottom', 'left', 'right']
+
+        sides.each do |side|
+          idx      = sides.index(side)
+          expected = styles[idx] ? styles[idx] : styles[0]
+          actual   = element.style("border-#{side}-style")
+          unless actual == expected
+            errors += 1
+            errs << "#{side}:#{actual}"
+          end
+        end
+
+        if errors == 0
+          passed_to_log(with_caller(msg))
+          true
+        else
+          failed_to_log(with_caller(msg, "Found #{nice_array(errs)}"))
+        end
 
       rescue
         rescue_msg_for_validation(desc, refs)
       end
 
       def margins_equal?(container, element, how, what, desc, refs, *pixels)
-        border_sizes_equal?(container, element, how, what, 'margins', desc, refs, *pixels)
+        border_sizes_equal?(container, element, how, what, 'margin', desc, refs, *pixels)
       end
 
-      def borders_equal?(container, element, how, what, desc, refs, *pixels)
-        border_sizes_equal?(container, element, how, what, 'borders', desc, refs, *pixels)
+      def border_widths_equal?(container, element, how, what, desc, refs, *pixels)
+        border_sizes_equal?(container, element, how, what, 'width', desc, refs, *pixels)
       end
 
       def padding_equal?(container, element, how, what, desc, refs, *pixels)
@@ -3013,65 +5025,69 @@ module Awetestlib
       end
 
       def select_list_includes?(browser, how, what, which, option, desc = '', refs = '')
-        msg         = build_message(desc, "Select list #{how}='#{what}' includes option with #{which}='#{option}'?", refs)
+        msg         = build_message(desc, "Select list #{how}='#{what}' includes option '#{option}'.")
         select_list = browser.select_list(how, what)
         options     = select_list.options
-        case which
-          when :text
-            found = false
-            options.each do |opt|
-              if opt.text == option
-                found = true
-                break
-              end
+        found       = false
+        where       = nil
+
+        whiches  = [:inner_text, :label, :value, :text]
+        opt_hash = {}
+
+        options.each do |opt|
+          opt_arr = [opt.attribute_value('innerText'), opt.label, opt.value, opt.text]
+          whiches.each_index { |i| opt_hash[whiches[i]] = opt_arr[i] }
+          opt_arr.each_index do |idx|
+            if opt_arr[idx] == option
+              found = true
+              where = whiches[idx]
+              debug_to_log(with_caller("Target string '#{option}' found in option #{where}")) if @debug_dsl
             end
-            if found
-              passed_to_log(msg)
-              true
-            else
-              failed_to_log(msg)
-            end
-          else
-            if options.include?(option)
-              passed_to_log(msg)
-              true
-            else
-              failed_to_log(msg)
-            end
+          end
         end
+
+        if found
+          passed_to_log(build_message(msg, "Found in #{where} (#{which})", refs))
+          true
+        else
+          failed_to_log("#{msg} #{refs}")
+        end
+
       rescue
-        rescue_msg_for_validation(msg)
+        rescue_msg_for_validation(msg, refs)
       end
 
       def select_list_does_not_include?(browser, how, what, which, option, desc = '', refs = '')
-        msg         = build_message(desc, "Select list #{how}='#{what}' does not include option with #{which}='#{option}'?", refs)
+        msg         = build_message(desc, "Select list #{how}='#{what}' does not include option with '#{option}'.")
         select_list = browser.select_list(how, what)
         options     = select_list.options
-        case which
-          when :text
-            found = false
-            options.each do |opt|
-              if opt.text == option
-                found = true
-                break
-              end
+        found       = false
+        where       = nil
+
+        whiches  = [:text, :label, :value, :inner_text]
+        opt_hash = {}
+
+        options.each do |opt|
+          opt_arr = [opt.text, opt.label, opt.value, opt.attribute_value('innerText')]
+          whiches.each_index { |i| opt_hash[whiches[i]] = opt_arr[i] }
+          opt_arr.each_index do |idx|
+            if opt_arr[idx] == option
+              found = true
+              where = whiches[idx]
+              debug_to_log(with_caller("Target string '#{option}' found in option #{where}")) if @debug_dsl
             end
-            if found
-              failed_to_log(msg)
-            else
-              passed_to_log(msg)
-              true
-            end
-          else
-            if options.include?(option)
-              failed_to_log(msg)
-            else
-              passed_to_log(msg)
-              true
-            end
+          end
         end
+
+        if found
+          failed_to_log(build_message(msg, "Found in #{where} (#{which})", refs))
+        else
+          passed_to_log("#{msg} #{refs}")
+          true
+        end
+
       rescue
-        failed_to_log("Unable to verify #{msg}. '#{$!}'")
+        rescue_msg_for_validation(msg, refs)
       end
 
       def validate_selected_options(browser, how, what, list, desc = '', refs = '', which = :text)
@@ -3079,7 +5095,7 @@ module Awetestlib
         selected         = extract_selected(selected_options, which)
         sorted_list      = list.dup.sort
         if list.is_a?(Array)
-          msg = build_message(desc, "Expected options [#{list.sort}] are selected by #{which} [#{selected}]?", refs)
+          msg = build_message(desc, "Expected options [#{list.sort}] are selected by #{which} [#{selected}].", refs)
           if selected == sorted_list
             passed_to_log(msg)
             true
@@ -3088,7 +5104,7 @@ module Awetestlib
           end
         else
           if selected.length == 1
-            msg      = build_message(desc, "Expected option [#{list}] was selected by #{which}?", refs)
+            msg      = build_message(desc, "Expected option [#{list}] was selected by #{which}.", refs)
             esc_list = Regexp.escape(list)
             if selected[0] =~ /#{esc_list}/
               passed_to_log(msg)
@@ -3097,7 +5113,7 @@ module Awetestlib
               failed_to_log("#{msg} Found [#{selected}]. #{desc}")
             end
           else
-            msg = build_message(desc, "Expected option [#{list}] was found among multiple selections by #{which} [#{selected}]?", refs)
+            msg = build_message(desc, "Expected option [#{list}] was found among multiple selections by #{which} [#{selected}].", refs)
             if selected.include?(list)
               failed_to_log(msg)
             else
@@ -3111,7 +5127,7 @@ module Awetestlib
       end
 
       def verify_attribute(container, element, how, what, attribute, expected, desc = '', refs = '')
-        msg    = element_query_message(element, "#{attribute} equals '#{expected}'?", how, what, nil, desc, refs)
+        msg    = element_query_message(element, "#{attribute} equals '#{expected}'.", how, what, nil, desc, refs)
         actual = get_attribute_value(container, element, how, what, attribute, desc)
         if actual == expected
           passed_to_log(msg)
@@ -3140,18 +5156,30 @@ module Awetestlib
       def focus_element(element, desc = '', refs = '', how = nil, what = nil)
         msg = element_action_message(element, 'Set focus on', how, what, nil, desc, refs)
         element.focus
+        sleep(0.2)
         if element.focused?
           passed_to_log(with_caller(msg))
           true
         else
-          failed_to_log(with_caller(msg))
+          current = get_active_element(element)
+          if element == current
+            passed_to_log(with_caller(msg))
+            true
+          else
+            if element.id == current.id
+              passed_to_log(with_caller(msg))
+              true
+            else
+              failed_to_log(with_caller(msg))
+            end
+          end
         end
       rescue
         failed_to_log(unable_to(msg))
       end
 
       def blur_element(element, desc = '', refs = '', how = nil, what = nil)
-        msg = element_action_message(element, "Trigger blur", how, what, nil, desc, refs)
+        msg = element_action_message(element, 'Trigger blur', how, what, nil, desc, refs)
         element.fire_event('onBlur')
         if element.focused?
           passed_to_log(with_caller(msg))
@@ -3163,25 +5191,37 @@ module Awetestlib
         failed_to_log(unable_to(msg))
       end
 
-      def clear(container, element, how, what, value = nil, desc = '', refs = '', options = {})
+      def clear(container, tag, how, what, value = nil, desc = '', refs = '', options = {})
         value, desc, refs, options = capture_value_desc(value, desc, refs, options) # for backwards compatibility
-        msg                        = element_action_message(element, 'Clear', how, what, value, desc, refs)
-        code                       = build_webdriver_fetch(element, how, what, options)
-        eval("#{code}.clear")
-        cleared = false
-        case element
-          when :text_field, :textfield
-            cleared = eval("#{code}.value == ''")
-          when :text_area, :textarea
-            cleared = eval("#{code}.value == ''")
-          when :checkbox, :radio
-            cleared != eval("#{code}.set?")
+        msg                        = element_action_message(tag, 'Clear', how, what, value, desc, refs)
+        code                       = build_webdriver_fetch(tag, how, what, options)
+        target                     = eval(code)
+        target                     = target.to_subtype if tag == :input
+        before                     = target.value
+        after                      = ''
+        cleared                    = false
+
+        target.clear
+
+        klass = target.class.to_s
+        case klass
+          when /textfield/i
+            after   = target.value
+            cleared = true if after.length == 0
+          when /textarea/i
+            after   = target.value
+            cleared = true if after.length == 0
+          when /checkbox/i, /radio/i
+            cleared != eval("#{code}.set.")
+          else
+            failed_to_log(with_caller(desc, "Invalid object class (#{klass}) for clear. *** waft002 ****"), refs)
         end
+
         if cleared
-          passed_to_log(msg)
+          passed_to_log("#{msg} (#{klass}) Before: '#{before}'")
           true
         else
-          failed_to_log(msg)
+          failed_to_log("#{msg} (#{klass}) Before: '#{before}' Found '#{after}'")
         end
       rescue
         failed_to_log(unable_to(msg))
@@ -3298,7 +5338,7 @@ module Awetestlib
       end
 
       def element_hover(element, desc = '', refs = '', how = nil, what = nil)
-        msg = element_action_message(element, "Hover over", how, what, nil, desc, refs)
+        msg = element_action_message(element, 'Hover over', how, what, nil, desc, refs)
         element.hover
         passed_to_log(msg)
         true
@@ -3367,7 +5407,7 @@ module Awetestlib
 
       def select_option(browser, how, what, which, option, desc = '', refs = '', nofail = false)
         list = browser.select_list(how, what).when_present
-        msg  = build_message(desc, with_caller("from list with :#{how}='#{what}"))
+        msg  = build_message(desc, with_caller("from list with :#{how}='#{what} by #{which}"))
         select_option_from_list(list, which, option, msg, refs, nofail)
       rescue
         failed_to_log(unable_to)
@@ -3410,7 +5450,7 @@ module Awetestlib
         ok  = true
         if list
           case how
-            when :text
+            when :text, :inner_text, :label
               list.select(what) #TODO: regex?
             when :value
               list.select_value(what) #TODO: regex?
@@ -3447,7 +5487,7 @@ module Awetestlib
       end
 
       def option_selected_from_list?(list, which, what, desc = '', refs = '')
-        msg = build_message(desc, "Option :#{which}='#{what}' is selected?", refs)
+        msg = build_message(desc, "Option :#{which}='#{what}' is selected.", refs)
         if list.option(which, what).selected?
           passed_to_log(msg)
           true
@@ -3458,10 +5498,10 @@ module Awetestlib
         failed_to_log(unable_to(msg))
       end
 
-      def resize_browser_window(browser, width, height, move_to_origin = true)
-        msg = "#{__method__.to_s.humanize} to (#{width}, #{height})"
+      def resize_browser_window(browser, width, height, offsets = @wd_vp_offsets, move_to_origin = true)
+        msg = "#{__method__.to_s.humanize} to (#{width}, #{height}) with offsets (#{offsets[0]}, #{offsets[1]})"
         #browser = browser.browser if browser.respond_to?(:tag_name)
-        browser.browser.driver.manage.window.resize_to(width, height)
+        browser.browser.driver.manage.window.resize_to(width + offsets[0], height + offsets[1])
         sleep(0.5)
         if move_to_origin
           browser.browser.driver.manage.window.move_to(0, 0)
@@ -3476,10 +5516,10 @@ module Awetestlib
 
       alias resize_window resize_browser_window
 
-      def tab_until_focused(container, element, how, what, class_strg = nil, desc = '', refs = '', limit = 15)
+      def tab_until_focused(container, tag, how, what, class_strg = nil, desc = '', refs = '', limit = 15)
         ok     = nil
-        msg    = build_message('Tab to set focus on', "#{element.to_s.upcase}", "#{how}='#{what}'", refs)
-        target = get_element(container, element, how, what, nil, with_caller(desc, "(#{limit})"), refs)
+        target = get_element(container, tag, how, what, nil, with_caller(desc, "(#{limit})"), refs)
+        msg    = build_message("#{tag.to_s.upcase}", "#{how}='#{what}'", "class='#{target.attribute_value('class')}'", refs)
         count  = 0
         (0..limit).each do |cnt|
           #debug_to_log("tab #{cnt}")
@@ -3496,18 +5536,132 @@ module Awetestlib
               break
             end
           end
-          container.send_keys(:tab)
+          container.browser.send_keys(:tab)
           count = cnt
-          #send_tab(container)
         end
+
         failed_to_log(unable_to(msg, "(#{count} tabs)")) unless ok
+
         ok
       rescue
         failed_to_log(unable_to)
       end
 
+      def key_until_focused(container, key, tag, how, what, class_strg = nil, desc = '', refs = '', limit = 15)
+        ok     = nil
+        target = get_element(container, tag, how, what, nil, with_caller(desc, "(#{limit})"), refs)
+        msg    = build_message("#{key.to_s}_until_focused(): #{tag.to_s.upcase}", "#{how}='#{what}'", "class='#{target.attribute_value('class')}'", refs)
+        count  = 0
+        (0..limit).each do |cnt|
+          #debug_to_log("tab #{cnt}")
+          if class_strg
+            if target.class_name.include?(class_strg)
+              passed_to_log(with_caller(msg, "(#{cnt} #{key.to_s}s)"))
+              ok = true
+              break
+            end
+          else
+            if target.focused?
+              passed_to_log(with_caller(msg, "(#{cnt} #{key.to_s}s)"))
+              ok = true
+              break
+            end
+          end
+          container.browser.send_keys(key)
+          count = cnt
+        end
+
+        failed_to_log(unable_to(msg, "(#{count} #{key.to_s}s)")) unless ok
+
+        ok
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def shift_tab_until_focused_in_locators(container, locators, desc = '', refs = '', limit = 15)
+        tab_until_focused_in_locators(container, locators, desc, refs, 15, :shift)
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def tab_until_focused_in_locators(container, locators, desc = '', refs = '', limit = 15, modifier = nil)
+        locator = nil
+        count   = 0
+        if modifier
+          keys = [modifier.to_sym, :tab]
+        else
+          keys = :tab
+        end
+        (0..limit).each do |cnt|
+          #debug_to_log("tab #{cnt}")
+
+          locators.each do |loc|
+            tag, how, what = parse_locator(loc)
+            msg            = with_caller("#{tag.to_s.upcase}", "#{how}='#{what}'")
+            code           = build_webdriver_fetch(tag, how, what)
+            target         = eval(code)
+            if target
+              if target.focused?
+                passed_to_log(with_caller(desc, msg, "(#{cnt} tabs)", refs))
+                locator = loc
+                break
+              end
+            else
+              debug_to_report(build_message(desc, 'Unable to locate', msg))
+            end
+          end
+          break if locator
+          container.browser.send_keys(keys)
+          count = cnt
+        end
+
+        failed_to_log(unable_to(desc, "(#{count} tabs)")) unless locator
+
+        locator
+      rescue
+        failed_to_log(unable_to(desc))
+      end
+
+      def tab_until_not_focused_in_locators(container, locators, desc = '', refs = '', limit = 15, modifier = nil)
+        locator = nil
+        count   = 0
+        if modifier
+          keys = [modifier.to_sym, :tab]
+        else
+          keys = :tab
+        end
+        (0..limit).each do |cnt|
+          #debug_to_log("tab #{cnt}")
+
+          locators.each do |loc|
+            tag, how, what = parse_locator(loc)
+            msg            = with_caller("#{tag.to_s.upcase}", "#{how}='#{what}'")
+            code           = build_webdriver_fetch(tag, how, what)
+            target         = eval(code)
+            if target
+              if target.focused?
+                debug_to_log(with_caller(desc, msg, "(#{cnt} tabs)", refs))
+                locator = loc
+                break
+              end
+            else
+              debug_to_report(build_message(desc, 'Unable to locate', msg))
+            end
+          end
+          break unless locator
+          container.browser.send_keys(keys)
+          count = cnt
+        end
+
+        failed_to_log(unable_to(desc, "(#{count} tabs)")) if locator
+
+        locator
+      rescue
+        failed_to_log(unable_to(desc))
+      end
+
       def type_in_text_field(element, strg, desc = '', refs = '')
-        msg = build_message(desc, "Type (send_keys) '#{strg}' into text field :id=>'#{element.attribute_value('id')}'", refs)
+        msg = build_message(desc, "Type (send_keys) '#{strg}' into text input :id=>'#{element.attribute_value('id')}'", refs)
         element.send_keys(strg)
         if element.value == strg
           passed_to_log(msg)
@@ -3521,10 +5675,10 @@ module Awetestlib
 
       def send_a_key(browser, key, modifier = nil, desc = '', refs = '')
         if modifier
-          msg = build_message(desc, "Sent #{modifier}+#{key}", refs)
+          msg = build_message(desc, "Sent #{modifier.upcase}+#{key.upcase} to browser", refs)
           browser.send_keys [modifier, key]
         else
-          msg = build_message(desc, "Sent #{key}", refs)
+          msg = build_message(desc, "Sent #{key.upcase} to browser", refs)
           browser.send_keys key
         end
         message_to_report(msg)
@@ -3536,11 +5690,11 @@ module Awetestlib
 
       alias press_page_down send_page_down
 
-      def sent_page_up(browser, desc = '', refs = '', modifier = nil)
+      def send_page_up(browser, desc = '', refs = '', modifier = nil)
         send_a_key(browser, :page_up, modifier, desc, refs)
       end
 
-      alias press_page_up sent_page_up
+      alias press_page_up send_page_up
 
       def send_spacebar(browser, desc = '', refs = '', modifier = nil)
         send_a_key(browser, :space, modifier, desc, refs)
@@ -3561,6 +5715,12 @@ module Awetestlib
       end
 
       alias press_tab send_tab
+
+      def send_shift_tab(browser, desc = '', refs = '', modifier = :shift)
+        send_a_key(browser, :tab, modifier, desc, refs)
+      end
+
+      alias press_shift_tab send_shift_tab
 
       def send_up_arrow(browser, desc = '', refs = '', modifier = nil)
         send_a_key(browser, :arrow_up, modifier, desc, refs)
@@ -3594,6 +5754,60 @@ module Awetestlib
 
     end
 
+    module Browser
+
+      def open_ie
+        begin
+          proxy = Selenium::WebDriver::Proxy.new(
+              :type => :pac,
+              :pac  => 'http://pac.wellsfargo.net/'
+          )
+        rescue
+          debug_to_log(unable_to)
+        end
+
+        caps = Selenium::WebDriver::Remote::Capabilities.internet_explorer(
+            #:nativeEvents => false,
+            #'nativeEvents' => false,
+            # :initialBrowserUrl                                   => 'about:blank',
+            :proxy                       => proxy,
+            :requireWindow_Focus         => true,
+            :enablePersistentHover       => false,
+            # :enableElementCacheCleanup   => true,
+            :ignoreProtectedModeSettings => true,
+            # :introduceFlakinessByIgnoringSecurityDomains         => true,
+            # :introduceInstabilityByIgnoringProtectedModeSettings => true,
+            :unexpectedAlertBehaviour    => 'ignore'
+        )
+        Watir::Browser.new(:ie, :desired_capabilities => caps)
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def activate_first_window(browser)
+        browser.driver.switch_to.window(browser.driver.window_handles[0])
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def go_to_url(browser, url = nil)
+        if url
+          @myURL = url
+        end
+        message_to_report(with_caller("URL: #{@myURL}"))
+        browser.goto(@myURL)
+        sleep(1)
+        if browser.alert.exists?
+          debug_to_report(with_caller('Alert encountered.', "#{browser.alert.text}"))
+          browser.alert.dismiss
+        end
+        true
+      rescue
+        fatal_to_log("Unable to navigate to '#{@myURL}': '#{$!}'")
+      end
+
+    end
+
     module DragAndDrop
 
       def remove_focus(container, element, desc = '', refs = '', tab_twice = false)
@@ -3606,16 +5820,16 @@ module Awetestlib
           which = :blur
           if element.focused?
             container.send_keys(:tab)
-            debug_to_log("Sent tab")
+            debug_to_log('Sent tab')
             which = :tab
             if tab_twice
               container.send_keys(:tab)
-              debug_to_log("Sent second tab")
+              debug_to_log('Sent second tab')
               which = :tab
             end
             if element.focused?
               container.send_keys(:enter)
-              debug_to_log("Sent enter")
+              debug_to_log('Sent enter')
               which = :enter
             end
           end
@@ -3661,15 +5875,15 @@ module Awetestlib
             which = :onfocus
             unless element.focused?
               element.focus
-              debug_to_log("Called focus method")
+              debug_to_log('Called focus method')
               which = :focus
               unless element.focused?
                 element.click
-                debug_to_log("Called click method")
+                debug_to_log('Called click method')
                 which = :click
                 unless element.focused?
                   container.send_keys([:shift, :tab])
-                  debug_to_log("Sent shift tab")
+                  debug_to_log('Sent shift tab')
                   which = :shift_tab
                 end
               end
@@ -3694,7 +5908,7 @@ module Awetestlib
       end
 
       #TODO: needs work: should succeed if browser is other container or element
-      def get_browser_coord(browser, dbg=nil)
+      def get_browser_coord(browser, dbg = @debug_dsl)
         title = browser.title
         x, y  = browser.position
         w, h  = browser.size
@@ -3706,7 +5920,7 @@ module Awetestlib
         [x, y, w, h]
       end
 
-      def get_element_screen_coordinates(browser, element, dbg = nil)
+      def get_element_screen_coordinates(browser, element, dbg = @debug_dsl)
         hash                            = Hash.new
         bx, by                          = browser.position
         ox, oy                          = window_viewport_offsets(browser)
@@ -3752,12 +5966,18 @@ module Awetestlib
         if @targetBrowser.abbrev == 'IE' and @browserVersion.to_i < 9
           x, y = insert_viewport_div(browser)
         else
+          bx = browser.body.attribute_value('clientWidth')
+          by = browser.body.attribute_value('clientHeight')
+          wx = browser.execute_script('return window.innerWidth')
+          wy = browser.execute_script('return window.innerHeight')
+          # debug_to_report(with_caller('body client:', "[#{bx}, #{by}]",
+          #                             'window inner:', "[#{wx}, #{wy}]", "use_body: #{use_body}", '*** waft023 ***')) if $waft_debug
           if use_body
-            x = browser.body.attribute_value('clientWidth')
-            y = browser.body.attribute_value('clientHeight')
+            x = bx
+            y = by
           else
-            x = browser.execute_script("return window.innerWidth")
-            y = browser.execute_script("return window.innerHeight")
+            x = wx
+            y = wy
           end
         end
 
@@ -3869,12 +6089,12 @@ module Awetestlib
         failed_to_log(unable_to(build_message(desc, what, refs)))
       end
 
-      def scroll_in_element(element, direction, amount)
-        js     = 'return arguments[0].scroll@@@ = arguments[1];",EEEEE, PPPPP'
+      def scroll_in_element(scrollable, direction, amount, desc = '', refs = '')
+        #TODO remove in favor of scroll_in_scrollable
         ortho  = ''
         pixels = amount
         case direction
-          when :up
+          when :up, :top
             ortho = 'Top'
           when :down
             ortho  = 'Top'
@@ -3887,7 +6107,8 @@ module Awetestlib
           else
             failed_to_log(with_caller("Invalid direction '#{direction}'"))
         end
-        element.browser.execute_script("return arguments[0].scroll#{ortho} = arguments[1];\"", element, pixels)
+        debug_to_log(with_caller(desc, ortho, "#{scrollable}", "#{pixels}")) if @debug_dsl
+        scrollable.browser.execute_script("return arguments[0].scroll#{ortho} = arguments[1]", scrollable, pixels)
 
           # Scroll inside web element vertically (e.g. 100 pixel)
           # js.executeScript("arguments[0].scrollTop = arguments[1];",driver.findElement(By.id("<div-id>")), 100);
@@ -3920,12 +6141,53 @@ module Awetestlib
         failed_to_log(unable_to(ortho, pixels))
       end
 
+      def scroll_in_scrollable(scrollable, amount, desc = '', refs = '', direction = :top)
+        ortho = ''
+        amount
+        case direction
+          when :up, :top, :down, /up/i, /top/i, /down/i
+            ortho = 'Top'
+          when :left, :right, /left/i, /right/i
+            ortho = 'Left'
+          else
+            failed_to_log(with_caller("Invalid direction '#{direction}'", refs))
+        end
+        debug_to_log(with_caller(desc, ortho, "#{scrollable}", "#{amount}px")) if @debug_dsl
+        scrollable.browser.execute_script("return arguments[0].scroll#{ortho} = arguments[1]", scrollable, amount)
+
+      rescue
+        failed_to_log(unable_to(ortho, amount))
+      end
+
+      def element_in_view_in_scrollable(element, scrollable, desc = '')
+
+        element_dims    = get_element_dimensions(element.browser, element, with_caller(desc, 'Element'))
+        scrollable_dims = get_element_dimensions(scrollable.browser, scrollable, with_caller(desc, 'Scrollable'))
+
+        element_o_top    = element_dims[:offsetTop]
+        element_o_height = element_dims[:offsetHeight]
+
+        scrollable_o_top    = scrollable_dims[:offsetTop]
+        scrollable_o_height = scrollable_dims[:offsetHeight]
+
+        scrollable_s_top = scrollable_dims[:scrollTop]
+
+        top_in_view    = element_o_top >= scrollable_s_top
+        bottom_in_view = (element_o_top + element_o_height) <= scrollable_o_height + scrollable_s_top
+
+        debug_to_log(with_caller(desc, "in view: top: #{top_in_view}, bottom: #{bottom_in_view}")) if @debug_dsl
+        (top_in_view and bottom_in_view)
+
+      rescue
+        failed_to_log(unable_to(direction, destination))
+      end
+
       def window_viewport_offsets(browser)
         x = 0
         y = 0
 
         if $mobile
-          debug_to_log(with_caller("Not supported for mobile browsers"))
+          debug_to_log(with_caller('Not supported for mobile browsers'))
         else
           browser = browser.browser if browser.respond_to?(:tag_name)
           wd_dim  = browser.window.size
@@ -3967,35 +6229,67 @@ module Awetestlib
         failed_to_log(unable_to)
       end
 
-      def mouse_to_browser_edge(container, offset_x = -3, offset_y = -3)
-        x, y = window_dimensions(container)[4, 2]
-        container.driver.mouse.move_to(container.driver[:tag_name => 'body'], x - offset_x, y - offset_y)
-        container.driver.mouse.down
-        container.driver.mouse.up
+      def mouse_outside_of_element(element, desc = '', refs = '')
+        x, y    = get_outside_location(element, desc, refs, 5, 'top', 'right')
+        browser = element.browser
+        if @browserAbbrev == 'FF'
+          browser.driver.mouse.move_to(element, x, y)
+        else
+          browser.driver.mouse.move_to(browser, x, y)
+        end
+        browser.driver.mouse.down
+        browser.driver.mouse.up
+      rescue
+        failed_to_log(unable_to)
       end
 
-      def set_viewport_size(browser, width, height, diff = nil, move_to_origin = true, use_body = false, desc = '', refs = '')
+      def mouse_to_browser_edge(container, offset_x = 8, offset_y = 8)
+        # x, y = window_dimensions(container)[4, 2]
+        dims         = get_element_dimensions(container, container.browser.body)
+        client_width = dims[:clientWidth]
+        debug_to_log(with_caller("\n#{dims.to_yaml}"))
+
+        to_x = client_width - offset_x
+        to_y = offset_y
+
+        begin
+          container.driver.mouse.move_to(container.driver[:tag_name => 'body'], to_x, to_y)
+        rescue => e
+          if e.message =~ 'Unable to Mouse To Browser Edge'
+            debug_to_log(with_caller(e))
+          else
+            raise e
+          end
+        end
+        container.driver.mouse.down
+        container.driver.mouse.up
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def set_viewport_size(browser, width, height, offsets = @wd_vp_offsets, move_to_origin = true, use_body = false, desc = '', refs = '')
+        # TODO: viewport offsets differ between browser versions and whether windows is running Aero desktop
         if $mobile
-          debug_to_log(with_caller("Not supported for mobile browsers"))
+          debug_to_log(with_caller('Not supported for mobile browsers'))
         else
-          diff = window_viewport_offsets(browser.browser) unless diff
-          resize_browser_window(browser.browser, width + diff[0], height + diff[1], move_to_origin)
+          offsets = window_viewport_offsets(browser.browser) unless offsets
+          resize_browser_window(browser.browser, width, height, offsets, move_to_origin)
           sleep(0.5)
           msg          = build_message(desc, "viewport (#{width}, #{height})",
-                                       "(offsets (#{diff[0]}, #{diff[1]}))")
+                                       "(offsets (#{offsets[0]}, #{offsets[1]}))")
           act_x, act_y = viewport_size(browser.browser, use_body)
           if width == act_x.to_i and height == act_y.to_i
             if @targetBrowser.abbrev == 'FF'
-              debug_to_log(with_caller(msg, refs))
+              debug_to_log(with_caller(msg, 'FF', refs))
             else
-              passed_to_log(with_caller(msg, refs))
+              debug_to_log(with_caller(msg, refs))
             end
             true
           else
             if @targetBrowser.abbrev == 'FF'
-              debug_to_report(with_caller(msg, "Found (#{act_x}, #{act_y})", refs))
+              debug_to_report(with_caller(msg, "FF Found (#{act_x}, #{act_y})", refs, '*** waft023 ***'))
             else
-              failed_to_log(with_caller(msg, "Found (#{act_x}, #{act_y})", refs))
+              debug_to_report(with_caller(msg, "Found (#{act_x}, #{act_y})", refs, '*** waft023 ***'))
             end
           end
         end
@@ -4040,7 +6334,7 @@ module Awetestlib
         failed_to_log("Unable to determine overlay. '#{$!}'")
       end
 
-      def get_element_dimensions(container, element, desc = '', refs = '')
+      def get_element_dimensions(container, element, desc = '', refs = '', dbg = nil)
         hash                = Hash.new
         #hash[:text]         = element.text
         #hash[:unit]         = element
@@ -4058,14 +6352,14 @@ module Awetestlib
         hash[:scrollWidth]  = element.attribute_value('scrollWidth').to_i
         hash[:scrollHeight] = element.attribute_value('scrollHeight').to_i
         if desc.length > 0
-          debug_to_log("#{desc} #{refs}\n#{hash.to_yaml}")
+          debug_to_log("#{desc} #{refs}\n#{hash.to_yaml}") if @debug_dsl or dbg
         end
         hash
       rescue
         failed_to_log(unable_to)
       end
 
-      def get_element_dimensions1(container, element, desc = '', refs = '')
+      def get_element_dimensions1(container, element, desc = '', refs = '', dbg = nil)
         hash                = Hash.new
         #hash[:text]         = element.text
         #hash[:unit]         = element
@@ -4083,7 +6377,7 @@ module Awetestlib
         hash[:scrollWidth]  = container.execute_script("return arguments[0].scrollWidth", element)
         hash[:scrollHeight] = container.execute_script("return arguments[0].scrollHeight", element)
         if desc.length > 0
-          debug_to_log("#{desc} #{refs}\n#{hash.to_yaml}")
+          debug_to_log("#{desc} #{refs}\n#{hash.to_yaml}") if @debug_dsl or dbg
         end
         hash
       rescue
@@ -4109,24 +6403,43 @@ module Awetestlib
         failed_to_log(unable_to)
       end
 
+      def get_default_font_size(container)
+        size = container.browser.execute_script(
+            'var test = document.createElement( "span" );' +
+                'test.style.cssText = "display:inline-block; padding:0; line-height:1; position:absolute; visibility:hidden; font-size:1em;"; ' +
+                'test.id = "awetest-temp-span"; ' +
+                'test.appendChild(document.createTextNode("M")); ' +
+                'document.body.appendChild(test); ' +
+                'var fs= [test.offsetWidth, test.offsetHeight]; ' +
+                # 'document.body.removeChild(test); ' +
+                'return fs; '
+        )
+        size << container.browser.body.style('line-height')
+        $default_font_size = size[1]
+        size
+      end
+
     end
+
+
   end
 end
 
 module Watir
   class Element
 
+    # // Get the color value of .element:before
+    # var color = window.getComputedStyle(
+    #     document.querySelector('.element'), ':before'
+    # ).getPropertyValue('color');
+    #
+    # // Get the content value of .element:before
+    # var content = window.getComputedStyle(
+    #     document.querySelector('.element'), ':before'
+    # ).getPropertyValue('content');
+
+
     def list_attributes
-      # binding.pry
-      # attributes = browser.execute_script(%Q[
-      #           var s = {};
-      #           var attrs = arguments[0].attributes;
-      #           for (var l = 0; l < attrs.length; ++l) {
-      #               var a = attrs[l]; s[a.name] = a.value);
-      #           } ;
-      #           return s;],
-      #                                     self
-      # )
       attributes = browser.execute_script(%Q[
                 var s = [];
                 var attrs = arguments[0].attributes;
@@ -4136,6 +6449,20 @@ module Watir
                 return s;],
                                           self
       )
+      hash       = {}
+      attributes.each do |entry|
+        attr, value = entry.split(/:\s+/, 2)
+        hash[attr]  = value
+      end
+      hash
+    end
+
+    def styles(list = []) # no js method 'styles'
+      hash = Hash.new
+      list.each do |prop|
+        hash[prop] = style(prop)
+      end
+      hash
     end
 
     def attribute_values
@@ -4158,7 +6485,7 @@ module Watir
 
     def bounding_client_rectangle
       assert_exists
-      self.browser.execute_script("return arguments[0].getBoundingClientRect()", self)
+      self.browser.execute_script('return arguments[0].getBoundingClientRect()', self)
     end
 
     ###################################
@@ -4192,6 +6519,7 @@ module Watir
 end
 
 class Hash
+
   def depth
     a = self.to_a
     d = 1
@@ -4200,6 +6528,17 @@ class Hash
     end
     d
   end
+
+  def sort_by_key(recursive = false, &block)
+    self.keys.sort(&block).reduce({}) do |seed, key|
+      seed[key] = self[key]
+      if recursive && seed[key].is_a?(Hash)
+        seed[key] = seed[key].sort_by_key(true, &block)
+      end
+      seed
+    end
+  end
+
 end
 
 class String
@@ -4238,3 +6577,15 @@ class HTMLValidationResult
 
 end
 
+# class Module
+#
+#   def timed(name)
+#     original_method = instance_method(name)
+#     define_method(name) do |*args|
+#       puts "Calling #{name} with #{args.inspect}."
+#       original_method.bind(self).call(*args)
+#       puts "Completed #{name}."
+#     end
+#   end
+#
+# end
