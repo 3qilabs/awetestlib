@@ -24,7 +24,8 @@ module Awetestlib
       'IC' => 'iOS Chrome',
       'MC' => 'iOS Chrome',
       'AC' => 'Android Chrome',
-      'AB' => 'Android Browser'
+      'AB' => 'Android Browser',
+      'None' => 'No Browser'
   }
 
   # @private

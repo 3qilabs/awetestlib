@@ -140,6 +140,14 @@ module Awetestlib
 
         $mobile, $emulator, $simulator, $platform = mobile_browser?(options)
 
+        # load dsl override file
+        # patch_file                               = options[:patch]
+        # load options[:patch] # ; load_time('Load dsl patch file', Time.now)
+
+        # load library file
+        # library_file                               = options[:library]
+        # load options[:library] # ; load_time('Load library file', Time.now)
+
         # load script file
         # script_file                               = options[:script_file]
         load options[:script_file] # ; load_time('Load script file', Time.now)
