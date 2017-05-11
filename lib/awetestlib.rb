@@ -12,19 +12,19 @@ module Awetestlib
   BROWSER_MAP        = {
       'FF' => 'Firefox',
       'IE' => 'Internet Explorer',
+      'ED' => 'Microsoft Edge',
       'S'  => 'Safari',
-      'SP' => 'Spartan',
+      'O'  => 'Opera',
       'GC' => 'Google Chrome',
       'C'  => 'Google Chrome',
-      'ME' => 'Mobile Internet Explorer',
-      'MP' => 'Mobile Spartan',
+      'MI' => 'Mobile Internet Explorer',
+      'ME' => 'Mobile Edge',
       'IS' => 'iOS Safari',
       'MS' => 'iOS Safari',
       'IC' => 'iOS Chrome',
       'MC' => 'iOS Chrome',
       'AC' => 'Android Chrome',
-      'AB' => 'Android Browser',
-      'AM' => 'Android Chromium'
+      'AB' => 'Android Browser'
   }
 
   # @private

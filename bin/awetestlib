@@ -121,7 +121,7 @@ case ARGV[0]
     options[:environment]['url']      = options[:environment_url]
     options[:environment]['nodename'] = options[:environment_nodename]
 
-    options[:log_path_subdir]         = 'logs' if options[:output_to_log] and not options[:log_path_subdir]
+    options[:log_path_subdir]         = 'awetest_report' if options[:output_to_log] and not options[:log_path_subdir]
 
     # $watir_script = options[:classic_watir]
     $capture_load_times               = options[:capture_load_times] unless $capture_load_times

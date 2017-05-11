@@ -28,6 +28,8 @@ module Awetestlib
           end
         end
 
+        workbook.close
+
         ok
       rescue
         failed_to_log(unable_to)
@@ -313,6 +315,8 @@ module Awetestlib
         else
           failed_to_log("Worksheet '#{sheet}' not found #{file}")
         end
+
+        workbook.close
 
         [@html_filters, @html_error_references]
       rescue

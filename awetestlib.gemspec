@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency('watir-webdriver')
   s.add_dependency('watir-nokogiri')
-  s.add_dependency('activesupport', '~> 4.2', '>= 4.2.0')
+  s.add_dependency('activesupport')
   s.add_dependency('andand')
   s.add_dependency('roo')
   s.add_dependency('selenium-webdriver')
@@ -43,4 +43,3 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
 
 end
-

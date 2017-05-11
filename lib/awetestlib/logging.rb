@@ -18,8 +18,8 @@ module Awetestlib
       level  = nil
 
       t        = Time.now.utc
-      last_ts  ||= t
-      duration = (t.to_f - last_ts.to_f)
+      @last_ts  ||= t
+      duration = (t.to_f - @last_ts.to_f)
 
       # durations = calculate_durations(tag, t = Time.now.utc)
 
@@ -51,7 +51,7 @@ module Awetestlib
 
       @report_class.add_to_report(message, who_called, text_for_level(tag), duration, level) if tag and tag.length > 0
 
-      last_ts = t
+      @last_ts = t
 
       nil # so method doesn't return whole @output.
     end
@@ -243,7 +243,7 @@ module Awetestlib
     def message_to_report(message, wai_lvl = 4)
       scr_lvl = first_script_index
       lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
-      mark_test_level(message, 0, '', 1, lvl)
+      mark_test_level(message, 0, '', 1, lvl + 1)
       true
     end
 
@@ -252,7 +252,7 @@ module Awetestlib
     def debug_to_report(message, wai_lvl = 4)
       scr_lvl = first_script_index
       lvl     = scr_lvl > 0 ? scr_lvl : wai_lvl
-      mark_test_level("(DEBUG): ", 0, "#{message}", 1, lvl)
+      mark_test_level("(DEBUG): ", 0, "#{message}", 1, lvl + 1)
       true
     end
 
@@ -347,7 +347,7 @@ module Awetestlib
       utc_ts           = begin_time.getutc
       loc_tm           = "#{begin_time.strftime("%H:%M:%S")} #{begin_time.zone}"
       message_to_report(">> Starting #{@myName.titleize} #{utc_ts} (#{loc_tm})")
-      debug_to_log("Awetestlib #{$metadata.to_yaml}")
+      debug_to_log("\nAwetestlib #{$metadata.to_yaml}")
     rescue
       failed_to_log(unable_to)
     end
@@ -401,6 +401,7 @@ module Awetestlib
     alias msg_with_caller with_caller
 
     def where_am_i?(index = 2)
+      index = index ? index : 2
       calls = get_call_list_new
       log_message(DEBUG, "=== #{__LINE__}\n#{calls.to_yaml}\n===") if $debug
       if calls[index]

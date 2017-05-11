@@ -1274,14 +1274,14 @@ module Awetestlib
           when '%'
             cnvt, unit = pct_to(value, to, prnt_px)
           else
-            # CSS absolute size keywords:	xx-small	x-small	small	medium	large	x-large	xx-large
+            # CSS absolute size keywords: xx-small  x-small small medium  large x-large xx-large
             # HTML absolute font sizes:
-            # (interpolated Mozilla values)	1	 	2	3	4	5	6	7
+            # (interpolated Mozilla values) 1   2 3 4 5 6 7
             # HTML headings:
-            # (interpolated Mosaic values)	h6	 	h5	h4	h3	h2	h1
-            # normalized scaling factor:	60% - 3:5	75% - 3:4	89% - 8:9	100% - 1:1	120% - 6:5	150% - 3:2	200% - 2:1	300% - 3:1
+            # (interpolated Mosaic values)  h6    h5  h4  h3  h2  h1
+            # normalized scaling factor:  60% - 3:5 75% - 3:4 89% - 8:9 100% - 1:1  120% - 6:5  150% - 3:2  200% - 2:1  300% - 3:1
             # px computed from a 16 ppem base: e.g., 12pt @ 96ppi or 16pt @ 72ppi
-            # (XP 5.0 UA default)	10px 12px 14px 16px 19px 24px 32px 48px
+            # (XP 5.0 UA default) 10px 12px 14px 16px 19px 24px 32px 48px
             if size =~ /^0$|^initial$|^inherit$|^none$/
               cnvt = size
             else

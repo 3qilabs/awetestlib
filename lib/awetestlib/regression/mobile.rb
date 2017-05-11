@@ -8,34 +8,51 @@ module Awetestlib
 
         mark_test_level(": #{self.device_type.titleize}")
 
+        if Dir.pwd =~ /shamisen/i
+          subdir = 'awetest_report'
+          sleep1  = 30
+          sleep2  = 90
+          server_url = "http://127.0.0.1:4723/wd/hub"
+          # server_url = 'http://0.0.0.0:4723/wd/hub'
+        else
+          subdir = 'log'
+          sleep1 = 10
+          sleep2 = 10
+          server_url = "http://127.0.0.1:4723/wd/hub"
+        end
+
         debug_to_log(with_caller("$debug => #{$debug}, $DEBUG => #{$DEBUG}"))
-        log_level = $debug ? 'debug:debug' : 'info:debug'
-        debug_to_log("#{Dir.pwd.chomp}")
-        log_file = File.join(Dir.pwd.chomp, 'log', "#{File.basename(__FILE__, '.rb')}_appium_lib_#{Time.now.strftime("%Y%m%d%H%M%S")}.log")
+        log_level = $debug ? 'debug:debug' : 'debug:debug' #'warn:debug'
+        debug_to_log(with_caller("#{Dir.pwd.chomp}"))
+
+        log_file = File.join(Dir.pwd.chomp, subdir, "#{File.basename(__FILE__, '.rb')}_appium_lib_#{Time.now.strftime("%Y%m%d%H%M%S")}.log")
         command  = "start \"appium server\" appium --log-timestamp --log-level #{log_level} -g #{log_file} &"
         debug_to_log(command)
         appium      = IO.popen(command, :err => :out)
         @appium_pid = appium.pid
-        debug_to_log("Appium PID: #{@appium_pid}")
+        debug_to_log(with_caller("Appium PID: #{@appium_pid}"))
 
-        debug_to_log("nodejs version: #{`"C:\\Program Files (x86)\\Appium\\node" --version`.chomp}")
-        sleep_for(10)
+        debug_to_log(with_caller("nodejs version: #{`node --version`.chomp}"))
+
+        sleep_for(sleep1)
 
         client         = Selenium::WebDriver::Remote::Http::Default.new
         client.timeout = 300
-        desired_caps   = set_mobile_capabilities(self.device_id, self.device_type, self.sdk, self.emulator, client)
+        desired_caps   = set_mobile_capabilities(self.device_id, self.device_type, self.sdk, self.emulator, client, server_url)
 
         debug_to_log(desired_caps.to_yaml)
 
+        debug_to_log(with_caller('Instantiating Appium Driver'))
         Appium::Driver.new(desired_caps)
+        debug_to_log(with_caller('Starting Appium Driver'))
         $driver.start_driver
-        # who_is_there?(__LINE__)
 
-        debug_to_log('Getting Watir Browser from driver...')
+        sleep_for(sleep2)
+
+        debug_to_log(with_caller('Getting Watir Browser from driver...'))
         browser = Watir::Browser.new($driver.driver)
-        # who_is_there?(__LINE__, browser)
 
-        # browser.goto('wf.com')
+        debug_to_log(with_caller('Returning browser'))
 
         browser
       rescue
@@ -165,23 +182,29 @@ module Awetestlib
         # debug_to_log user
         android_temp_path = 'C:\\Users\\'+user+'\\AppData\\Local\\Temp\\AndroidEmulator'
         debug_to_log android_temp_path
-        dir = Dir.new(android_temp_path)
-        dir.each do |file|
-          debug_to_log file if file =~ /^TMP.+\.tmp/
-        end
-        tmp_ptrn = '\\TMP*.tmp'
-        dir_cmd  = "dir #{android_temp_path}#{tmp_ptrn} 2>&1"
-        del_cmd  = "del #{android_temp_path}#{tmp_ptrn} 2>&1"
-        debug_to_log "#{__LINE__}: #{dir_cmd}"
-        dir_out = `#{dir_cmd}`
-        unless dir_out =~ /file not found/i
-          debug_to_log "#{__LINE__}: #{del_cmd}"
-          debug_to_log `#{del_cmd}`.chomp
-          if `#{dir_cmd}` =~ /file not found/i
-            debug_to_log 'Emulator TMP files deleted successfully'
+        if Dir.exists?(android_temp_path)
+          dir = Dir.new(android_temp_path)
+          dir.each do |file|
+            debug_to_log file if file =~ /^TMP.+\.tmp/
           end
+          tmp_ptrn = '\\TMP*.tmp'
+          dir_cmd  = "dir #{android_temp_path}#{tmp_ptrn} 2>&1"
+          del_cmd  = "del #{android_temp_path}#{tmp_ptrn} 2>&1"
+          debug_to_log "#{__LINE__}: #{dir_cmd}"
+          dir_out = `#{dir_cmd}`
+          unless dir_out =~ /file not found/i
+            debug_to_log "#{__LINE__}: #{del_cmd}"
+            debug_to_log `#{del_cmd}`.chomp
+            if `#{dir_cmd}` =~ /file not found/i
+              debug_to_log 'Emulator TMP files deleted successfully'
+            end
+          end
+        else
+          debug_to_log("#{android_temp_path} not found")
         end
 
+      rescue
+        failed_to_log(unable_to)
       end
 
       def end_android_processes
