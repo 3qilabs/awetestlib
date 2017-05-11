@@ -31,7 +31,7 @@ Gem::Specification.new do |s|
   s.add_dependency('selenium-webdriver')
   s.add_dependency('nokogiri')
   s.add_dependency('i18n')
-  s.add_dependency('appium_lib', '~> 6.0')
+  s.add_dependency('appium_lib')
   s.add_dependency('pry')
   s.add_dependency('sys-uname')
   s.add_dependency('w3c_validators')
