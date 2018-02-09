@@ -2,34 +2,38 @@ module Awetestlib
   # Report generator for Awetestlib.
   class HtmlReport
 
+    attr_accessor :report_name,
+                  :html_file_name,
+                  :json_file_name
+
+    # TODO: split the json and html reports to separate classes
     # Initialize the report class
     # @private
-    def initialize(report_name)
-      @reportname     = report_name
-      @reportContent1 = ''
-      @reportContent2 = ''
+    def initialize(report_name, report_dir, ts)
+      @report_name      = report_name
+      @report_content_1 = ''
+      @report_content_2 = ''
+      rpt_time            = "#{ts.strftime("%Y%m%d_%H%M%S")}"
+      self.html_file_name = File.join(report_dir, "#{report_name}_#{rpt_time}.html")
+      self.json_file_name = File.join(report_dir, "#{report_name}_#{rpt_time}.json")
+
     end
 
     # Create a report
     # @private
-    def create_report(reportName)
+    def create_report(report_name)
       # Get current time
       t = Time.now
 
-      @col_1_p        = '65%'
-      @col_2_p        = '25%'
-      @col_3_p        = '10%'
+      @col_1_p          = '66%'
+      @col_2_p          = '22%'
+      @col_3_p          = '6%'
+      @col_4_p          = '6%'
 
-      # Create the report name
-      rpt_time        = "#{t.strftime("%Y%m%d_%H%M%S")}"
-      rpt_nice_time   = "#{t.strftime("%m/%d/%Y @ %H:%M:%S")}"
-      rpt_file_name   = "#{reportName}_#{rpt_time}.html"
-
-      # Create the HTML report
-      rpt_file        = File.open(rpt_file_name, 'w')
+      rpt_nice_time     = "#{t.strftime("%m/%d/%Y @ %H:%M:%S")}"
 
       # Format the header of the HTML report
-      @reportContent1 = '<html>
+      @report_content_1 = '<html>
         <head>
         <meta content=text/html; charset=ISO-8859-1 http-equiv=content-type>
         <title>Awetestlib Test Run</title>
@@ -66,7 +70,7 @@ module Awetestlib
         <tbody>
         <tr>
         <td style=width: 150px;>&nbsp;</td>
-        <td align=left><img src="https://raw.github.com/3qilabs/awetestlib/develop/images/logo.png"></img></td>
+        <td align=left><img src="http://awetest.com/images/awetest_logo.png"></img></td>
         <td align=right><p class=title>Test Report</p></td>
         </tr>
         </tbody>
@@ -80,7 +84,7 @@ module Awetestlib
         <td width=10%><p class=normal_text></p></td>
         <td width=20%><p class=bold_text>Script</p></td>
         <td width=5%><p class=bold_text>:</p></td>
-        <td width=65%><p class=normal_text>' + @reportname.capitalize + '</p></td>
+        <td width=65%><p class=normal_text>' + report_name.capitalize + '</p></td>
         </tr>
         <tr>
         <td width=10%><p class=normal_text></p></td>
@@ -90,7 +94,7 @@ module Awetestlib
         </tr>
         <tr>'
 
-      @reportContent2 = '</tr>
+      @report_content_2 = '</tr>
         </tbody>
         </table>
         </center>
@@ -101,28 +105,34 @@ module Awetestlib
         <tr>
         <td class=bborder_left width=' + @col_1_p + '><p>Test Step</p></td>
         <td class=bborder_left width=' + @col_2_p + '><p>Location</p></td>
-        <td class=bborder_left width=' + @col_3_p + '><p>Result</p></td>
+        <td class=bborder_left width=' + @col_3_p + '><p>Duration</p></td>
+        <td class=bborder_left width=' + @col_4_p + '><p>Result</p></td>
         </tr>' + "\n"
 
-      # Close the report
-      rpt_file.close
+      @json_content                = {}
+      @json_content['report_type'] = 'Awetestlib Report'
+      @json_content['Data_order'] = 'message, location, result, level, Time.now, line' #, duration'
+      @line_no                     = 1
 
-      return rpt_file_name
+
     end
 
     # Add a row to the report
     # @private
-    def add_to_report(message, location, result, level = 1)
+    def add_to_report(message, location, result, duration = 0, level = 1)
       # Format the body of the HTML report
+
+      fmt_duration = "#{'%9.5f' % (duration)}"
 
       left_class   = 'border_left'
       right_class  = 'border_right'
       pgph_class   = 'normal_text'
       loc_class    = 'center_text'
+      dur_class    = 'center_text'
       rslt_class   = 'result_ok'
       middle_class = 'border_middle'
 
-      rslt_class = 'result_nok' if result == "FAILED"
+      rslt_class   = 'result_nok' if result == "FAILED"
       case result
         when 'FAILED'
           rslt_class = 'result_nok'
@@ -135,6 +145,10 @@ module Awetestlib
               left_class   = 'mark_testlevel_left'
               middle_class = 'mark_testlevel_middle'
               right_class  = 'mark_testlevel_right'
+              location     = ''
+              fmt_duration = ''
+            else
+              result = ''
             end
           end
       end
@@ -142,47 +156,40 @@ module Awetestlib
       row = '<tr>
         <td class=' + left_class + ' width=' + @col_1_p + '><p class=' + pgph_class + '>' + message + '</p></td>
         <td class=' + middle_class + ' width=' + @col_2_p + '><p class=' + loc_class + '>' + location + '</p></td>
-        <td class=' + right_class + ' width=' + @col_3_p + '><p class=' + rslt_class + '>' + result + '</p></td>
+        <td class=' + middle_class + ' width=' + @col_3_p + '><p class=' + dur_class + '>' + fmt_duration + '</p></td>
+        <td class=' + right_class + ' width=' + @col_4_p + '><p class=' + rslt_class + '>' + result + '</p></td>
         </tr>'
 
-      @reportContent2 += row + "\n"
-
-
-      #if (result == 'PASSED')
-      #  @reportContent2 = @reportContent2 + '<tr>C'
-      #  @reportContent2 = @reportContent2 + '<td class=border_right width=20%><p class=result_ok>' + result + '</p></td>'
-      #elsif (result == 'FAILED')
-      #  @reportContent2 = @reportContent2 + '<tr><td class=border_left width=80%><p class=normal_text>' + step + '</p></td>'
-      #  @reportContent2 = @reportContent2 + '<td class=border_right width=20%><p class=result_nok>' + result + '</p></td>'
-      #elsif level < 1
-      #  @reportContent2 = @reportContent2 + '<tr><td class=border_left width=80%><p class=normal_text>' + step + '</p></td>'
-      #  @reportContent2 = @reportContent2 + '<td class=border_right width=20%><p class=result_ok>' + result + '</p></td>'
-      #else
-      #  @reportContent2 = @reportContent2 + '<tr><td class=mark_testlevel_left width=80%><p class=bold_large_text>' + step + '</p></td>'
-      #  @reportContent2 = @reportContent2 + '<td class=mark_testlevel_right width=20%><p class=result_ok>' + result + '</p></td>'
-      #end
+      @report_content_2                    += row + "\n"
+      @json_content["line_no_#{@line_no}"] = [message, location, result, level, Time.now, @line_no] #, duration]
+      @line_no                             += 1
 
     end
 
     # Close the report HTML
     # @private
-    def finish_report(reportName)
-      # Open the HTML report
-      rpt_file = File.open(reportName, 'a')
+    def finish_report
 
-      @reportContent2 = @reportContent2 + '<tr>
+      # HTML Report
+      rpt_file = File.open(self.html_file_name, 'w')
+      @report_content_2 = @report_content_2 + '<tr>
       <td class=bborder_left width=' + @col_1_p + '><p>&nbsp;</p></td>
       <td class=bborder_left width=' + @col_2_p + '><p>&nbsp;</p></td>
       <td class=bborder_left width=' + @col_3_p + '><p>&nbsp;</p></td>
+      <td class=bborder_left width=' + @col_4_p + '><p>&nbsp;</p></td>
       </tr>
       </table>'
-
-      rpt_file.puts(@reportContent1)
-
-      rpt_file.puts(@reportContent2)
-
-      # Close the report
+      rpt_file.puts(@report_content_1)
+      rpt_file.puts(@report_content_2)
       rpt_file.close
+
+      # JSON report
+      rpt_json = File.open(self.json_file_name, 'w')
+      rpt_json.puts(@json_content.to_json)
+      rpt_json.close
+
+      self.html_file_name
+
     end
   end
 end

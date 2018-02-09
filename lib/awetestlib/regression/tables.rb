@@ -5,6 +5,75 @@ module Awetestlib
     module Tables
 
 
+      def dump_all_tables(browser, to_report = false)
+        tables  = browser.tables
+        msg     = ''
+        tbl_cnt = 0
+        tables.each do |tbl|
+          tbl_cnt += 1
+          row_cnt = 0
+          msg << "\n=================\ntable: #{tbl_cnt}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
+          tbl.rows.each do |row|
+            row_cnt  += 1
+            cell_cnt = 0
+            msg << "\n=================\ntable: #{tbl_cnt} row: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
+            row.each do |cell|
+              cell_cnt += 1
+              msg << " \ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+            end
+          end
+        end
+        if to_report
+          debug_to_report(msg)
+        else
+          debug_to_log(msg)
+        end
+      end
+
+      def dump_table_and_rows(table, to_report = false)
+        msg = "\n=================\ntable\n=================\nn#{table}\n#{table.to_yaml}\nrows:"
+        cnt = 0
+        table.rows.each do |r|
+          cnt += 1
+          msg << "\n#{cnt}: #{r.text}"
+        end
+        msg << "\n=================\n================="
+        if to_report
+          debug_to_report(msg)
+        else
+          debug_to_log(msg)
+        end
+      end
+
+      def dump_table_rows_and_cells(tbl)
+        msg     = ''
+        row_cnt = 0
+        msg << "\n=================\ntable: #{tbl.inspect}\n=================\n#{tbl}\ntext:\n#{tbl.text}"
+        tbl.rows.each do |row|
+          row_cnt  += 1
+          cell_cnt = 0
+          msg << "\n=================\nrow: #{row_cnt}\n#{row.inspect}\n#{row}\ntext:'#{row.text}'"
+          row.each do |cell|
+            cell_cnt += 1
+            msg << "\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+          end
+        end
+        debug_to_log(msg)
+      end
+
+      alias dump_table_rows dump_table_rows_and_cells
+
+      def dump_row_cells(row)
+        msg      = ''
+        cell_cnt = 0
+        msg << "\n=================\nrow: #{row.inspect}\n#{row}\ntext:'#{row.text}'"
+        row.each do |cell|
+          cell_cnt += 1
+          msg << "\ncell: #{cell_cnt}\n#{cell.inspect}\n#{row}\ntext: '#{cell.text}'"
+        end
+        debug_to_log(msg)
+      end
+
       def get_index_for_column_head(panel, table_index, strg, desc = '')
         table = panel.tables[table_index]
         get_column_index(table, strg, desc, true)
@@ -43,7 +112,48 @@ module Awetestlib
         failed_to_log("Unable to #{msg} '#{$!}'")
       end
 
-      # Return the index of the last row of the specified table.
+      def get_parent_row(container, element, how, what, limit = 5)
+        msg    = "#{__method__}: #{element.to_s.upcase} :#{how}='#{what}'"
+        target = nil
+        parent = nil
+        case element
+          when :link
+            target = container.link(how, what)
+          when :select_list
+            target = container.select_list(how, what)
+          when :text_field
+            target = container.text_field(how, what)
+          when :checkbox
+            target = container.checkbox(how, what)
+          when :radio
+            target = container.radio(how, what)
+          else
+            fail "#{element.to_s.upcase} not supported."
+        end
+        if target
+          count  = 0
+          parent = target.parent
+          until parent.is_a?(Watir::TableRow) do
+            parent = parent.parent
+            count  += 1
+            if count > limit
+              failed_to_log("Parent row not within #{limit} ancestors.")
+            end
+          end
+        else
+          failed_to_log(msg)
+        end
+        if parent.is_a?(Watir::TableRow)
+          passed_to_log(msg)
+          parent
+        else
+          failed_to_log(msg)
+        end
+      rescue
+        failed_to_log(unable_to)
+      end
+
+    # Return the index of the last row of the specified table.
       # @param [Watir::Table] table A reference to the table in question.
       # @param [Fixnum] pad The number of zeroes to prefix the index to allow correct sorting.
       # @param [Fixnum] every A number indicating which rows in the table actually carry data if
@@ -116,7 +226,7 @@ module Awetestlib
       # after the row indicated by this argument. When omitted, the first hit is accepted.
       # @return [Fixnum] the index of the row containing *strg*
       def get_index_of_row_with_text(table, strg, column_index = nil, fail_if_found = false, after_index = nil)
-        debug_to_log("#{__method__}: #{get_callers(5)}")
+        debug_to_log(with_caller("#{get_callers(5)}")) if $debug
         if fail_if_found
           msg = 'No '
         else
@@ -298,14 +408,14 @@ module Awetestlib
       # @param [Fixnum] header_index The index of the row containing the header names.
       # @return [Hash] Two level hash of hashes. Internal hashes are 'name' which allows look-up of a column index
       # by the header name, and 'index' which allows look-up of the name by the column index.
-      def get_table_headers(table, header_index = 1)
+      def get_table_headers(table, header_index = 0)
         headers          = Hash.new
         headers['index'] = Hash.new
         headers['name']  = Hash.new
-        count            = 1
-        table[header_index].each do |cell|
+        count            = 0
+        table[header_index].cells.each do |cell|
           if cell.text.length > 0
-            name                    = cell.text.gsub(/\s+/, ' ')
+            name                    = cell.text.strip.gsub(/\s+/, ' ')
             headers['index'][count] = name
             headers['name'][name]   = count
           end
@@ -314,7 +424,7 @@ module Awetestlib
         #debug_to_log("#{__method__}: headers:\n#{headers.to_yaml}")
         headers
       rescue
-        failed_to_log("Unable to get content headers. '#{$!}'")
+        failed_to_log(unable_to)
       end
 
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.

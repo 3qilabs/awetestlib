@@ -19,47 +19,12 @@ module Awetestlib
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String, Regexp] value A string or a regular expression to be found in the *:value* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
-      def get_element(browser, element, how, what, value = nil, desc = '')
-        msg    = build_message("Return #{element} with :#{how}=#{what}", value, desc)
-        target = nil
-        what = Regexp.new(Regexp.escape(what)) unless how == :index or what.is_a?(Regexp)
-        case element
-          when :link
-            target = browser.link(how, what)
-          when :button
-            target = browser.button(how, what)
-          when :div
-            target = browser.div(how, what)
-          when :checkbox
-            target = browser.checkbox(how, what, value)
-          when :text_field, :textfield
-            target = browser.text_field(how, what)
-          when :image
-            target = browser.image(how, what)
-          when :file_field, :filefield
-            target = browser.file_field(how, what)
-          when :form
-            target = browser.form(how, what)
-          when :frame
-            target = browser.frame(how, what)
-          when :radio
-            target = browser.radio(how, what, value)
-          when :span
-            target = browser.span(how, what)
-          when :table
-            target = browser.table(how, what)
-          when :li
-            target = browser.li(how, what)
-          when :select_list, :selectlist
-            target = browser.select_list(how, what)
-          when :hidden
-            target = browser.hidden(how, what)
-          when :area
-            target = browser.area(how, what)
-          else
-            target = browser.element(how, what)
-        end
-        if target.exists?
+      def get_element(container, element, how, what, value = nil, desc = '', options = {})
+        value, desc, options = capture_value_desc(value, desc, options) # for backwards compatibility
+        msg    = build_message("Return #{element} with :#{how}=>'#{what}'", value, desc)
+        code   = build_webdriver_fetch(element, how, what, options)
+        target = eval(code)
+        if target and target.exists?
           passed_to_log(msg)
           target
         else
@@ -67,12 +32,13 @@ module Awetestlib
           nil
         end
       rescue => e
-        unless rescue_me(e, __method__, rescue_me_command(target, how, what), "#{browser.class}", target)
+        unless rescue_me(e, __method__, rescue_me_command(target, how, what), "#{container.class}", target)
           raise e
         end
       end
 
       def get_attribute_value(browser, element, how, what, attribute, desc = '')
+        #TODO: eliminate case statement by using eval with build_webdriver_fetch
         msg = build_message("Value of #{attribute} in #{element} #{how}=>#{what}.", desc)
         case element
           when :link
@@ -80,13 +46,74 @@ module Awetestlib
           when :button
             value = browser.button(how => what).attribute_value attribute
           else
-            if browser.element(how => what).responds_to('attribute_value')
+            if browser.element(how => what).responds_to?('attribute_value')
               value = browser.element(how => what).attribute_value attribute
             end
         end
         value
       rescue
         failed_to_log(" Unable to #{msg}: '#{$!}'")
+      end
+
+      def get_directory(path)
+        if File.directory?(path)
+          debug_to_log("Directory already exists, '#{path}'.")
+        else
+          Dir::mkdir(path)
+          debug_to_log("Directory was created, '#{path}'.")
+        end
+        path
+      end
+
+      def get_ancestor(descendant, element, how, what, desc = '')
+        found = false
+        how = 'class_name' if how.to_s == 'class'
+        tag = element.to_s.downcase
+        debug_to_log("target: #{descendant.tag_name} :id=>#{descendant.id}")
+        debug_to_log("goal:   #{element} :#{how}=>#{what}   #{desc}")
+        ancestor = target.parent
+        debug_to_log("#{ancestor.tag_name}: :class=>'#{ancestor.class_name}'")
+        code = "ancestor.#{how}"
+        what.is_a?(Regexp) ? code << " =~ /#{what.source}/" : code << " == '#{what}'"
+        debug_to_log("#{code}")
+        until found do
+          debug_to_log("#{ancestor.tag_name}: :class=>'#{ancestor.class_name}'")
+          if ancestor.tag_name == tag
+            if eval(code)
+              found = true
+              break
+            end
+          end
+          break unless ancestor
+          ancestor = ancestor.parent
+        end
+        ancestor
+      rescue
+        failed_to_log(unable_to)
+      end
+
+      def capture_value_desc(value, desc, options = nil)
+        opt = options.dup if options
+        unless opt.kind_of?(Hash)
+          opt = Hash.new
+        end
+        if value
+          vlu = value.dup
+          if opt[:value]
+            vlu = nil
+          else
+            opt[:value] = vlu
+          end
+        end
+        if desc
+          dsc = desc.dup
+          unless opt[:desc]
+            opt[:desc] = dsc
+          end
+        end
+        [vlu, dsc, opt]
+      rescue
+        failed_to_log(unable_to)
       end
 
       # Return an array containing the options available for selection in a select_list identifified by

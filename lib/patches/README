@@ -1,2 +1,0 @@
-We put here small monkey patches to the gems we use.
-This is the easier path when we sometimes just need to override or add a few methods in a gem; we don't really need to fork it.

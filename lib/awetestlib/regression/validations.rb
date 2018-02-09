@@ -136,58 +136,70 @@ module Awetestlib
       # @param [String, Regexp] what A string or a regular expression to be found in the *how* attribute that uniquely identifies the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return [Boolean] Returns true if the element is enabled.
-      def enabled?(browser, element, how, what, desc = '')
-        #TODO: handle identification of element with value as well as other attribute. see exists?
-        msg = build_message("#{element.to_s.titlecase} by #{how}=>'#{what}' is enabled.}", desc)
-        case element
-          when :textfield, :textarea, :text_area, :text_field
-            rtrn = browser.text_field(how, what).enabled? and not browser.text_field(how, what).readonly?
-          when :select_list, :selectlist
-            rtrn = browser.select_list(how, what).enabled?
-          else
-            rtrn = browser.element(how, what).enabled?
-        end
-        if rtrn
-          passed_to_log("#{msg}")
+      #def enabled?(browser, element, how, what, desc = '')
+      #  #TODO: Webdriver does not define this at element level, only for specific tags
+      #  #TODO: handle identification of element with value as well as other attribute. see exists?
+      #  msg = build_message("#{element.to_s.titlecase} by #{how}=>'#{what}' is enabled.}", desc)
+      #  case element
+      #    when :textfield, :textarea, :text_area, :text_field
+      #      rtrn = browser.text_field(how, what).enabled? and not browser.text_field(how, what).readonly?
+      #    when :select_list, :selectlist
+      #      rtrn = browser.select_list(how, what).enabled?
+      #    else
+      #      rtrn = browser.element(how, what).enabled?
+      #  end
+      #  if rtrn
+      #    passed_to_log("#{msg}")
+      #    true
+      #  else
+      #    failed_to_log("#{msg}")
+      #  end
+      #  rtrn
+      #rescue
+      #  failed_to_log(unable_to(msg, false, true))
+      #end
+
+      #alias validate_enabled enabled?
+
+      def expected_color?(container, element, how, what, style, expected_color, desc = '')
+        #TODO: check that style is a color style
+        msg          = build_message("Color of #{element} #{how}=>'#{what}' #{style} is #{expected_color}", desc)
+        code         = build_webdriver_fetch(element, how, what)
+        actual_color = eval("#{code}.style('#{style}')")
+        if actual_color == expected_color
+          passed_to_log(msg)
           true
         else
-          failed_to_log("#{msg}")
+          failed_to_log(msg)
         end
-        rtrn
       rescue
         failed_to_log(unable_to(msg, false, true))
       end
 
-      alias validate_enabled enabled?
+      def disablement(container, should_be, element, how, what, desc = '')
+        if should_be
+          disabled?(container, element, how, what, desc)
+        else
+          enabled?(container, element, how, what, desc)
+        end
+      rescue
+        failed_to_log(unable_to(desc, false, true))
+      end
 
       # Verify that a DOM element is disabled.
       # @param (see #enabled?)
       # @return [Boolean] Returns true if the element is disabled.
-      def disabled?(browser, element, how, what, desc = '')
-        #TODO: handle identification of element with value as well as other attribute. see exists?
-        msg = build_message("#{element.to_s.titlecase} by #{how}=>'#{what}' is disabled.", desc)
-        case element
-          when :textfield, :textarea, :text_area, :text_field
-            rtrn = browser.text_field(how, what).disabled? ||
-                browser.text_field(how, what).readonly?
-          when :select_list, :selectlist
-            rtrn = browser.select_list(how, what).disabled?
-          when :checkbox
-            rtrn = browser.checkbox(how, what).disabled?
-          when :radio
-            rtrn = browser.radio(how, what).disabled?
-          when :button
-            rtrn = browser.button(how, what).disabled?
-          else
-            rtrn = browser.element(how, what).disabled?
-        end
-        if rtrn
-          passed_to_log("#{msg}")
+      def disabled?(container, element, how, what, desc = '', value = nil)
+        value, desc, options = capture_value_desc(value, desc) # for backwards compatibility
+        msg2 = value ? "and value=>'#{value}' " : nil
+        msg  = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'is disabled.', desc)
+        code = build_webdriver_fetch(element, how, what, options)
+        if eval("#{code}.disabled?")
+          passed_to_log(msg)
           true
         else
-          failed_to_log("#{msg}")
+          failed_to_log(msg)
         end
-        rtrn
       rescue
         failed_to_log(unable_to(msg, false, true))
       end
@@ -195,30 +207,104 @@ module Awetestlib
       alias validate_not_enabled disabled?
       alias validate_disabled disabled?
 
+      def not_disabled?(container, element, how, what, desc = '', value = nil)
+        value, desc, options = capture_value_desc(value, desc) # for backwards compatibility
+        msg2 = value ? "and value=>'#{value}' " : nil
+        msg  = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'is enabled.', desc)
+        code = build_webdriver_fetch(element, how, what, options)
+        if eval("#{code}.disabled?")
+          failed_to_log(msg)
+        else
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log(unable_to(msg, false, true))
+      end
+
+      alias enabled? not_disabled?
+      alias validate_enabled not_disabled?
+
+      def element_disablement(target, disabled, desc = '')
+        #TODO: Is this really necessary?
+        is_disabled = target.disabled?
+        disablement = false
+        should_be   = disabled ? true : false
+        msg         = build_message("#{method_to_title(__method__)}", "should be #{should_be}", "is #{is_disabled}", desc)
+        if should_be == is_disabled
+          passed_to_log(msg)
+          disablement = true
+        else
+          failed_to_log(msg)
+        end
+        [is_disabled, disablement]
+      rescue
+        failed_to_log(unable_to(msg, false, true))
+      end
+
+      def presence(container, should_be, element, how, what, desc = '')
+        if should_be
+          is_present?(container, element, how, what, desc)
+        else
+          not_present?(container, element, how, what, desc)
+        end
+      rescue
+        failed_to_log(unable_to(desc, false, true))
+      end
+
+      def is_present?(container, element, how, what, value = nil, desc = '')
+        value, desc, options = capture_value_desc(value, desc) # for backwards compatibility
+        msg2 = value ? "and value=>'#{value}' " : nil
+        msg  = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'is present.', desc)
+        code = build_webdriver_fetch(element, how, what, options)
+        if eval("#{code}.present?")
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log(msg)
+        end
+      rescue
+        failed_to_log(unable_to(msg, false, true))
+      end
+
+      def not_present?(container, element, how, what, value = nil, desc = '')
+        value, desc, options = capture_value_desc(value, desc) # for backwards compatibility
+        msg2 = value ? "and value=>'#{value}' " : nil
+        msg  = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'is not present.', desc)
+        code = build_webdriver_fetch(element, how, what, options)
+        if eval("#{code}.exists?")
+          failed_to_log(msg)
+        else
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log(unable_to(msg, false, true))
+      end
+
+      def visibility(container, should_be, element, how, what, desc = '')
+        msg = build_message(desc)
+        if should_be
+          visible?(container, element, how, what, desc)
+        else
+          not_visible?(container, element, how, what, desc)
+        end
+      rescue
+        failed_to_log(unable_to(desc, false, true))
+      end
+
       # Verify that a DOM element is visible.
       # @param (see #enabled?)
       # @return [Boolean] Returns true if the element is visible.
-      def visible?(browser, element, how, what, desc = '')
-        #TODO: handle identification of element with value as well as other attribute. see exists?
-        msg  = build_message("#{element.to_s.titlecase} #{how}=>'#{what}' is visible.", desc)
-        rtrn = false
-        case how
-          when :index
-            target = get_element(browser, element, how, what)
-            if target.visible?
-              rtrn = true
-            end
-          else
-            if browser.element(how, what).visible?
-              rtrn = true
-            end
-        end
-        if rtrn
+      def visible?(container, element, how, what, desc = '')
+        msg  = build_message("#{__method__.to_s.titleize}: #{element.to_s.titleize} #{how}=>'#{what}'", desc)
+        code = build_webdriver_fetch(element, how, what)
+        if eval("#{code}.visible?")
           passed_to_log("#{msg}")
+          true
         else
           failed_to_log("#{msg}")
         end
-        rtrn
       rescue
         failed_to_log(unable_to(msg, false, true))
       end
@@ -228,27 +314,15 @@ module Awetestlib
       # Verify that a DOM element is not visible.
       # @param (see #enabled?)
       # @return [Boolean] Returns true if the element is not visible.
-      def not_visible?(browser, element, how, what, desc = '')
-        #TODO: handle identification of element with value as well as other attribute.  see exists?
-        msg  = build_message("#{element.to_s.titlecase} #{how}=>'#{what}' is not visible.", desc)
-        rtrn = false
-        case how
-          when :index
-            target = get_element(browser, element, how, what)
-            if not target.visible?
-              rtrn = true
-            end
-          else
-            if not browser.element(how, what).visible?
-              rtrn = true
-            end
-        end
-        if rtrn
-          passed_to_log("#{msg}")
-        else
+      def not_visible?(container, element, how, what, desc = '')
+        msg  = build_message("#{__method__.to_s.titleize}: #{element.to_s.titleize} #{how}=>'#{what}'", desc)
+        code = build_webdriver_fetch(element, how, what)
+        if eval("#{code}.visible?")
           failed_to_log("#{msg}")
+        else
+          passed_to_log("#{msg}")
+          true
         end
-        rtrn
       rescue
         failed_to_log(unable_to(msg, false, true))
       end
@@ -298,6 +372,16 @@ module Awetestlib
       alias checkbox_checked? checked?
       alias checkbox_set? checked?
 
+      def existence(container, should_be, element, how, what, desc = '')
+        if should_be
+          exists?(container, element, how, what, desc)
+        else
+          does_not_exist?(container, element, how, what, desc)
+        end
+      rescue
+        failed_to_log(unable_to(desc, false, true))
+      end
+
       # Verify that a DOM element exists on the page.
       # @param [Watir::Browser] browser A reference to the browser window or container element to be tested.
       # @param [Symbol] how The element attribute used to identify the specific element.
@@ -307,20 +391,16 @@ module Awetestlib
       # @param [String, Regexp] value A string or a regular expression to be found in the value attribute of the element.
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return [Boolean] True if the element exists.
-      def exists?(browser, element, how, what, value = nil, desc = '')
-        msg2 = "and value=>'#{value}' " if value
-        msg = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'exists.', desc)
-        case element
-          when :link
-            bool = browser.link(how, what).exists?
-          else
-            bool = browser.element(how, what).exists?
-        end
-        if bool
-          passed_to_log("#{msg}? #{desc}")
+      def exists?(container, element, how, what, value = nil, desc = '')
+        value, desc, options = capture_value_desc(value, desc) # for backwards compatibility
+        msg2 = value ? "and value=>'#{value}' " : nil
+        msg  = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'exists.', desc)
+        code = build_webdriver_fetch(element, how, what, options)
+        if eval("#{code}.exists?")
+          passed_to_log(msg)
           true
         else
-          failed_to_log("#{msg}? #{desc} [#{get_callers(1)}]")
+          failed_to_log(msg)
         end
       rescue
         failed_to_log(unable_to(msg, false, true))
@@ -329,16 +409,12 @@ module Awetestlib
       # Verify that a DOM element does not exist on the page.
       # @param (see #exists?)
       # @return [Boolean] True if the element does not exist.
-      def does_not_exist?(browser, element, how, what, value = nil, desc = '')
-        msg2 = "and value=>'#{value}' " if value
-        msg = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'does not exist.', desc)
-        case element
-          when :link
-            bool = browser.link(how, what).exists?
-          else
-            bool = browser.element(how, what).exists?
-        end
-        if bool
+      def does_not_exist?(container, element, how, what, value = nil, desc = '')
+        value, desc, options = capture_value_desc(value, desc) # for backwards compatibility
+        msg2 = value ? "and value=>'#{value}' " : nil
+        msg  = build_message("#{element.to_s.titlecase} with #{how}=>'#{what}' ", msg2, 'does not exist.', desc)
+        code = build_webdriver_fetch(element, how, what, options)
+        if eval("#{code}.exists?")
           failed_to_log(msg)
         else
           passed_to_log(msg)
@@ -649,9 +725,9 @@ module Awetestlib
       # @param [String, Regexp] expected A string or regular expression which must be matched in the value of the text field
       # @param [String] desc Contains a message or description intended to appear in the log and/or report output
       # @return [Boolean] Returns true if the *expected* is matched in the value of the text field.
-      def textfield_contains?(browser, how, what, expected, desc = '')
+      def textfield_contains?(container, how, what, expected, desc = '')
         msg      = build_message("Text field #{how}=>#{what} contains '#{expected}'.", desc)
-        contents = browser.text_field(how, what).value
+        contents = container.text_field(how, what).when_present.value
         if contents =~ /#{expected}/
           passed_to_log(msg)
           true
@@ -659,7 +735,7 @@ module Awetestlib
           failed_to_log("#{msg} Contents: '#{contents}'")
         end
       rescue
-        failed_to_log(unable_to)
+        failed_to_log(unable_to('', false, true))
       end
 
       # Verify that a text field (also text area), identified by *how* and *what*, is empty.
@@ -804,32 +880,32 @@ module Awetestlib
         end
       end
 
-      def validate_text(browser, ptrn, desc = '', skip_fail = false, skip_sleep = false)
-        cls = browser.class.to_s
+      def validate_text(container, ptrn, desc = '', skip_fail = false, skip_sleep = false)
+        cls = container.class.to_s
         cls.gsub!('Watir::', '')
         cls.gsub!('IE', 'Browser')
-        msg = build_message("#{cls} text contains  '#{ptrn}'.", desc)
+        msg = build_message("#{cls} text contains '#{ptrn}'.", desc)
         if ptrn.is_a?(Regexp)
           target = ptrn
         else
           target = Regexp.new(Regexp.escape(ptrn))
         end
-        sleep_for(2) unless skip_sleep
-        myText = browser.text
-        if not myText.match(target)
-          sleep_for(2) unless skip_sleep #TODO try a wait_until here?
-          myText = browser.text
+        if container.respond_to?(:wait)
+          container.wait
+        elsif container.respond_to?(:wait_until_present)
+          container.wait_until_present
+        else
+          sleep(3)
         end
-        if myText.match(target)
+        if container.text.match(target)
           passed_to_log("#{msg}")
           true
         else
           if skip_fail
             debug_to_log("#{cls} text does not contain the text: '#{ptrn}'.  #{desc} (Fail suppressed)")
           else
-            failed_to_log("#{msg}")
+            failed_to_log(msg)
           end
-          #debug_to_log("\n#{myText}")
         end
       rescue
         failed_to_log(unable_to)
@@ -963,14 +1039,15 @@ module Awetestlib
         failed_to_log(unable_to)
       end
 
-      def validate_selected_options(browser, how, what, list, desc = '')
-        select_list = browser.select_list(how, what)
-        selected    = select_list.selected_options.sort
+      def validate_selected_options(browser, how, what, list, desc = '', which = :text)
+        selected_options = browser.select_list(how, what).selected_options.dup
+        selected         = extract_selected(selected_options, which)
+        sorted_list      = list.dup.sort
         if list.is_a?(Array)
-          if selected == list.sort
+          if selected == sorted_list
             passed_to_log("Expected options [#{list.sort}] are selected [#{selected}]. #{desc}")
           else
-            failed_to_log("Selected options [#{selected}] do not match expected [#{list.sort}]. #{desc}")
+            failed_to_log("Selected options [#{selected}] do not match expected [#{sorted_list}]. #{desc}")
             true
           end
         else
@@ -1071,6 +1148,139 @@ module Awetestlib
         end
       rescue
         failed_to_log(unable_to)
+      end
+
+      def attribute_contains?(container, element, how, what, attr_name, expected, desc = '')
+        msg = build_message("Element #{element} :#{how}=>#{what}", "attribute '#{attr_name}", "contains '#{expected}'.", desc)
+        if container.element(how, what).attribute_value(attr_name).contains(expected)
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log(msg)
+        end
+      rescue
+        failed_to_log(unable_to('', false, true))
+      end
+
+      def attribute_does_not_contain?(container, element, how, what, attr_name, expected, desc = '')
+        msg = build_message("Element #{element} :#{how}=>#{what}", "attribute '#{attr_name}", "does not contain '#{expected}'.", desc)
+        if container.element(how, what).attribute_value(attr_name).contains(expected)
+          failed_to_log(msg)
+        else
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log(unable_to('', false, true))
+      end
+
+      def attribute_equals?(container, element, how, what, attr_name, expected, desc = '')
+        msg = build_message("Element #{element} :#{how}=>#{what}", "attribute '#{attr_name}", "equals '#{expected}'.", desc)
+        actual = container.element(how, what).attribute_value(attr_name)
+        if actual == expected
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log("#{msg} Found '#{actual}'")
+        end
+      rescue
+        failed_to_log(unable_to('', false, true))
+      end
+
+      def attribute_does_not_equal?(container, element, how, what, attr_name, expected, desc = '')
+        msg = build_message("Element #{element} :#{how}=>#{what}", "attribute '#{attr_name}", "does not equal '#{expected}'.", desc)
+        if container.element(how, what).attribute_value(attr_name) == expected
+          failed_to_log(msg)
+        else
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log(unable_to('', false, true))
+      end
+
+      def element_attribute_equals?(element, attr_name, expected, desc = '')
+        msg = build_message("#{element.tag_name.capitalize}", "attribute '#{attr_name}'", "equals '#{expected}'.", desc)
+        actual = element.attribute_value(attr_name)
+        if actual == expected
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log("#{msg} Found '#{actual}'")
+        end
+      rescue
+        failed_to_log(unable_to('', false, true))
+      end
+
+      def element_attribute_does_not_equal?(element, attr_name, expected, desc = '')
+        msg = build_message("#{element.tag_name.capitalize}", "attribute '#{attr_name}'", "does not equal '#{expected}'.", desc)
+        if element.attribute_value(attr_name) == expected
+          failed_to_log(msg)
+        else
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log(unable_to('', false, true))
+      end
+
+      def element_attribute_contains?(element, attribute, expected, desc = '')
+        msg = build_message("#{element.tag_name.capitalize}", "attribute '#{attribute}'","contains '#{expected}'.", desc)
+        if element.attribute_value(attribute).include?(expected)
+          passed_to_log(msg)
+          true
+        else
+          failed_to_log(msg)
+        end
+      rescue
+        failed_to_log(unable_to('', false, true))
+      end
+
+      def element_attribute_does_not_contain?(element, attribute, expected, desc = '')
+        msg = build_message("#{element.tag_name.capitalize}", "attribute '#{attribute}'","does not contain '#{expected}'.", desc)
+        if element.attribute_value(attribute).include?(expected)
+          failed_to_log(msg)
+        else
+          passed_to_log(msg)
+          true
+        end
+      rescue
+        failed_to_log(unable_to('', false, true))
+      end
+
+      def contains_text?(container, element, how, what, expected, desc = '')
+        msg  = build_message("Element #{element} :#{how}=>#{what} contains '#{expected}'.", desc)
+        code = build_webdriver_fetch(element, how, what)
+        target = eval(code)
+        if target
+          text = target.text
+          if expected and expected.length > 0
+            rgx = Regexp.new(Regexp.escape(expected))
+            if text =~ rgx
+              passed_to_log(msg)
+              true
+            else
+              debug_to_log("exp: [#{expected.gsub(' ', '^')}]")
+              debug_to_log("act: [#{text.gsub(' ', '^')}]")
+              failed_to_log("#{msg} Found '#{text}'. #{desc}")
+            end
+          else
+            if text.length > 0
+              debug_to_log("exp: [#{expected.gsub(' ', '^')}]")
+              debug_to_log("act: [#{text.gsub(' ', '^')}]")
+              failed_to_log("#{msg} Found '#{text}'. #{desc}")
+            else
+              passed_to_log(msg)
+              true
+            end
+          end
+        end
+      rescue
+        failed_to_log(unable_to(msg, false, true))
+      end
+
+      def directory_exists?(directory)
+        File.directory?(directory)
       end
 
       # @!endgroup Core

@@ -1,5 +1,6 @@
 require 'open-uri'  #; load_time
 module Awetestlib
+  # TODO replace this with regression/runner.  Only one script type.
   # Parent class. Each script type will have a Runner that inherits from this class.
   class Runner
     def initialize(options = {})
@@ -9,8 +10,10 @@ module Awetestlib
 
     def check_script_type(script_type)
       case script_type
-        when "Regression" ; "Regression" #Should this be regression? possible rename
-        else              ; script_type
+        when 'Regression', 'Awetest', 'AwetestDSL', 'Awetestlib'
+          'Regression'
+        else
+          script_type
       end
     end
   end
