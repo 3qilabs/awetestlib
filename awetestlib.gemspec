@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.homepage                  = %q{http://3qilabs.com}
   s.description               = %q{Features robust and flexible reporting.}
 
-  s.add_dependency('watir-webdriver')
+  s.add_dependency('watir')
   s.add_dependency('watir-nokogiri')
   s.add_dependency('activesupport')
   s.add_dependency('andand')
